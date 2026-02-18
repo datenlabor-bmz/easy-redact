@@ -182,7 +182,7 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
   for (const r of redactions) {
     const raw = r.personGroup ?? 'Sonstige'
     const group = raw.toLowerCase() === 'sonstiges' ? 'Sonstige' : raw
-    const person = r.person || r.text || '(unbekannt)'
+    const person = r.person || '(unbekannt)'
     if (!groups.has(group)) groups.set(group, new Map())
     const persons = groups.get(group)!
     if (!persons.has(person)) persons.set(person, [])
