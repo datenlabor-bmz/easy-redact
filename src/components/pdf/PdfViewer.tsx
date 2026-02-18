@@ -49,7 +49,7 @@ export function PdfViewer({
       const existing = await loadDocumentAndAnnotations(buf)
       existing.forEach((ann: any) => {
         const parts = ann.quads.map((q: number[]) => quadToPart(q))
-        onRedactionAdd({ id: generateUUID(), pageIndex: ann.pageIndex, parts, status: 'manual', shouldApply: true })
+        onRedactionAdd({ id: generateUUID(), documentKey: '', pageIndex: ann.pageIndex, parts, status: 'manual', shouldApply: true })
       })
 
       const total = await countPages()
@@ -86,7 +86,7 @@ export function PdfViewer({
         // quads is Quad[][] - outer array = matches, inner = quads per match
         const parts = (quads as number[][][]).flat().map(q => quadToPart(q as number[]))
         onRedactionAdd({
-          id: generateUUID(), pageIndex: s.pageIndex, parts,
+          id: generateUUID(), documentKey: '', pageIndex: s.pageIndex, parts,
           status: 'suggested', confidence: s.confidence,
           person: s.person, personGroup: s.personGroup,
           rule: s.rule, reason: s.reason,

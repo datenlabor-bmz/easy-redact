@@ -71,11 +71,12 @@ export default function App() {
 
   const addRedaction = useCallback((r: Redaction) => {
     setSession(prev => {
-      const next = { ...prev!, redactions: [...prev!.redactions, r] }
+      const docKey = prev!.documents[activeFileIdx]?.idbKey ?? ''
+      const next = { ...prev!, redactions: [...prev!.redactions, { ...r, documentKey: docKey }] }
       saveSession(next)
       return next
     })
-  }, [])
+  }, [activeFileIdx])
 
   const updateRedaction = useCallback((id: string, updates: Partial<Redaction>) => {
     setSession(prev => {
@@ -182,6 +183,8 @@ export default function App() {
   )
 
   const activeFile = files[activeFileIdx]
+  const activeDocKey = session.documents[activeFileIdx]?.idbKey ?? ''
+  const activeRedactions = session.redactions.filter(r => r.documentKey === activeDocKey)
 
   return (
     <div className='flex flex-col h-screen bg-background overflow-hidden'>
@@ -204,10 +207,20 @@ export default function App() {
                 <X className='h-2.5 w-2.5 hover:text-red-400' onClick={e => {
                   e.stopPropagation()
                   const next = files.filter((_, fi) => fi !== i)
-                  setFiles(next); setActiveFileIdx(Math.min(activeFileIdx, next.length - 1))
-                  if (session.documents[i]) {
-                    deleteFile(session.documents[i].idbKey)
-                    updateSession({ documents: session.documents.filter((_, di) => di !== i) })
+                  setFiles(next); setActiveFileIdx(Math.min(activeFileIdx, Math.max(0, next.length - 1)))
+                  setSelectedId(null)
+                  const doc = session.documents[i]
+                  if (doc) {
+                    deleteFile(doc.idbKey)
+                    setSession(prev => {
+                      const updated = {
+                        ...prev!,
+                        documents: prev!.documents.filter((_, di) => di !== i),
+                        redactions: prev!.redactions.filter(r => r.documentKey !== doc.idbKey),
+                      }
+                      saveSession(updated)
+                      return updated
+                    })
                   }
                 }} />
               </button>
@@ -230,7 +243,7 @@ export default function App() {
       <div ref={containerRef} className='flex flex-1 min-h-0 select-none'>
         {/* Left sidebar */}
         <div style={{ width: leftWidth }} className='shrink-0 flex flex-col min-w-0'>
-          <LeftSidebar pages={pages} redactions={session.redactions} selectedId={selectedId}
+          <LeftSidebar pages={pages} redactions={activeRedactions} selectedId={selectedId}
             onSelectRedaction={setSelectedId} onAccept={acceptRedaction} onIgnore={ignoreRedaction}
             onNavigatePage={handleNavigatePage} />
         </div>
@@ -242,7 +255,7 @@ export default function App() {
         {/* Center — PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
           {activeFile ? (
-            <PdfViewer file={activeFile} redactions={session.redactions} selectedId={selectedId} zoom={zoom}
+            <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
               onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
               onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
               onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}

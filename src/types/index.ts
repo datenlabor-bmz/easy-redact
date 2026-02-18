@@ -59,6 +59,7 @@ export type RedactionConfidence = 'high' | 'low'
 
 export interface Redaction {
   id: string
+  documentKey: string   // idbKey of the document this redaction belongs to; stamped by App.addRedaction
   pageIndex: number
   parts: RedactionPart[]
   rule?: RedactionRule
