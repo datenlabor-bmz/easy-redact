@@ -5,8 +5,9 @@ import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSugge
 import { useMupdf } from './useMupdf'
 import { finalizeHighlight, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
 import { PdfPage } from './PdfPage'
-import { Loader2, Minus, Plus } from 'lucide-react'
+import { Download, FileLock2, Loader2, Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 export interface PdfViewerProps {
   file: File
@@ -164,12 +165,28 @@ export function PdfViewer({
           </Button>
         </div>
         <div className='flex gap-2'>
-          <Button variant='outline' size='sm' onClick={() => handleExport(false)}>
-            🟨 Vorgeschwärzt
-          </Button>
-          <Button size='sm' onClick={() => handleExport(true)}>
-            ⬛ Final geschwärzt
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant='outline' size='sm' className='gap-1.5' onClick={() => handleExport(false)}>
+                <Download className='h-3.5 w-3.5' />
+                Export
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='bottom' className='max-w-56 text-center'>
+              PDF mit sichtbaren gelben Markierungen — zum Prüfen und Abstimmen vor der finalen Freigabe
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size='sm' className='gap-1.5' onClick={() => handleExport(true)}>
+                <FileLock2 className='h-3.5 w-3.5' />
+                Schwärzen und Speichern
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='bottom' className='max-w-56 text-center'>
+              Text unwiderruflich entfernt und durch schwarze Balken ersetzt — bereit zur Veröffentlichung
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

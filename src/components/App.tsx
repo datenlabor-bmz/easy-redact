@@ -255,7 +255,7 @@ export default function App() {
 
         {/* Left drag handle */}
         <div onMouseDown={startDrag('left')}
-          className='w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10' />
+          className='w-px shrink-0 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors z-10' />
 
         {/* Center — PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
@@ -283,7 +283,7 @@ export default function App() {
 
         {/* Right drag handle */}
         <div onMouseDown={startDrag('right')}
-          className='w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10' />
+          className='w-px shrink-0 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors z-10' />
 
         {/* Right — Chat */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
