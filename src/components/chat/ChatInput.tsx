@@ -14,11 +14,14 @@ export function ChatInput({ onSend, onStop, isStreaming, placeholder = 'Fragen S
   const [value, setValue] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
 
+  // field-sizing:content handles auto-resize in modern browsers;
+  // fallback for older browsers via JS
   useEffect(() => {
-    if (ref.current) {
-      ref.current.style.height = 'auto'
-      ref.current.style.height = `${Math.min(ref.current.scrollHeight, 180)}px`
-    }
+    if (!ref.current) return
+    const ta = ref.current
+    if (ta.style.fieldSizing === 'content') return  // native handles it
+    ta.style.height = 'auto'
+    ta.style.height = `${Math.min(ta.scrollHeight, 180)}px`
   }, [value])
 
   const send = () => {
@@ -43,11 +46,11 @@ export function ChatInput({ onSend, onStop, isStreaming, placeholder = 'Fragen S
           ))}
         </div>
       )}
-      <div className='relative bg-background border rounded-2xl shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all'>
+      <div className='flex items-center gap-2 bg-background border rounded-2xl shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all pl-4 pr-2 py-2'>
         <textarea ref={ref} value={value} onChange={e => setValue(e.target.value)}
-          onKeyDown={onKey} placeholder={placeholder} disabled={isStreaming} rows={1}
-          className='w-full resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none min-h-[44px] max-h-[180px] py-3 pl-4 pr-12' />
-        <div className='absolute right-2 bottom-2'>
+          onKeyDown={onKey} placeholder={placeholder} disabled={isStreaming}
+          className='flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none max-h-[180px] py-0 leading-5 [field-sizing:content]' />
+        <div className='shrink-0'>
           {isStreaming ? (
             <Button variant='outline' size='icon' onClick={onStop} className='h-8 w-8 rounded-lg'>
               <Square className='h-4 w-4' />

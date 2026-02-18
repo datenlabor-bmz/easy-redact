@@ -176,7 +176,9 @@ export default function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `redacted-${files[activeFileIdx]?.name ?? 'document.pdf'}`
+    const orig = files[activeFileIdx]?.name ?? 'document.pdf'
+    const base = orig.replace(/\.pdf$/i, '')
+    a.download = `${base}.${_applied ? 'redacted' : 'preview'}.pdf`
     a.click()
     URL.revokeObjectURL(url)
   }, [files, activeFileIdx])

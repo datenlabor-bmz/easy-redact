@@ -85,7 +85,7 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align='end' className='w-auto min-w-48 p-0' onOpenAutoFocus={e => e.preventDefault()}>
+      <PopoverContent align='end' className='w-64 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
           <div className='px-3 pt-3 pb-1'>
             <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>Datenverarbeitung</p>
@@ -174,7 +174,7 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align='end' className='w-auto min-w-48 p-0' onOpenAutoFocus={e => e.preventDefault()}>
+      <PopoverContent align='end' className='w-64 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
           <div className='p-3'>
             <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>Schwärzungsmodus</p>
@@ -191,7 +191,7 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
               <div className='mt-2'>
                 <label className='text-[10px] text-muted-foreground block mb-1'>Rechtsgrundlage</label>
                 <Select value={session.foiJurisdiction ?? ''} onValueChange={onFoiJurisdictionChange}>
-                  <SelectTrigger className='h-7 text-xs'>
+                  <SelectTrigger className='h-7 text-xs w-full'>
                     <SelectValue placeholder={jurisdictions.length ? 'Gesetz wählen…' : 'Lädt…'} />
                   </SelectTrigger>
                   <SelectContent>
