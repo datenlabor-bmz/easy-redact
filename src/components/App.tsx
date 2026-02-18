@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -236,6 +237,10 @@ export default function App() {
           </div>
           <span className='font-semibold text-sm'>EasyRedact</span>
         </div>
+        <Link href='/about'
+          className='ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors'>
+          Über EasyRedact
+        </Link>
       </header>
 
       {/* Three-panel layout */}
