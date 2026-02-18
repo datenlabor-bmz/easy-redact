@@ -244,7 +244,12 @@ export default function App() {
         {/* Left sidebar */}
         <div style={{ width: leftWidth }} className='shrink-0 flex flex-col min-w-0'>
           <LeftSidebar pages={pages} redactions={activeRedactions} selectedId={selectedId}
-            onSelectRedaction={setSelectedId} onAccept={acceptRedaction} onIgnore={ignoreRedaction}
+            onSelectRedaction={id => {
+              setSelectedId(id)
+              const r = activeRedactions.find(x => x.id === id)
+              if (r != null) handleNavigatePage(r.pageIndex)
+            }}
+            onAccept={acceptRedaction} onIgnore={ignoreRedaction}
             onNavigatePage={handleNavigatePage} />
         </div>
 

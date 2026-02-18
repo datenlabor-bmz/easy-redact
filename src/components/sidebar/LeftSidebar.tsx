@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Check, X, LayoutGrid, List, Users } from 'lucide-react'
+import { Check, X, LayoutGrid, List, Users, BoxSelect } from 'lucide-react'
 import type { Redaction, PageData } from '@/types'
+import { getRedactionText } from '@/components/pdf/geometry'
 
 interface LeftSidebarProps {
   pages: PageData[]
@@ -49,36 +50,47 @@ function ThumbnailGrid({ pages, redactions, onNavigatePage }: {
 
 // ── Redaction list item ────────────────────────────────────────────────────────
 
-function RedactionItem({ r, selected, onSelect, onAccept, onIgnore }: {
-  r: Redaction; selected: boolean
+function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore }: {
+  r: Redaction; page: PageData | undefined; selected: boolean
   onSelect: () => void; onAccept: () => void; onIgnore: () => void
 }) {
-  const statusColor = {
-    manual: 'bg-foreground text-background',
-    suggested: r.confidence === 'low' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-    accepted: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    ignored: 'bg-muted text-muted-foreground line-through',
+  // Status expressed through the text block's background tint
+  const blockBg = {
+    manual: 'bg-foreground/10',
+    suggested: r.confidence === 'low' ? 'bg-blue-100/70 dark:bg-blue-900/20' : 'bg-amber-100/70 dark:bg-amber-900/20',
+    accepted: 'bg-green-100/70 dark:bg-green-900/20',
+    ignored: 'bg-muted/40 opacity-50',
   }[r.status]
+
+  const text = page ? getRedactionText(r, page) : ''
+  const isFreehand = !text
 
   return (
     <div onClick={onSelect}
       className={`group flex items-start gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-muted/50 ${selected ? 'bg-primary/5 border-l-2 border-primary' : 'border-l-2 border-transparent'}`}>
       <div className='flex-1 min-w-0'>
-        <div className='flex items-center gap-1.5 mb-0.5'>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusColor}`}>
-            S. {r.pageIndex + 1}
-          </span>
+        {isFreehand ? (
+          <div className={`flex items-center gap-1.5 text-[11px] text-muted-foreground italic rounded px-2 py-1 ${blockBg}`}>
+            <BoxSelect className='h-3 w-3 shrink-0' />
+            <span>Freihand-Schwärzung</span>
+          </div>
+        ) : (
+          <p className={`text-xs font-mono rounded px-2 py-1 leading-relaxed break-words whitespace-pre-wrap ${blockBg}`}>
+            {text}
+          </p>
+        )}
+        <div className='flex items-center gap-2 mt-1'>
           {r.confidence && (
-            <span className={`text-[10px] px-1 py-0.5 rounded ${r.confidence === 'low' ? 'text-blue-600' : 'text-amber-600'}`}>
+            <span className={`text-[10px] ${r.confidence === 'low' ? 'text-blue-500' : 'text-amber-500'}`}>
               {r.confidence === 'low' ? 'unsicher' : 'sicher'}
             </span>
           )}
+          {r.person && <span className='text-[11px] text-muted-foreground truncate'>{r.person}</span>}
+          {r.reason && !r.person && <span className='text-[11px] text-muted-foreground truncate'>{r.reason}</span>}
         </div>
-        {r.person && <p className='text-xs font-medium truncate'>{r.person}</p>}
-        {r.reason && <p className='text-[11px] text-muted-foreground truncate'>{r.reason}</p>}
       </div>
       {r.status === 'suggested' && (
-        <div className='flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0'>
+        <div className='flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5'>
           <Button variant='ghost' size='icon' className='h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50' onClick={e => { e.stopPropagation(); onAccept() }}>
             <Check className='h-3.5 w-3.5' />
           </Button>
@@ -94,22 +106,35 @@ function RedactionItem({ r, selected, onSelect, onAccept, onIgnore }: {
 
 // ── Chronological list ────────────────────────────────────────────────────────
 
-function ChronologicalList({ redactions, selectedId, onSelect, onAccept, onIgnore }: {
-  redactions: Redaction[]; selectedId: string | null
+function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore }: {
+  redactions: Redaction[]; pages: PageData[]; selectedId: string | null
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
 }) {
-  const sorted = [...redactions].sort((a, b) => {
-    if (a.pageIndex !== b.pageIndex) return a.pageIndex - b.pageIndex
-    return (a.parts[0]?.y ?? 0) - (b.parts[0]?.y ?? 0)
-  })
+  const sorted = [...redactions].sort((a, b) =>
+    a.pageIndex !== b.pageIndex ? a.pageIndex - b.pageIndex : (a.parts[0]?.y ?? 0) - (b.parts[0]?.y ?? 0)
+  )
 
   if (!sorted.length) return <p className='text-xs text-muted-foreground p-4 text-center'>Keine Schwärzungen vorhanden</p>
 
+  const byPage = sorted.reduce<Map<number, Redaction[]>>((acc, r) => {
+    acc.set(r.pageIndex, [...(acc.get(r.pageIndex) ?? []), r])
+    return acc
+  }, new Map())
+
   return (
-    <div className='divide-y divide-border/50'>
-      {sorted.map(r => (
-        <RedactionItem key={r.id} r={r} selected={selectedId === r.id}
-          onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)} />
+    <div>
+      {[...byPage.entries()].map(([pageIdx, rs]) => (
+        <div key={pageIdx}>
+          <div className='px-3 py-1.5 bg-muted/30 text-[11px] font-semibold text-muted-foreground sticky top-0'>
+            Seite {pageIdx + 1}
+          </div>
+          <div className='divide-y divide-border/50'>
+            {rs.map(r => (
+              <RedactionItem key={r.id} r={r} page={pages[r.pageIndex]} selected={selectedId === r.id}
+                onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)} />
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -117,8 +142,8 @@ function ChronologicalList({ redactions, selectedId, onSelect, onAccept, onIgnor
 
 // ── Grouped view ──────────────────────────────────────────────────────────────
 
-function GroupedList({ redactions, selectedId, onSelect, onAccept, onIgnore }: {
-  redactions: Redaction[]; selectedId: string | null
+function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore }: {
+  redactions: Redaction[]; pages: PageData[]; selectedId: string | null
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
 }) {
   // Group by personGroup → person
@@ -160,8 +185,11 @@ function GroupedList({ redactions, selectedId, onSelect, onAccept, onIgnore }: {
                 <span className='text-[10px] text-muted-foreground'>{rs.filter(r => r.status !== 'ignored').length} Schwärzungen</span>
               </div>
               {rs.map(r => (
-                <RedactionItem key={r.id} r={r} selected={selectedId === r.id}
-                  onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)} />
+                <div key={r.id} className='relative'>
+                  <span className='absolute right-10 top-2 text-[10px] text-muted-foreground/60 select-none'>S.{r.pageIndex + 1}</span>
+                  <RedactionItem r={r} page={pages[r.pageIndex]} selected={selectedId === r.id}
+                    onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)} />
+                </div>
               ))}
             </div>
           ))}
@@ -204,14 +232,14 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
 
         <TabsContent value='list' className='flex-1 mt-0 overflow-hidden'>
           <ScrollArea className='h-full'>
-            <ChronologicalList redactions={redactions} selectedId={selectedId}
+            <ChronologicalList redactions={redactions} pages={pages} selectedId={selectedId}
               onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore} />
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value='groups' className='flex-1 mt-0 overflow-hidden'>
           <ScrollArea className='h-full'>
-            <GroupedList redactions={redactions} selectedId={selectedId}
+            <GroupedList redactions={redactions} pages={pages} selectedId={selectedId}
               onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore} />
           </ScrollArea>
         </TabsContent>
