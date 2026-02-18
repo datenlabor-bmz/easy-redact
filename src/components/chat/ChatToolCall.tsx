@@ -22,6 +22,7 @@ const TOOL_LABELS: Record<string, string> = {
 }
 
 export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
+  if (toolCall.name === 'ask_user') return null
   const [expanded, setExpanded] = useState(false)
   const Icon = TOOL_ICONS[toolCall.name] ?? Brain
   const label = TOOL_LABELS[toolCall.name] ?? toolCall.name

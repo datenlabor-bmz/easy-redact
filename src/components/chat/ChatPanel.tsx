@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from 'react'
 import { useStickToBottom } from 'use-stick-to-bottom'
-import { Trash2, ArrowDown, Loader2, Bot, ShieldAlert } from 'lucide-react'
+import { Trash2, Loader2, Bot, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ChatMessage } from './ChatMessage'
@@ -37,7 +37,7 @@ export function ChatPanel({
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages } =
     useChatStream({ consent, redactionMode, foiJurisdiction, documentPages, onConsentRequired, onSuggestionsReceived })
 
-  const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
+  const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)
 
   // Load persisted messages on mount
@@ -99,10 +99,10 @@ export function ChatPanel({
 
           {isStreaming && messages.length > 0 && !messages[messages.length - 1]?.content && (
             <div className='flex gap-3'>
-              <div className='shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center'>
+              <div className='shrink-0 w-7 h-7 rounded-full bg-muted flex items-center justify-center mt-0.5'>
                 <Bot className='h-3.5 w-3.5 text-muted-foreground' />
               </div>
-              <div className='flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm text-muted-foreground'>
+              <div className='flex items-center gap-2 px-3 py-2 bg-muted rounded-2xl rounded-tl-sm text-sm text-muted-foreground'>
                 <Loader2 className='h-3.5 w-3.5 animate-spin' /> Denke nach…
               </div>
             </div>
@@ -116,12 +116,6 @@ export function ChatPanel({
           )}
         </div>
 
-        {!isAtBottom && messages.length > 0 && (
-          <Button variant='secondary' size='sm' onClick={() => scrollToBottom()}
-            className='absolute bottom-4 left-1/2 -translate-x-1/2 shadow-md rounded-full'>
-            <ArrowDown className='h-3.5 w-3.5 mr-1' /> Nach unten
-          </Button>
-        )}
       </div>
 
       {/* Input */}
