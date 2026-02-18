@@ -10,8 +10,9 @@ interface UseChatStreamOptions {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: Array<{ pageIndex: number; text: string }>
-  onConsentRequired?: (reason: string) => void
   onSuggestionsReceived?: (suggestions: RedactionSuggestion[]) => void
+  // Called when user picks a consent mode from the inline consent box
+  onConsentGranted?: (mode: ConsentMode) => void
 }
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -24,8 +25,9 @@ export function useChatStream(opts: UseChatStreamOptions) {
   const optsRef = useRef(opts)
   optsRef.current = opts
 
-  const sendMessage = useCallback(async (content: string) => {
-    const userMsg: ChatMessage = { id: generateId(), role: 'user', content, timestamp: new Date().toISOString() }
+  const sendMessage = useCallback(async (content: string, overrideConsent?: ConsentMode) => {
+    const isSystem = content.startsWith('[System:')
+    const userMsg: ChatMessage = { id: generateId(), role: 'user', content, timestamp: new Date().toISOString(), hidden: isSystem }
     setMessages(prev => [...prev, userMsg])
     setIsStreaming(true)
     setError(null)
@@ -33,15 +35,39 @@ export function useChatStream(opts: UseChatStreamOptions) {
     const assistantId = generateId()
     setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', toolCalls: [], timestamp: new Date().toISOString() }])
 
-    // Build API messages from current state
     const allMessages = await new Promise<ChatMessage[]>(resolve => {
       setMessages(prev => { resolve(prev); return prev })
     })
-    const apiMessages: ApiChatMessage[] = allMessages
-      .filter(m => !m.hidden)
-      .map(m => ({ role: m.role, content: m.content }))
 
-    const { consent, redactionMode, foiJurisdiction, documentPages } = optsRef.current
+    // Reconstruct full OpenAI message format including tool call/result pairs
+    const history = allMessages.filter(m => m.id !== assistantId)
+    const apiMessages: ApiChatMessage[] = []
+    for (const m of history) {
+      if (m.role === 'user') {
+        if (m.content) apiMessages.push({ role: 'user', content: m.content })
+      } else {
+        if (m.toolCalls?.length) {
+          apiMessages.push({
+            role: 'assistant', content: m.content,
+            tool_calls: m.toolCalls.map(tc => ({
+              id: tc.id, type: 'function' as const,
+              function: { name: tc.name, arguments: JSON.stringify(tc.args) },
+            })),
+          })
+          for (const tc of m.toolCalls) {
+            apiMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(tc.result ?? '') })
+          }
+        } else if (m.content) {
+          apiMessages.push({ role: 'assistant', content: m.content })
+        }
+      }
+    }
+
+    const { redactionMode, foiJurisdiction, documentPages } = optsRef.current
+    const effectiveConsent = overrideConsent ?? optsRef.current.consent
+
+    console.log('[chat] sendMessage', { content: content.slice(0, 80), effectiveConsent, apiMessageCount: apiMessages.length })
+    console.log('[chat] apiMessages', apiMessages.map(m => ({ role: m.role, content: m.content?.slice(0, 60) })))
 
     abortRef.current = new AbortController()
     try {
@@ -50,9 +76,9 @@ export function useChatStream(opts: UseChatStreamOptions) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
-          model: consent === 'local' ? 'local' : 'cloud',
-          consent, redactionMode, foiJurisdiction,
-          documentPages: consent ? documentPages : undefined,
+          model: effectiveConsent === 'local' ? 'local' : 'cloud',
+          consent: effectiveConsent, redactionMode, foiJurisdiction,
+          documentPages: effectiveConsent ? documentPages : undefined,
         }),
         signal: abortRef.current.signal,
       })
@@ -74,6 +100,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           if (!chunk.startsWith('data: ')) continue
           try {
             const event: SSEEvent = JSON.parse(chunk.slice(6))
+            if (event.type !== 'text_delta') console.log('[chat] SSE event', event.type, event)
             switch (event.type) {
               case 'text_delta':
                 setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: m.content + event.content } : m))
@@ -81,7 +108,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
               case 'tool_start':
                 toolIdx++
                 setMessages(prev => prev.map(m => m.id === assistantId
-                  ? { ...m, toolCalls: [...(m.toolCalls ?? []), { name: event.name, args: event.args, status: 'running' }] }
+                  ? { ...m, toolCalls: [...(m.toolCalls ?? []), { id: event.id, name: event.name, args: event.args, status: 'running' }] }
                   : m))
                 break
               case 'tool_result':
@@ -90,7 +117,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
                   : m))
                 break
               case 'consent_required':
-                optsRef.current.onConsentRequired?.(event.reason)
+                // Attach consent request to the current assistant message for inline rendering
+                setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, consentRequired: event.reason } : m))
                 break
               case 'ask_user':
                 setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, question: event.question } : m))
@@ -114,7 +142,14 @@ export function useChatStream(opts: UseChatStreamOptions) {
     }
   }, [])
 
-  // Silently add context (user accept/ignore actions, consent decisions)
+  // Called when user grants consent from inline box — updates session and resumes with a silent message
+  const grantConsent = useCallback((mode: ConsentMode) => {
+    console.log('[chat] grantConsent', mode, 'documentPages:', optsRef.current.documentPages?.length)
+    optsRef.current.onConsentGranted?.(mode)
+    setMessages(prev => prev.map(m => m.consentRequired ? { ...m, consentRequired: undefined } : m))
+    sendMessage(`[System: Dokumentenzugriff erteilt (${mode}). Rufe jetzt read_documents auf und mache danach Schwärzungsvorschläge.]`, mode)
+  }, [sendMessage])
+
   const addSilentContext = useCallback((content: string) => {
     setMessages(prev => [...prev, {
       id: generateId(), role: 'user', content, timestamp: new Date().toISOString(), hidden: true,
@@ -122,8 +157,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
   }, [])
 
   const stopStreaming = useCallback(() => { abortRef.current?.abort() }, [])
-
   const setMessagesDirectly = useCallback((msgs: ChatMessage[]) => { setMessages(msgs) }, [])
 
-  return { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages: setMessagesDirectly }
+  return { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages: setMessagesDirectly }
 }

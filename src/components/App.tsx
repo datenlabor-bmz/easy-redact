@@ -7,10 +7,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { PdfViewer } from '@/components/pdf/PdfViewer'
 import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
-import { ConsentModal } from '@/components/ConsentModal'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
-import type { Redaction, Session, PageData, ConsentMode, RedactionSuggestion, ChatMessage } from '@/types'
+import type { Redaction, Session, PageData, RedactionSuggestion, ChatMessage } from '@/types'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -21,13 +20,13 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pages, setPages] = useState<PageData[]>([])
   const [documentPages, setDocumentPages] = useState<Array<{ pageIndex: number; text: string }>>([])
-  const [consentModalOpen, setConsentModalOpen] = useState(false)
-  const [consentReason, setConsentReason] = useState('')
   const [pendingSuggestions, setPendingSuggestions] = useState<RedactionSuggestion[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportRef = useRef<((apply: boolean) => void) | null>(null)
+  const chatTriggerRef = useRef<((msg: string) => void) | null>(null)
+  const pendingChatTrigger = useRef<string | null>(null)
 
   // Resizable panels
   const [leftWidth, setLeftWidth] = useState(() => {
@@ -129,6 +128,14 @@ export default function App() {
         documents: [...(session?.documents ?? []), { name: pdf.name, idbKey: key }],
       })
     }
+
+    const names = pdfs.map(f => f.name).join(', ')
+    const consent = session?.consent
+    pendingChatTrigger.current = consent
+      ? `[System: Neue Dokumente hochgeladen: ${names}. Zugriff bereits erteilt. Lies die Dokumente und mache Schwärzungsvorschläge.]`
+      : `[System: Neue Dokumente hochgeladen: ${names}. Bitte Dokumentenzugriff anfordern und dann analysieren.]`
+    // Reset extracted pages so the effect below fires fresh
+    setDocumentPages([])
   }, [files, session, updateSession])
 
   useEffect(() => {
@@ -155,13 +162,15 @@ export default function App() {
     })
   }, [])
 
-  const handleConsentRequired = useCallback((reason: string) => {
-    setConsentReason(reason); setConsentModalOpen(true)
-  }, [])
-
-  const handleConsent = useCallback((mode: ConsentMode) => {
-    updateSession({ consent: mode }); setConsentModalOpen(false)
-  }, [updateSession])
+  // Fire pending chat trigger once all pages have been text-extracted
+  useEffect(() => {
+    if (!pendingChatTrigger.current) return
+    if (!pages.length) return
+    if (documentPages.length < pages.length) return
+    const msg = pendingChatTrigger.current
+    pendingChatTrigger.current = null
+    chatTriggerRef.current?.(msg)
+  }, [documentPages, pages])
 
   const handleExport = useCallback((blob: Blob, _applied: boolean) => {
     const url = URL.createObjectURL(blob)
@@ -329,10 +338,12 @@ export default function App() {
         {/* Right — Chat */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
           <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
+            documentNames={session.documents.map(d => d.name)}
+            triggerRef={chatTriggerRef}
+            onDeferredTrigger={msg => { pendingChatTrigger.current = `[System: ${msg}]` }}
             foiJurisdiction={session.foiJurisdiction}
-            documentPages={session.consent ? documentPages : undefined}
+            documentPages={documentPages}
             initialMessages={chatMessages}
-            onConsentRequired={handleConsentRequired}
             onSuggestionsReceived={setPendingSuggestions}
             onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
             session={session}
@@ -345,9 +356,6 @@ export default function App() {
 
       <input ref={fileInputRef} type='file' accept='.pdf,.docx,application/pdf' multiple className='hidden'
         onChange={e => e.target.files && handleFiles(e.target.files)} />
-
-      <ConsentModal open={consentModalOpen} reason={consentReason}
-        onConsent={handleConsent} onClose={() => setConsentModalOpen(false)} />
     </div>
   )
 }

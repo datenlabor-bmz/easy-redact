@@ -2,14 +2,15 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { User, Bot } from 'lucide-react'
+import { User, Bot, Cloud, Server, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ChatToolCall } from './ChatToolCall'
-import type { ChatMessage as Msg } from './useChatStream'
+import type { ChatMessage as Msg, ConsentMode } from '@/types'
 
-export function ChatMessage({ message, onOptionSelect }: {
+export function ChatMessage({ message, onOptionSelect, onConsentGrant }: {
   message: Msg
   onOptionSelect?: (questionId: string, optionId: string, label: string) => void
+  onConsentGrant?: (mode: ConsentMode) => void
 }) {
   const isUser = message.role === 'user'
   if (message.hidden) return null
@@ -40,6 +41,47 @@ export function ChatMessage({ message, onOptionSelect }: {
               ) : (
                 <div className='prose prose-sm dark:prose-invert max-w-none prose-p:my-1.5 prose-pre:my-1.5 prose-pre:bg-background prose-code:bg-background/80 prose-code:px-1 prose-code:rounded prose-code:before:content-[""] prose-code:after:content-[""]'>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Inline consent request box */}
+        {!isUser && message.consentRequired && (
+          <div className='mt-2 w-full max-w-[95%] rounded-xl border bg-muted/30 overflow-hidden'>
+            <div className='px-3 py-2 border-b bg-muted/50 flex items-center gap-2'>
+              <ShieldCheck className='h-3.5 w-3.5 text-amber-500 shrink-0' />
+              <span className='text-xs font-medium'>Dokumentenzugriff erforderlich</span>
+            </div>
+            <div className='px-3 py-2 text-xs text-muted-foreground border-b'>
+              {message.consentRequired}
+            </div>
+            <div className='p-2 flex flex-col gap-1.5'>
+              <button onClick={() => onConsentGrant?.('cloud')}
+                className='flex items-center gap-2.5 px-3 py-2 rounded-lg border hover:border-primary hover:bg-primary/5 transition-all text-left text-xs group'>
+                <Cloud className='h-4 w-4 text-blue-500 shrink-0' />
+                <div>
+                  <p className='font-medium group-hover:text-primary'>Cloud-KI (Azure OpenAI)</p>
+                  <p className='text-muted-foreground mt-0.5'>DSGVO-konform, keine Data Retention</p>
+                </div>
+              </button>
+              {process.env.NEXT_PUBLIC_LOCAL_LLM_ENABLED === 'true' ? (
+                <button onClick={() => onConsentGrant?.('local')}
+                  className='flex items-center gap-2.5 px-3 py-2 rounded-lg border hover:border-primary hover:bg-primary/5 transition-all text-left text-xs group'>
+                  <Server className='h-4 w-4 text-green-500 shrink-0' />
+                  <div>
+                    <p className='font-medium group-hover:text-primary'>Lokales LLM</p>
+                    <p className='text-muted-foreground mt-0.5'>Nur auf Ihrem Server, keine Cloud-Verbindung</p>
+                  </div>
+                </button>
+              ) : (
+                <div className='flex items-center gap-2.5 px-3 py-2 rounded-lg border border-dashed text-xs text-muted-foreground/50 cursor-not-allowed'>
+                  <Server className='h-4 w-4 shrink-0' />
+                  <div>
+                    <p className='font-medium'>Lokales LLM</p>
+                    <p className='mt-0.5'>Nicht konfiguriert <span className='text-[10px]'>(coming soon)</span></p>
+                  </div>
                 </div>
               )}
             </div>

@@ -12,10 +12,12 @@ import type { ConsentMode, JurisdictionMeta, RedactionMode, Session } from '@/ty
 
 // ── Shared option lists ────────────────────────────────────────────────────────
 
+const localLlmEnabled = process.env.NEXT_PUBLIC_LOCAL_LLM_ENABLED === 'true'
+
 const CONSENT_OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string; available: boolean }> = [
   { mode: null,    label: 'Nicht freigegeben', icon: Lock,   desc: 'Kein Dokumentinhalt wird an externe Dienste übertragen',                                  available: true },
-  { mode: 'cloud', label: 'Cloud-KI',          icon: Cloud,  desc: 'Azure OpenAI — DSGVO-konform, kein Data Retention, kein Training auf Ihren Daten',         available: true },
-  { mode: 'local', label: 'Lokales LLM',        icon: Server, desc: 'Ollama-kompatibler Endpunkt auf Ihrem eigenen GPU-Server — keine externe Datenübertragung', available: true },
+  { mode: 'cloud', label: 'Cloud-KI',          icon: Cloud,  desc: 'Azure OpenAI — DSGVO-konform, keine Data Retention, kein Training auf Ihren Daten',         available: true },
+  { mode: 'local', label: 'Lokales LLM',        icon: Server, desc: 'Ollama-kompatibler Endpunkt auf Ihrem eigenen GPU-Server — keine externe Datenübertragung', available: localLlmEnabled },
   { mode: null,    label: 'spaCy NLP',          icon: Brain,  desc: 'Lokale NLP-Analyse ohne KI-Modell (Docker only)',                                          available: false },
   { mode: null,    label: 'Browser NLP',        icon: Globe,  desc: 'In-Browser Transformer — vollständig offline (in Entwicklung)',                             available: false },
 ]

@@ -12,7 +12,7 @@ interface ConsentBarProps {
 
 const OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string; implemented: boolean }> = [
   { mode: null, label: 'Nicht freigegeben', icon: Lock, desc: 'Kein Dokumentinhalt wird geteilt', implemented: true },
-  { mode: 'cloud', label: 'Cloud-KI', icon: Cloud, desc: 'Azure OpenAI (DSGVO-konform, kein Data Retention)', implemented: true },
+  { mode: 'cloud', label: 'Cloud-KI', icon: Cloud, desc: 'Azure OpenAI (DSGVO-konform, keine Data Retention)', implemented: true },
   { mode: 'local', label: 'Lokales LLM', icon: Server, desc: 'Ollama auf Ihrem GPU-Server', implemented: true },
 ]
 

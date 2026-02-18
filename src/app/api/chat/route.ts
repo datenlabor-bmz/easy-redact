@@ -24,6 +24,9 @@ export async function POST(req: Request) {
   const body: ChatRequest = await req.json()
   const { messages, model, consent, redactionMode, foiJurisdiction, documentPages } = body
 
+  console.log('[chat] POST', { consent, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
+  console.log('[chat] messages', JSON.stringify(messages.map(m => ({ role: m.role, content: m.content?.slice(0, 80) }))))
+
   // Load FOI rules if needed
   const foiRules = redactionMode === 'foi' && foiJurisdiction
     ? await getRulesForJurisdiction(foiJurisdiction).catch(() => undefined)
@@ -35,7 +38,11 @@ export async function POST(req: Request) {
   })
 
   const { client, model: modelName } = getClient(consent === 'local' ? 'local' : 'cloud')
-  const activeTools = consent ? [...tools, readDocumentsTool] : tools
+  // Once consent is granted: remove request_document_access (no need to ask again) and add read_documents
+  const activeTools = consent
+    ? [...tools.filter(t => t.function.name !== 'request_document_access'), readDocumentsTool]
+    : tools
+  console.log('[chat] activeTools', activeTools.map(t => t.function.name))
 
   const stream = new ReadableStream({
     async start(ctrl) {
@@ -48,6 +55,7 @@ export async function POST(req: Request) {
         let iterations = 0
         while (iterations < 20) {
           iterations++
+          console.log(`[chat] iteration ${iterations}`)
           let assistantContent = ''
           let toolCalls: ApiChatMessage['tool_calls'] = []
           const toolCallArgs = new Map<number, string>()
@@ -79,11 +87,16 @@ export async function POST(req: Request) {
           }
           toolCalls = toolCalls!.filter(Boolean)
 
+          console.log(`[chat] iter ${iterations}: assistantContent=${assistantContent.slice(0, 60)}, toolCalls=${JSON.stringify(toolCalls.map(tc => tc.function.name))}`)
+
           if (!toolCalls.length) {
+            console.log('[chat] no tool calls → done')
             send(ctrl, { type: 'done' })
             break
           }
 
+          // Only process the first tool call per iteration
+          toolCalls = toolCalls.slice(0, 1)
           apiMessages.push({ role: 'assistant', content: assistantContent, tool_calls: toolCalls })
 
           for (const tc of toolCalls) {
@@ -95,7 +108,8 @@ export async function POST(req: Request) {
               continue
             }
 
-            send(ctrl, { type: 'tool_start', name, args })
+            console.log(`[chat] tool_start: ${name}`, JSON.stringify(args).slice(0, 120))
+            send(ctrl, { type: 'tool_start', id: tc.id, name, args })
 
             let result: { success: boolean; data?: unknown; error?: string }
             let special: SpecialToolResult | null = null
@@ -129,6 +143,8 @@ export async function POST(req: Request) {
                 result = { success: false, error: `Unknown tool: ${name}` }
             }
 
+            console.log(`[chat] tool_result: ${name}`, { success: result.success, special: special?.type })
+
             // Send special SSE events before the tool_result
             if (special) {
               if (special.type === 'consent_required') {
@@ -145,11 +161,19 @@ export async function POST(req: Request) {
               role: 'tool', tool_call_id: tc.id,
               content: JSON.stringify(result.success ? result.data : { error: result.error }),
             })
+
+            // Stop the loop immediately — user must act outside the chat before we continue
+            if (special?.type === 'consent_required') {
+              console.log('[chat] consent_required → stopping loop')
+              send(ctrl, { type: 'done' })
+              return
+            }
           }
         }
 
         if (iterations >= 20) send(ctrl, { type: 'error', message: 'Maximum iterations reached' })
       } catch (err) {
+        console.error('[chat] error', err)
         send(ctrl, { type: 'error', message: err instanceof Error ? err.message : 'Unknown error' })
       } finally {
         ctrl.close()

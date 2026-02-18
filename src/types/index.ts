@@ -111,7 +111,7 @@ export interface Session {
 // ── Chat ──────────────────────────────────────────────────────────────────────
 
 export interface ToolCall {
-  id?: string
+  id: string
   name: string
   args: Record<string, unknown>
   result?: unknown
@@ -126,8 +126,8 @@ export interface ChatMessage {
   toolCalls?: ToolCall[]
   timestamp: string  // ISO string for serialization
   hidden?: boolean   // silent context messages not rendered in UI
-  // structured question from ask_user tool
   question?: AskUserQuestion
+  consentRequired?: string  // reason string when AI requested document access
 }
 
 export interface AskUserOption {
@@ -145,7 +145,7 @@ export interface AskUserQuestion {
 // ── SSE event types ───────────────────────────────────────────────────────────
 
 export type SSEEvent =
-  | { type: 'tool_start'; name: string; args: Record<string, unknown> }
+  | { type: 'tool_start'; id: string; name: string; args: Record<string, unknown> }
   | { type: 'tool_result'; name: string; result: unknown; success: boolean }
   | { type: 'text_delta'; content: string }
   | { type: 'consent_required'; reason: string }

@@ -16,12 +16,13 @@ interface ChatPanelProps {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: Array<{ pageIndex: number; text: string }>
+  documentNames?: string[]
   initialMessages?: Msg[]
-  onConsentRequired: (reason: string) => void
+  triggerRef?: React.MutableRefObject<((msg: string) => void) | null>
+  onDeferredTrigger?: (msg: string) => void  // for triggers that need pages to be ready first
   onSuggestionsReceived: (suggestions: RedactionSuggestion[]) => void
   onRedactionAction?: (redactionId: string, action: 'accepted' | 'ignored') => void
   onMessagesChange?: (messages: Msg[]) => void
-  // Settings passed through for the header popover
   session: Session
   onConsentChange: (mode: ConsentMode) => void
   onRedactionModeChange: (mode: RedactionMode) => void
@@ -30,23 +31,45 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  consent, redactionMode, foiJurisdiction, documentPages, initialMessages,
-  onConsentRequired, onSuggestionsReceived, onRedactionAction, onMessagesChange,
+  consent, redactionMode, foiJurisdiction, documentPages, documentNames, initialMessages, triggerRef, onDeferredTrigger,
+  onSuggestionsReceived, onRedactionAction, onMessagesChange,
   session, onConsentChange, onRedactionModeChange, onFoiJurisdictionChange, onModelSettingsChange,
 }: ChatPanelProps) {
-  const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages } =
-    useChatStream({ consent, redactionMode, foiJurisdiction, documentPages, onConsentRequired, onSuggestionsReceived })
+  const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages } =
+    useChatStream({
+      consent, redactionMode, foiJurisdiction, documentPages,
+      onSuggestionsReceived,
+      onConsentGranted: onConsentChange,
+    })
 
   const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)
 
-  // Load persisted messages on mount
+  // Expose sendMessage for external triggers (e.g. on document upload)
+  useEffect(() => { if (triggerRef) triggerRef.current = sendMessage }, [triggerRef, sendMessage])
+
+  // Load persisted messages or trigger welcome on mount
   useEffect(() => {
-    if (!initialLoaded.current && initialMessages && initialMessages.length > 0) {
-      initialLoaded.current = true
+    if (initialLoaded.current) return
+    initialLoaded.current = true
+    if (initialMessages && initialMessages.length > 0) {
       setMessages(initialMessages)
+    } else {
+      const hasDocs = !!documentNames?.length
+      const hasConsent = !!consent
+      let msg: string
+      if (hasDocs && hasConsent) {
+        // Defer until document pages are extracted — don't trigger immediately or read_documents will fail
+        onDeferredTrigger?.(`Dokumente geladen: ${documentNames!.join(', ')}. Zugriff bereits erteilt. Begrüße den Nutzer kurz, rufe SOFORT read_documents auf und mache dann Schwärzungsvorschläge.`)
+        return
+      } else if (hasDocs) {
+        msg = `Dokumente geladen: ${documentNames!.join(', ')}. Begrüße den Nutzer kurz, erkläre was du tun kannst, und fordere Dokumentenzugriff an.`
+      } else {
+        msg = `Begrüße den Nutzer kurz, erkläre was du tun kannst, und bitte ihn, ein Dokument hochzuladen.`
+      }
+      sendMessage(`[System: ${msg}]`)
     }
-  }, [initialMessages, setMessages])
+  }, [initialMessages, setMessages, sendMessage])
 
   // Persist messages when they change
   useEffect(() => {
@@ -94,7 +117,7 @@ export function ChatPanel({
               </p>
             </div>
           ) : (
-            messages.map(m => <ChatMessage key={m.id} message={m} onOptionSelect={handleOptionSelect} />)
+            messages.map(m => <ChatMessage key={m.id} message={m} onOptionSelect={handleOptionSelect} onConsentGrant={grantConsent} />)
           )}
 
           {isStreaming && messages.length > 0 && !messages[messages.length - 1]?.content && (
