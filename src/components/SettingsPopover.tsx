@@ -21,15 +21,15 @@ const CONSENT_OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.Ele
 ]
 
 const REDACTION_MODES: Array<{ mode: RedactionMode; label: string; icon: React.ElementType; desc: string }> = [
-  { mode: 'pii', label: 'Personendaten (PII)',        icon: User,       desc: 'Schwärzt Namen, Adressen, Kontaktdaten und andere personenbezogene Daten' },
-  { mode: 'foi', label: 'Informationsfreiheit (FOI)', icon: FileSearch, desc: 'Schwärzt nach den Ausnahmetatbeständen des jeweiligen Informationsfreiheitsgesetzes' },
+  { mode: 'pii', label: 'Personendaten',        icon: User,       desc: 'Schwärzt Namen, Adressen, Kontaktdaten und andere personenbezogene Daten' },
+  { mode: 'foi', label: 'Informationsfreiheit', icon: FileSearch, desc: 'Schwärzt nach den Ausnahmetatbeständen des jeweiligen Informationsfreiheitsgesetzes' },
 ]
 
 // ── Shared option button list ──────────────────────────────────────────────────
 
 function OptionList<T>({ options, isActive, onSelect }: {
   options: Array<{ value: T; label: string; icon: React.ElementType; desc: string; available?: boolean }>
-  isActive: (v: T) => boolean
+  isActive: (v: T, i: number) => boolean
   onSelect: (v: T) => void
 }) {
   return (
@@ -42,11 +42,11 @@ function OptionList<T>({ options, isActive, onSelect }: {
             <TooltipTrigger asChild>
               <button tabIndex={-1} disabled={!available} onClick={() => available && onSelect(opt.value)}
                 className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-left w-full
-                  ${!available ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-                  ${isActive(opt.value) ? 'bg-primary text-primary-foreground' : available ? 'hover:bg-muted text-foreground' : 'text-muted-foreground'}`}>
+                  ${!available ? 'cursor-not-allowed text-muted-foreground/50' : 'cursor-pointer'}
+                  ${isActive(opt.value, i) ? 'bg-primary text-primary-foreground' : available ? 'hover:bg-muted text-foreground' : ''}`}>
                 <Icon className='h-3.5 w-3.5 shrink-0' />
                 <span className='flex-1'>{opt.label}</span>
-                {!available && <span className='text-[9px] border rounded px-1 opacity-60'>bald</span>}
+                {!available && <span className='text-[9px] text-muted-foreground/40 font-normal'>coming soon</span>}
               </button>
             </TooltipTrigger>
             <TooltipContent side='left' className='max-w-52'>{opt.desc}</TooltipContent>
@@ -83,13 +83,13 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align='end' className='w-68 p-0' onOpenAutoFocus={e => e.preventDefault()}>
+      <PopoverContent align='end' className='w-auto min-w-48 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
           <div className='px-3 pt-3 pb-1'>
             <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>Datenverarbeitung</p>
             <OptionList
               options={CONSENT_OPTIONS.map(o => ({ value: o.mode, label: o.label, icon: o.icon, desc: o.desc, available: o.available }))}
-              isActive={v => v === session.consent && (v !== null || active.label === 'Nicht freigegeben')}
+              isActive={(v, i) => i === 0 ? session.consent === null : v === session.consent && v !== null}
               onSelect={onConsentChange} />
           </div>
 
@@ -172,7 +172,7 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align='end' className='w-64 p-0' onOpenAutoFocus={e => e.preventDefault()}>
+      <PopoverContent align='end' className='w-auto min-w-48 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
           <div className='p-3'>
             <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>Schwärzungsmodus</p>
