@@ -19,7 +19,7 @@ export function ChatInput({ onSend, onStop, isStreaming, placeholder = 'Fragen S
   useEffect(() => {
     if (!ref.current) return
     const ta = ref.current
-    if (ta.style.fieldSizing === 'content') return  // native handles it
+    if ((ta.style as CSSStyleDeclaration & { fieldSizing?: string }).fieldSizing === 'content') return  // native handles it
     ta.style.height = 'auto'
     ta.style.height = `${Math.min(ta.scrollHeight, 180)}px`
   }, [value])
