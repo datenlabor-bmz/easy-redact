@@ -14,10 +14,12 @@ export interface PdfPageProps {
   onMouseDown: (e: React.MouseEvent<SVGSVGElement>, pageIndex: number) => void
   onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void
   onMouseUp: () => void
+  onAccept?: (id: string) => void
+  onIgnore?: (id: string) => void
 }
 
 export function PdfPage({ pageIndex, pageData, zoom, redactions, selectedId, currentHighlight,
-  onRedactionClick, onMouseDown, onMouseMove, onMouseUp }: PdfPageProps) {
+  onRedactionClick, onMouseDown, onMouseMove, onMouseUp, onAccept, onIgnore }: PdfPageProps) {
   const [, , pw, ph] = pageData.bounds
   return (
     <div className='flex flex-col items-center'>
@@ -27,7 +29,8 @@ export function PdfPage({ pageIndex, pageData, zoom, redactions, selectedId, cur
         <RedactionOverlay pageIndex={pageIndex} pageWidth={pw} pageHeight={ph} pageData={pageData}
           redactions={redactions} selectedId={selectedId} currentHighlight={currentHighlight}
           onRedactionClick={onRedactionClick} onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove} onMouseUp={onMouseUp} />
+          onMouseMove={onMouseMove} onMouseUp={onMouseUp}
+          onAccept={onAccept} onIgnore={onIgnore} />
       </div>
       <p className='text-xs text-muted-foreground mb-3'>Seite {pageIndex + 1}</p>
     </div>

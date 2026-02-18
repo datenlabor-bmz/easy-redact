@@ -72,14 +72,16 @@ export function redactionsToAnnotations(redactions: Redaction[]) {
   }))
 }
 
+const overlaps = (w: { bbox: { x0: number; y0: number; x1: number; y1: number } }, r: { x: number; y: number; width: number; height: number }) =>
+  !(w.bbox.x1 < r.x || w.bbox.x0 > r.x + r.width || w.bbox.y1 < r.y || w.bbox.y0 > r.y + r.height)
+
 export function getRedactionText(redaction: Redaction, page: PageData): string {
-  const bbox = boundingBox(redaction)
   const words = [...page.words].sort((a, b) => {
     const dy = a.bbox.y0 - b.bbox.y0
     return Math.abs(dy) > 5 ? dy : a.bbox.x0 - b.bbox.x0
   })
   return words
-    .filter(w => !(w.bbox.x1 < bbox.x0 || w.bbox.x0 > bbox.x1 || w.bbox.y1 < bbox.y0 || w.bbox.y0 > bbox.y1))
+    .filter(w => redaction.parts.some(p => overlaps(w, p)))
     .map(w => w.text)
     .join(' ')
 }

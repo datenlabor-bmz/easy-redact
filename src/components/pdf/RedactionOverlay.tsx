@@ -1,50 +1,71 @@
 'use client'
 
+import { useState } from 'react'
 import type { Redaction, RedactionPart, HighlightInProgress, PageData } from '@/types'
 import { finalizeHighlight, boundingBox } from './geometry'
 
+export const ACCEPTED_OPACITY = 0.45
+export const SUGGESTION_HIGH_OPACITY = 0.5
+export const SUGGESTION_LOW_OPACITY = 0.25
+
 function RedactionBox({ part, status, confidence }: {
-  part: RedactionPart
-  status: string
-  confidence?: string
+  part: RedactionPart; status: string; confidence?: string
 }) {
   if (status === 'ignored') return null
-
-  const isManualOrAccepted = status === 'manual' || status === 'accepted'
-  const isSuggested = status === 'suggested'
-
-  let fill: string, fillOpacity: number, stroke: string, strokeDasharray: string
-  if (isManualOrAccepted) {
-    fill = 'black'; fillOpacity = 0.85; stroke = 'black'; strokeDasharray = 'none'
-  } else if (isSuggested && confidence === 'low') {
-    fill = '#3b82f6'; fillOpacity = 0.15; stroke = '#3b82f6'; strokeDasharray = '4,3'
+  let fill: string, fillOpacity: number
+  if (status === 'manual' || status === 'accepted') {
+    fill = 'black'; fillOpacity = ACCEPTED_OPACITY
+  } else if (status === 'suggested') {
+    fill = '#fde047'
+    fillOpacity = confidence === 'low' ? SUGGESTION_LOW_OPACITY : SUGGESTION_HIGH_OPACITY
   } else {
-    fill = '#f59e0b'; fillOpacity = 0.15; stroke = '#f59e0b'; strokeDasharray = '4,3'
+    return null
   }
-
   return (
     <rect x={part.x} y={part.y} width={part.width} height={part.height}
-      fill={fill} fillOpacity={fillOpacity} stroke={stroke} strokeOpacity={1}
-      strokeWidth={1.5} strokeDasharray={strokeDasharray} style={{ cursor: 'pointer' }} />
+      fill={fill} fillOpacity={fillOpacity} stroke='none' style={{ cursor: 'pointer' }} />
   )
 }
 
-function RedactionGroup({ redaction, isSelected, onClick }: {
+function RedactionButtons({ redaction, onAccept, onIgnore }: {
   redaction: Redaction
-  isSelected: boolean
-  onClick: (id: string, e: React.MouseEvent) => void
+  onAccept?: (id: string) => void
+  onIgnore?: (id: string) => void
 }) {
-  if (redaction.status === 'ignored') return null
   const bbox = boundingBox(redaction)
+  const isSuggested = redaction.status === 'suggested'
+  const btnSize = 12
+  const btnGap = 2
+  const btnY = bbox.y0
+  const acceptX = bbox.x1 + btnGap
+  const ignoreX = acceptX + (isSuggested ? btnSize + btnGap : 0)
+
   return (
-    <g onClick={(e) => onClick(redaction.id, e)} data-highlight='true' style={{ cursor: 'pointer' }}>
-      {redaction.parts.map((part, i) => (
-        <RedactionBox key={i} part={part} status={redaction.status} confidence={redaction.confidence} />
-      ))}
-      {isSelected && (
-        <rect x={bbox.x0 - 2} y={bbox.y0 - 2} width={bbox.x1 - bbox.x0 + 4} height={bbox.y1 - bbox.y0 + 4}
-          fill='none' stroke='#6366f1' strokeWidth={2} strokeDasharray='4,4' pointerEvents='none' />
+    <g>
+      {isSuggested && (
+        <>
+          <rect x={acceptX} y={btnY} width={btnSize} height={btnSize} rx={2}
+            fill='#16a34a' fillOpacity={1} stroke='none'
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onAccept?.(redaction.id) }}
+            style={{ cursor: 'pointer' }} />
+          <text x={acceptX + btnSize / 2} y={btnY + btnSize * 0.72}
+            textAnchor='middle' fontSize={btnSize * 0.65} fill='white' fontWeight='bold'
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onAccept?.(redaction.id) }}
+            style={{ cursor: 'pointer', userSelect: 'none' }}>✓</text>
+        </>
       )}
+      <rect x={ignoreX} y={btnY} width={btnSize} height={btnSize} rx={2}
+        fill='#dc2626' fillOpacity={1} stroke='none'
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); onIgnore?.(redaction.id) }}
+        style={{ cursor: 'pointer' }} />
+      <text x={ignoreX + btnSize / 2} y={btnY + btnSize * 0.72}
+        textAnchor='middle' fontSize={btnSize * 0.65} fill='white'
+        onMouseDown={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); onIgnore?.(redaction.id) }}
+        style={{ cursor: 'pointer', userSelect: 'none' }}>✕</text>
     </g>
   )
 }
@@ -60,13 +81,17 @@ export interface RedactionOverlayProps {
   onMouseDown: (e: React.MouseEvent<SVGSVGElement>, pageIndex: number) => void
   onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void
   onMouseUp: () => void
+  onAccept?: (id: string) => void
+  onIgnore?: (id: string) => void
 }
 
 export function RedactionOverlay({
   pageIndex, pageWidth, pageHeight, pageData, redactions, selectedId,
   currentHighlight, onRedactionClick, onMouseDown, onMouseMove, onMouseUp,
+  onAccept, onIgnore,
 }: RedactionOverlayProps) {
-  const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex)
+  const [lastHoveredId, setLastHoveredId] = useState<string | null>(null)
+  const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex && r.status !== 'ignored')
 
   const renderCurrent = () => {
     if (!currentHighlight || currentHighlight.pageIndex !== pageIndex) return null
@@ -79,10 +104,31 @@ export function RedactionOverlay({
       style={{ position: 'absolute', top: 0, left: 0, cursor: 'crosshair' }}
       onMouseDown={(e) => onMouseDown(e, pageIndex)}
       onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+
+      {/* Pass 1: all highlight boxes */}
       {pageRedactions.map(r => (
-        <RedactionGroup key={r.id} redaction={r} isSelected={selectedId === r.id} onClick={onRedactionClick} />
+        <g key={r.id} onClick={(e) => onRedactionClick(r.id, e)} data-highlight='true'
+          style={{ cursor: 'pointer' }} onMouseEnter={() => setLastHoveredId(r.id)}>
+          {r.parts.map((part, i) => (
+            <RedactionBox key={i} part={part} status={r.status} confidence={r.confidence} />
+          ))}
+          {selectedId === r.id && (() => {
+            const bbox = boundingBox(r)
+            return (
+              <rect x={bbox.x0 - 1} y={bbox.y0 - 1} width={bbox.x1 - bbox.x0 + 2} height={bbox.y1 - bbox.y0 + 2}
+                fill='none' stroke='#6366f1' strokeWidth={1.5} pointerEvents='none' />
+            )
+          })()}
+        </g>
       ))}
       {renderCurrent()}
+
+      {/* Pass 2: action buttons on top of everything */}
+      {pageRedactions.map(r =>
+        (r.id === lastHoveredId || selectedId === r.id) ? (
+          <RedactionButtons key={r.id} redaction={r} onAccept={onAccept} onIgnore={onIgnore} />
+        ) : null
+      )}
     </svg>
   )
 }

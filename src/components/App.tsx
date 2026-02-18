@@ -239,7 +239,12 @@ export default function App() {
               if (r != null) handleNavigatePage(r.pageIndex)
             }}
             onAccept={acceptRedaction} onIgnore={ignoreRedaction}
-            onNavigatePage={handleNavigatePage} />
+            onNavigatePage={handleNavigatePage}
+            onClearAll={() => setSession(prev => {
+              const next = { ...prev!, redactions: prev!.redactions.filter(r => r.documentKey !== activeDocKey) }
+              saveSession(next)
+              return next
+            })} />
         </div>
 
         {/* Left drag handle */}
@@ -314,7 +319,8 @@ export default function App() {
               onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
               onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
               pendingSuggestions={pendingSuggestions} onSuggestionsApplied={() => setPendingSuggestions([])}
-              exportRef={exportRef} />
+              exportRef={exportRef}
+              onAccept={acceptRedaction} onIgnore={ignoreRedaction} />
           ) : (
             <div
               className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}
