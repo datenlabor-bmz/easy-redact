@@ -62,6 +62,16 @@ export const tools = [
                 person: { type: 'string', description: 'Name of the person or organisation this redaction belongs to — use the actual name (e.g. "Max Mustermann", "Diversifix e. V."), never leave empty' },
                 personGroup: { type: 'string', description: 'Group category, e.g. "Privatpersonen", "Bundesbeamte", "Organisationen"' },
                 reason: { type: 'string', description: 'Brief explanation why this should be redacted' },
+                rule: {
+                  type: 'object',
+                  description: 'The specific FOI rule that justifies this redaction (FOI mode only)',
+                  properties: {
+                    title: { type: 'string', description: 'Rule title, e.g. "Personenbezogene Daten"' },
+                    reference: { type: 'string', description: 'Legal reference, e.g. "§5 IFG"' },
+                    group: { type: 'string', description: 'Rule group/category' },
+                  },
+                  required: ['title'],
+                },
               },
               required: ['text', 'pageIndex', 'confidence', 'person', 'personGroup'],
             },
@@ -135,7 +145,16 @@ export function executeRequestDocumentAccess(args: Record<string, unknown>): { s
 }
 
 export function executeSuggestRedactions(args: Record<string, unknown>): { special: SpecialToolResult; toolResult: ToolResult } {
-  const suggestions = args.suggestions as RedactionSuggestion[]
+  const raw = args.suggestions as Array<Record<string, unknown>>
+  const suggestions: RedactionSuggestion[] = raw.map(s => ({
+    text: s.text as string,
+    pageIndex: s.pageIndex as number,
+    confidence: s.confidence as RedactionSuggestion['confidence'],
+    person: s.person as string | undefined,
+    personGroup: s.personGroup as string | undefined,
+    reason: s.reason as string | undefined,
+    rule: s.rule as RedactionSuggestion['rule'],
+  }))
   return {
     special: { type: 'suggest_redactions', suggestions },
     toolResult: { success: true, data: `${suggestions.length} Schwärzungsvorschläge wurden im Dokument markiert.` },

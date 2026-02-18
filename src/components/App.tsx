@@ -9,7 +9,8 @@ import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
-import type { Redaction, Session, PageData, RedactionSuggestion, ChatMessage } from '@/types'
+import type { Redaction, Session, PageData, RedactionSuggestion, ChatMessage, RedactionRule } from '@/types'
+import { getRulesForJurisdiction } from '@/lib/redaction-rules'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -21,6 +22,7 @@ export default function App() {
   const [pages, setPages] = useState<PageData[]>([])
   const [documentPages, setDocumentPages] = useState<Array<{ pageIndex: number; text: string }>>([])
   const [pendingSuggestions, setPendingSuggestions] = useState<RedactionSuggestion[]>([])
+  const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -60,6 +62,12 @@ export default function App() {
     loadSession().then(setSession)
     loadChat().then(setChatMessages)
   }, [])
+
+  // Load FOI rules when in FOI mode + jurisdiction set
+  useEffect(() => {
+    if (session?.redactionMode !== 'foi' || !session.foiJurisdiction) { setFoiRules([]); return }
+    getRulesForJurisdiction(session.foiJurisdiction).then(setFoiRules).catch(() => setFoiRules([]))
+  }, [session?.redactionMode, session?.foiJurisdiction])
 
   const updateSession = useCallback((updates: Partial<Session>) => {
     setSession(prev => {
@@ -246,7 +254,10 @@ export default function App() {
               const next = { ...prev!, redactions: prev!.redactions.filter(r => r.documentKey !== activeDocKey) }
               saveSession(next)
               return next
-            })} />
+            })}
+            foiRules={foiRules}
+            redactionMode={session.redactionMode}
+            onRuleChange={(id, rule) => updateRedaction(id, { rule })} />
         </div>
 
         {/* Left drag handle */}
@@ -322,7 +333,9 @@ export default function App() {
               onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
               pendingSuggestions={pendingSuggestions} onSuggestionsApplied={() => setPendingSuggestions([])}
               exportRef={exportRef}
-              onAccept={acceptRedaction} onIgnore={ignoreRedaction} />
+              onAccept={acceptRedaction} onIgnore={ignoreRedaction}
+              foiRules={foiRules}
+              redactionMode={session.redactionMode} />
           ) : (
             <div
               className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}

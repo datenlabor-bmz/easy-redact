@@ -1,13 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Check, X, LayoutGrid, List, Users, BoxSelect, Trash2 } from 'lucide-react'
-import type { Redaction, PageData } from '@/types'
+import { Check, X, LayoutGrid, List, Users, BoxSelect, Trash2, Scale } from 'lucide-react'
+import type { Redaction, PageData, RedactionRule, RedactionMode } from '@/types'
 import { getRedactionText } from '@/components/pdf/geometry'
+import { RuleSelector } from '@/components/RuleSelector'
 
 interface LeftSidebarProps {
   pages: PageData[]
@@ -18,6 +21,9 @@ interface LeftSidebarProps {
   onIgnore: (id: string) => void
   onNavigatePage: (idx: number) => void
   onClearAll?: () => void
+  foiRules?: RedactionRule[]
+  redactionMode?: RedactionMode
+  onRuleChange?: (id: string, rule?: RedactionRule) => void
 }
 
 // ── Thumbnails ─────────────────────────────────────────────────────────────────
@@ -52,11 +58,14 @@ function ThumbnailGrid({ pages, redactions, onNavigatePage }: {
 
 // ── Redaction list item ────────────────────────────────────────────────────────
 
-function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, variant = 'list' }: {
+function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, variant = 'list',
+  foiRules, onRuleChange }: {
   r: Redaction; page: PageData | undefined; selected: boolean
   onSelect: () => void; onAccept: () => void; onIgnore: () => void
   variant?: 'list' | 'grouped'
+  foiRules?: RedactionRule[]; onRuleChange?: (rule?: RedactionRule) => void
 }) {
+  const [ruleOpen, setRuleOpen] = useState(false)
   if (r.status === 'ignored') return null
 
   const isSuggested = r.status === 'suggested'
@@ -90,6 +99,22 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
             <span style={{ ...highlightStyle, padding: '1px 3px' }}>Freihand-Schwärzung</span>
           </div>
         )}
+        {foiRules && onRuleChange && (
+          <Popover open={ruleOpen} onOpenChange={setRuleOpen}>
+            <PopoverTrigger asChild>
+              <button onClick={e => { e.stopPropagation(); setRuleOpen(true) }}
+                className='mt-1 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors'>
+                <Scale className='h-2.5 w-2.5 shrink-0' />
+                <span className='truncate max-w-[120px]'>{r.rule?.title ?? 'Grund wählen…'}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side='right' align='start' className='p-0 w-auto border-0 shadow-none bg-transparent'
+              onOpenAutoFocus={e => e.preventDefault()}>
+              <RuleSelector rules={foiRules} selectedRule={r.rule}
+                onRuleSelect={rule => { onRuleChange(rule); setRuleOpen(false) }} />
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
       <div className={`flex gap-1 shrink-0 ${variant === 'grouped' ? 'opacity-0 group-hover:opacity-100 transition-opacity' : ''}`}>
         {isSuggested && (
@@ -109,9 +134,10 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
 
 // ── Chronological list ────────────────────────────────────────────────────────
 
-function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore }: {
+function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore, foiRules, onRuleChange }: {
   redactions: Redaction[]; pages: PageData[]; selectedId: string | null
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
+  foiRules?: RedactionRule[]; onRuleChange?: (id: string, rule?: RedactionRule) => void
 }) {
   const sorted = [...redactions].sort((a, b) =>
     a.pageIndex !== b.pageIndex ? a.pageIndex - b.pageIndex : (a.parts[0]?.y ?? 0) - (b.parts[0]?.y ?? 0)
@@ -134,7 +160,8 @@ function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, 
           <div>
             {rs.map(r => (
               <RedactionItem key={r.id} r={r} page={pages[r.pageIndex]} selected={selectedId === r.id}
-                onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)} />
+                onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)}
+                foiRules={foiRules} onRuleChange={rule => onRuleChange?.(r.id, rule)} />
             ))}
           </div>
         </div>
@@ -145,9 +172,10 @@ function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, 
 
 // ── Grouped view ──────────────────────────────────────────────────────────────
 
-function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore }: {
+function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore, foiRules, onRuleChange }: {
   redactions: Redaction[]; pages: PageData[]; selectedId: string | null
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
+  foiRules?: RedactionRule[]; onRuleChange?: (id: string, rule?: RedactionRule) => void
 }) {
   // Group by personGroup → person
   const groups = new Map<string, Map<string, Redaction[]>>()
@@ -205,7 +233,7 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
               {rs.map(r => (
                 <RedactionItem key={r.id} r={r} page={pages[r.pageIndex]} selected={selectedId === r.id}
                   onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)}
-                  variant='grouped' />
+                  variant='grouped' foiRules={foiRules} onRuleChange={rule => onRuleChange?.(r.id, rule)} />
               ))}
             </div>
           )})}
@@ -217,7 +245,7 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
 
 // ── Main sidebar ──────────────────────────────────────────────────────────────
 
-export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, onAccept, onIgnore, onNavigatePage, onClearAll }: LeftSidebarProps) {
+export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, onAccept, onIgnore, onNavigatePage, onClearAll, foiRules, redactionMode, onRuleChange }: LeftSidebarProps) {
   const visibleCount = redactions.filter(r => r.status !== 'ignored').length
   const suggestedCount = redactions.filter(r => r.status === 'suggested').length
 
@@ -284,14 +312,16 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
         <TabsContent value='list' className='flex-1 mt-0 overflow-hidden'>
           <ScrollArea className='h-full'>
             <ChronologicalList redactions={redactions} pages={pages} selectedId={selectedId}
-              onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore} />
+              onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore}
+              foiRules={redactionMode === 'foi' ? foiRules : undefined} onRuleChange={onRuleChange} />
           </ScrollArea>
         </TabsContent>
 
         <TabsContent value='groups' className='flex-1 mt-0 overflow-hidden'>
           <ScrollArea className='h-full'>
             <GroupedList redactions={redactions} pages={pages} selectedId={selectedId}
-              onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore} />
+              onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore}
+              foiRules={redactionMode === 'foi' ? foiRules : undefined} onRuleChange={onRuleChange} />
           </ScrollArea>
         </TabsContent>
       </Tabs>

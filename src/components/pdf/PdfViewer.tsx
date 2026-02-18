@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSuggestion } from '@/types'
+import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSuggestion, RedactionRule, RedactionMode } from '@/types'
 import { useMupdf } from './useMupdf'
 import { finalizeHighlight, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
 import { PdfPage } from './PdfPage'
+import { RuleSelectorOverlay } from './RuleSelectorOverlay'
 import { Loader2 } from 'lucide-react'
 
 export interface PdfViewerProps {
@@ -25,13 +26,15 @@ export interface PdfViewerProps {
   pendingSuggestions?: RedactionSuggestion[]
   onSuggestionsApplied?: () => void
   exportRef?: React.MutableRefObject<((apply: boolean) => void) | null>
+  foiRules?: RedactionRule[]
+  redactionMode?: RedactionMode
 }
 
 export function PdfViewer({
   file, redactions, selectedId, zoom, onRedactionAdd, onRedactionRemove,
   onRedactionUpdate, onSelectionChange, onZoomChange, onExport,
   onPageTextExtracted, onPagesLoaded, pendingSuggestions, onSuggestionsApplied, exportRef,
-  onAccept, onIgnore,
+  onAccept, onIgnore, foiRules, redactionMode,
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
     getPageContent, getPageBounds, getPageWords, getRedactedDocument, searchPage } = useMupdf()
@@ -158,10 +161,13 @@ export function PdfViewer({
     </div>
   )
 
+  const selectedRedaction = selectedId ? redactions.find(r => r.id === selectedId) : null
+  const showRuleOverlay = redactionMode === 'foi' && foiRules?.length && selectedRedaction
+
   return (
     <div className='flex flex-col h-full'>
       {/* Pages */}
-      <div ref={pdfViewerRef} className='flex-1 overflow-auto flex flex-col items-center bg-muted'>
+      <div ref={pdfViewerRef} className='flex-1 overflow-auto flex flex-col items-center bg-muted relative'>
         {pages.map((page, i) => (
           <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
             selectedId={selectedId} currentHighlight={currentHighlight}
@@ -169,6 +175,19 @@ export function PdfViewer({
             onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
             onAccept={onAccept} onIgnore={onIgnore} />
         ))}
+        {showRuleOverlay && selectedRedaction && (
+          <RuleSelectorOverlay
+            redaction={selectedRedaction}
+            pageIndex={selectedRedaction.pageIndex}
+            pageWidth={pages[selectedRedaction.pageIndex]?.bounds[2] ?? 595}
+            pageHeight={pages[selectedRedaction.pageIndex]?.bounds[3] ?? 842}
+            zoom={zoom}
+            foiRules={foiRules!}
+            containerRef={pdfViewerRef as React.RefObject<HTMLDivElement>}
+            onRuleSelect={rule => onRedactionUpdate(selectedRedaction.id, { rule })}
+            onClose={() => onSelectionChange(null)}
+          />
+        )}
       </div>
     </div>
   )
