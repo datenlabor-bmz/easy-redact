@@ -4,49 +4,49 @@ overview: A pure Next.js "Cursor for document redaction" app named EasyRedact (e
 todos:
   - id: scaffold
     content: Scaffold Next.js app with shadcn/ui, TypeScript, Tailwind; set up package.json with mupdf, openai deps
-    status: pending
+    status: completed
   - id: types
     content: Define extended Redaction, Session, RedactionSuggestion types in src/types/index.ts
-    status: pending
+    status: completed
   - id: storage
     content: Implement IndexedDB-only storage via `idb` in lib/storage.ts (files + session state + chat history, no localStorage)
-    status: pending
+    status: completed
   - id: copy-mupdf
     content: Copy and adapt redaction-ui PDF components (PdfRedactor, mupdf.worker.ts, useMupdf.ts) into src/components/pdf/, configure mupdf WASM for Next.js
-    status: pending
+    status: completed
   - id: copy-chat
     content: Copy and adapt UN EOSG chat components (ChatPanel, ChatMessage, ChatInput, useChatStream) into src/components/chat/
-    status: pending
+    status: completed
   - id: ai-client
     content: Implement lib/ai-client.ts with Azure OpenAI + local OpenAI-compat client setup
-    status: pending
+    status: completed
   - id: chat-tools
     content: "Implement lib/chat-tools.ts: ask_user, request_document_access, read_documents, suggest_redactions, start_nlp_processing"
-    status: pending
+    status: completed
   - id: chat-route
     content: "Implement /api/chat/route.ts: SSE agentic loop with model switching, tool execution, consent_required event"
-    status: pending
+    status: completed
   - id: docx-route
     content: "Implement /api/docx/route.ts: LibreOffice DOCX→PDF conversion, guarded by LIBREOFFICE_PATH"
-    status: pending
+    status: completed
   - id: consent-ui
     content: Build ConsentBar (above chat) and ConsentModal (triggered by consent_required SSE event)
-    status: pending
+    status: completed
   - id: left-sidebar
     content: "Build LeftSidebar with 3 tabs: ThumbnailGrid, RedactionChronological, RedactionGrouped"
-    status: pending
+    status: completed
   - id: main-layout
     content: Build main page.tsx three-panel layout, wire up all state, IndexedDB persistence, file upload
-    status: pending
+    status: completed
   - id: system-prompt
     content: "Write system prompt for AI: guides conversation flow, ask_user for settings, consent barrier explanation, redaction suggestion schema"
-    status: pending
+    status: completed
   - id: docker
     content: Write Dockerfile (Node + LibreOffice) and docker-compose.yml
-    status: pending
+    status: completed
   - id: load-rules
     content: Implement lib/redaction-rules.ts — fetch rules.json index from GitHub raw URL, fetch individual rule files on demand, cache in memory
-    status: pending
+    status: completed
   - id: spacy-script
     content: Write scripts/spacy_nlp.py (uv inline script) + /api/nlp/route.ts to call it via spawn; Docker-only (SPACY_ENABLED env var)
     status: pending
