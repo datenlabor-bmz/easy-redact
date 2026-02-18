@@ -19,10 +19,10 @@ const TOOL_LABELS: Record<string, string> = {
 const NO_EXPAND = new Set(['ask_user', 'request_document_access', 'read_documents', 'suggest_redactions'])
 
 export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
+  const [expanded, setExpanded] = useState(false)
+
   if (toolCall.name === 'ask_user') return null
   if (toolCall.name === 'request_document_access') return null
-
-  const [expanded, setExpanded] = useState(false)
   const Icon = TOOL_ICONS[toolCall.name] ?? Brain
   const canExpand = !NO_EXPAND.has(toolCall.name) && toolCall.result !== undefined
 

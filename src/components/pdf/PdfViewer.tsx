@@ -152,7 +152,7 @@ export function PdfViewer({
   }
 
   // Expose export trigger to parent via ref
-  if (exportRef) exportRef.current = handleExport
+  useEffect(() => { if (exportRef) exportRef.current = handleExport })
 
   if (isLoading) return (
     <div className='flex flex-col items-center justify-center flex-1 gap-3 text-muted-foreground bg-muted'>
