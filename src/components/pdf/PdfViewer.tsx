@@ -5,9 +5,7 @@ import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSugge
 import { useMupdf } from './useMupdf'
 import { finalizeHighlight, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
 import { PdfPage } from './PdfPage'
-import { Download, FileLock2, Loader2, Minus, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Loader2 } from 'lucide-react'
 
 export interface PdfViewerProps {
   file: File
@@ -24,12 +22,13 @@ export interface PdfViewerProps {
   onPagesLoaded?: (pages: PageData[]) => void
   pendingSuggestions?: RedactionSuggestion[]
   onSuggestionsApplied?: () => void
+  exportRef?: React.MutableRefObject<((apply: boolean) => void) | null>
 }
 
 export function PdfViewer({
   file, redactions, selectedId, zoom, onRedactionAdd, onRedactionRemove,
   onRedactionUpdate, onSelectionChange, onZoomChange, onExport,
-  onPageTextExtracted, onPagesLoaded, pendingSuggestions, onSuggestionsApplied,
+  onPageTextExtracted, onPagesLoaded, pendingSuggestions, onSuggestionsApplied, exportRef,
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
     getPageContent, getPageBounds, getPageWords, getRedactedDocument, searchPage } = useMupdf()
@@ -144,8 +143,11 @@ export function PdfViewer({
     onExport(blob, apply)
   }
 
+  // Expose export trigger to parent via ref
+  if (exportRef) exportRef.current = handleExport
+
   if (isLoading) return (
-    <div className='flex flex-col items-center justify-center flex-1 gap-3 text-muted-foreground'>
+    <div className='flex flex-col items-center justify-center flex-1 gap-3 text-muted-foreground bg-muted'>
       <Loader2 className='h-8 w-8 animate-spin' />
       <p className='text-sm'>PDF wird geladen…</p>
     </div>
@@ -153,45 +155,8 @@ export function PdfViewer({
 
   return (
     <div className='flex flex-col h-full'>
-      {/* Toolbar */}
-      <div className='flex items-center justify-between px-4 py-2 border-b bg-muted/30 shrink-0'>
-        <div className='flex items-center gap-2'>
-          <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => onZoomChange(Math.max(25, zoom - 25))}>
-            <Minus className='h-3.5 w-3.5' />
-          </Button>
-          <span className='text-xs w-12 text-center tabular-nums'>{zoom}%</span>
-          <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => onZoomChange(Math.min(300, zoom + 25))}>
-            <Plus className='h-3.5 w-3.5' />
-          </Button>
-        </div>
-        <div className='flex gap-2'>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant='outline' size='sm' className='gap-1.5' onClick={() => handleExport(false)}>
-                <Download className='h-3.5 w-3.5' />
-                Export
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='bottom' className='max-w-56 text-center'>
-              PDF mit sichtbaren gelben Markierungen — zum Prüfen und Abstimmen vor der finalen Freigabe
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size='sm' className='gap-1.5' onClick={() => handleExport(true)}>
-                <FileLock2 className='h-3.5 w-3.5' />
-                Schwärzen und Speichern
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='bottom' className='max-w-56 text-center'>
-              Text unwiderruflich entfernt und durch schwarze Balken ersetzt — bereit zur Veröffentlichung
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-
       {/* Pages */}
-      <div ref={pdfViewerRef} className='flex-1 overflow-auto flex flex-col items-center bg-muted/20'>
+      <div ref={pdfViewerRef} className='flex-1 overflow-auto flex flex-col items-center bg-muted'>
         {pages.map((page, i) => (
           <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
             selectedId={selectedId} currentHighlight={currentHighlight}

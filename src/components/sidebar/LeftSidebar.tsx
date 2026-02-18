@@ -207,12 +207,10 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
 
   return (
     <div className='flex flex-col h-full border-r bg-card'>
-      <div className='px-3 py-2 border-b'>
-        <p className='text-xs font-semibold text-foreground'>Schwärzungen</p>
-        <div className='flex gap-2 mt-0.5'>
-          <span className='text-[10px] text-muted-foreground'>{visibleCount} gesamt</span>
-          {suggestedCount > 0 && <span className='text-[10px] text-amber-600'>{suggestedCount} Vorschläge</span>}
-        </div>
+      <div className='h-11 px-3 flex items-center gap-2 border-b bg-muted/50 shrink-0'>
+        <span className='text-xs font-medium text-foreground flex-1'>Schwärzungen</span>
+        <span className='text-[10px] text-muted-foreground'>{visibleCount} gesamt</span>
+        {suggestedCount > 0 && <span className='text-[10px] text-amber-600'>{suggestedCount} Vorschläge</span>}
       </div>
 
       <Tabs defaultValue='list' className='flex-1 flex flex-col min-h-0'>

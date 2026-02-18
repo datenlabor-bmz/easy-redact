@@ -1,12 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Upload, FileText, X, AlertCircle } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { PdfViewer } from '@/components/pdf/PdfViewer'
 import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
-import { ConsentBar } from '@/components/ConsentBar'
 import { ConsentModal } from '@/components/ConsentModal'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
@@ -27,6 +27,7 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const exportRef = useRef<((apply: boolean) => void) | null>(null)
 
   // Resizable panels
   const [leftWidth, setLeftWidth] = useState(() => {
@@ -186,57 +187,36 @@ export default function App() {
   const activeDocKey = session.documents[activeFileIdx]?.idbKey ?? ''
   const activeRedactions = session.redactions.filter(r => r.documentKey === activeDocKey)
 
+  const removeFile = (i: number) => {
+    const next = files.filter((_, fi) => fi !== i)
+    setFiles(next)
+    setActiveFileIdx(Math.min(activeFileIdx, Math.max(0, next.length - 1)))
+    setSelectedId(null)
+    const doc = session.documents[i]
+    if (doc) {
+      deleteFile(doc.idbKey)
+      setSession(prev => {
+        const updated = {
+          ...prev!,
+          documents: prev!.documents.filter((_, di) => di !== i),
+          redactions: prev!.redactions.filter(r => r.documentKey !== doc.idbKey),
+        }
+        saveSession(updated)
+        return updated
+      })
+    }
+  }
+
   return (
     <div className='flex flex-col h-screen bg-background overflow-hidden'>
       {/* Header */}
-      <header className='shrink-0 flex items-center justify-between px-4 py-2.5 border-b bg-card shadow-sm'>
-        <div className='flex items-center gap-2'>
+      <header className='shrink-0 flex items-center gap-3 px-4 border-b bg-muted/50 h-11'>
+        <div className='flex items-center gap-2 shrink-0'>
           <div className='w-7 h-7 rounded-lg bg-primary flex items-center justify-center'>
             <span className='text-primary-foreground text-xs font-bold'>E</span>
           </div>
           <span className='font-semibold text-sm'>EasyRedact</span>
         </div>
-
-        {files.length > 0 && (
-          <div className='flex items-center gap-1 overflow-x-auto max-w-md'>
-            {files.map((f, i) => (
-              <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs whitespace-nowrap transition-colors ${i === activeFileIdx ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-muted-foreground'}`}>
-                <FileText className='h-3 w-3' />
-                {f.name.length > 20 ? f.name.slice(0, 18) + '…' : f.name}
-                <X className='h-2.5 w-2.5 hover:text-red-400' onClick={e => {
-                  e.stopPropagation()
-                  const next = files.filter((_, fi) => fi !== i)
-                  setFiles(next); setActiveFileIdx(Math.min(activeFileIdx, Math.max(0, next.length - 1)))
-                  setSelectedId(null)
-                  const doc = session.documents[i]
-                  if (doc) {
-                    deleteFile(doc.idbKey)
-                    setSession(prev => {
-                      const updated = {
-                        ...prev!,
-                        documents: prev!.documents.filter((_, di) => di !== i),
-                        redactions: prev!.redactions.filter(r => r.documentKey !== doc.idbKey),
-                      }
-                      saveSession(updated)
-                      return updated
-                    })
-                  }
-                }} />
-              </button>
-            ))}
-            <Button variant='ghost' size='sm' className='h-7 text-xs' onClick={() => fileInputRef.current?.click()}>
-              + Datei
-            </Button>
-          </div>
-        )}
-
-        {error && (
-          <div className='flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-1 rounded'>
-            <AlertCircle className='h-3 w-3' /> {error}
-            <button onClick={() => setError(null)} className='ml-1'><X className='h-3 w-3' /></button>
-          </div>
-        )}
       </header>
 
       {/* Three-panel layout */}
@@ -257,14 +237,75 @@ export default function App() {
         <div onMouseDown={startDrag('left')}
           className='w-px shrink-0 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors z-10' />
 
-        {/* Center — PDF viewer or upload prompt */}
+        {/* Center — unified tab+toolbar header + PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
+          {/* Unified header: tabs left, zoom+export right */}
+          <div className='shrink-0 flex items-center gap-1 px-2 border-b bg-muted/50 h-11 overflow-hidden'>
+            {/* Tabs */}
+            <div className='flex items-center gap-0.5 flex-1 overflow-x-auto min-w-0'>
+              {files.map((f, i) => (
+                <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
+                  className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${i === activeFileIdx ? 'bg-background shadow-sm border text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-background/60'}`}>
+                  <FileText className='h-3 w-3 shrink-0' />
+                  <span className='max-w-[130px] truncate'>{f.name}</span>
+                  <X className='h-2.5 w-2.5 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive' onClick={e => { e.stopPropagation(); removeFile(i) }} />
+                </button>
+              ))}
+              <button onClick={() => fileInputRef.current?.click()}
+                className='flex items-center gap-1 px-2 h-6 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors shrink-0'>
+                <Upload className='h-3 w-3' /> Hochladen
+              </button>
+            </div>
+            {/* Error */}
+            {error && (
+              <div className='flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded shrink-0'>
+                <AlertCircle className='h-3 w-3' /> {error}
+                <button onClick={() => setError(null)}><X className='h-3 w-3' /></button>
+              </div>
+            )}
+            {/* Zoom + export — only when a file is open */}
+            {activeFile && (
+              <div className='flex items-center gap-1 shrink-0 ml-1'>
+                <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.max(25, zoom - 25))}>
+                  <Minus className='h-3.5 w-3.5' />
+                </Button>
+                <span className='text-xs w-10 text-center tabular-nums'>{zoom}%</span>
+                <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.min(300, zoom + 25))}>
+                  <Plus className='h-3.5 w-3.5' />
+                </Button>
+                <div className='flex gap-1 ml-1'>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant='outline' size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(false)}>
+                        <Download className='h-3 w-3' /> Export
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side='bottom' className='max-w-56 text-center'>
+                      PDF mit sichtbaren gelben Markierungen — zum Prüfen und Abstimmen
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(true)}>
+                        <FileLock2 className='h-3 w-3' /> Schwärzen und Speichern
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side='bottom' className='max-w-56 text-center'>
+                      Text unwiderruflich entfernt — bereit zur Veröffentlichung
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            )}
+          </div>
+
           {activeFile ? (
             <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
               onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
               onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
               onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
-              pendingSuggestions={pendingSuggestions} onSuggestionsApplied={() => setPendingSuggestions([])} />
+              pendingSuggestions={pendingSuggestions} onSuggestionsApplied={() => setPendingSuggestions([])}
+              exportRef={exportRef} />
           ) : (
             <div
               className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}
@@ -287,16 +328,18 @@ export default function App() {
 
         {/* Right — Chat */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
-          <ConsentBar consent={session.consent} onConsentChange={mode => updateSession({ consent: mode })} />
-          <div className='flex-1 min-h-0'>
-            <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
-              foiJurisdiction={session.foiJurisdiction}
-              documentPages={session.consent ? documentPages : undefined}
-              initialMessages={chatMessages}
-              onConsentRequired={handleConsentRequired}
-              onSuggestionsReceived={setPendingSuggestions}
-              onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }} />
-          </div>
+          <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
+            foiJurisdiction={session.foiJurisdiction}
+            documentPages={session.consent ? documentPages : undefined}
+            initialMessages={chatMessages}
+            onConsentRequired={handleConsentRequired}
+            onSuggestionsReceived={setPendingSuggestions}
+            onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
+            session={session}
+            onConsentChange={mode => updateSession({ consent: mode })}
+            onRedactionModeChange={mode => updateSession({ redactionMode: mode })}
+            onFoiJurisdictionChange={id => updateSession({ foiJurisdiction: id })}
+            onModelSettingsChange={(key, value) => updateSession({ modelSettings: { ...session.modelSettings, [key]: value } })} />
         </div>
       </div>
 

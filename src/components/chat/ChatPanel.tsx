@@ -4,10 +4,12 @@ import { useRef, useEffect, useCallback } from 'react'
 import { useStickToBottom } from 'use-stick-to-bottom'
 import { Trash2, ArrowDown, Loader2, Bot, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
-import type { ConsentMode, RedactionMode, RedactionSuggestion, ChatMessage as Msg } from '@/types'
+import { SettingsPopover } from '@/components/SettingsPopover'
+import type { ConsentMode, RedactionMode, RedactionSuggestion, ChatMessage as Msg, Session } from '@/types'
 
 interface ChatPanelProps {
   consent: ConsentMode
@@ -19,11 +21,18 @@ interface ChatPanelProps {
   onSuggestionsReceived: (suggestions: RedactionSuggestion[]) => void
   onRedactionAction?: (redactionId: string, action: 'accepted' | 'ignored') => void
   onMessagesChange?: (messages: Msg[]) => void
+  // Settings passed through for the header popover
+  session: Session
+  onConsentChange: (mode: ConsentMode) => void
+  onRedactionModeChange: (mode: RedactionMode) => void
+  onFoiJurisdictionChange: (id: string) => void
+  onModelSettingsChange: (key: keyof Session['modelSettings'], value: string) => void
 }
 
 export function ChatPanel({
   consent, redactionMode, foiJurisdiction, documentPages, initialMessages,
   onConsentRequired, onSuggestionsReceived, onRedactionAction, onMessagesChange,
+  session, onConsentChange, onRedactionModeChange, onFoiJurisdictionChange, onModelSettingsChange,
 }: ChatPanelProps) {
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages } =
     useChatStream({ consent, redactionMode, foiJurisdiction, documentPages, onConsentRequired, onSuggestionsReceived })
@@ -52,7 +61,28 @@ export function ChatPanel({
   }, [messages, setMessages, sendMessage])
 
   return (
-    <div className='flex flex-col h-full'>
+    <div className='flex flex-col h-full bg-card'>
+      {/* Panel header */}
+      <div className='shrink-0 h-11 flex items-center justify-between px-3 border-b bg-muted/50'>
+        <span className='text-xs font-medium text-foreground'>Schwärzungs-Assistent</span>
+        <div className='flex items-center gap-1'>
+          <SettingsPopover session={session}
+            onConsentChange={onConsentChange}
+            onRedactionModeChange={onRedactionModeChange}
+            onFoiJurisdictionChange={onFoiJurisdictionChange}
+            onModelSettingsChange={onModelSettingsChange} />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant='ghost' size='icon' className='h-6 w-6 text-muted-foreground hover:text-destructive'
+                onClick={() => { setMessages([]); onMessagesChange?.([]) }}>
+                <Trash2 className='h-3.5 w-3.5' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='bottom'>Gespräch löschen</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+
       {/* Messages */}
       <div ref={scrollRef} className='flex-1 overflow-y-auto relative'>
         <div ref={contentRef} className='p-4 space-y-4 min-h-full'>
@@ -95,15 +125,7 @@ export function ChatPanel({
       </div>
 
       {/* Input */}
-      <div className='shrink-0 border-t bg-muted/20 p-3'>
-        {messages.length > 0 && (
-          <div className='flex justify-end mb-2'>
-            <Button variant='ghost' size='sm' onClick={() => { setMessages([]); onMessagesChange?.([]) }}
-              className='h-7 text-xs text-muted-foreground'>
-              <Trash2 className='h-3 w-3 mr-1' /> Gespräch löschen
-            </Button>
-          </div>
-        )}
+      <div className='shrink-0 p-3'>
         <ChatInput onSend={sendMessage} onStop={stopStreaming} isStreaming={isStreaming} />
       </div>
     </div>

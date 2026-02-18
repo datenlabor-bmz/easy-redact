@@ -22,7 +22,7 @@ export function PdfPage({ pageIndex, pageData, zoom, redactions, selectedId, cur
   return (
     <div className='flex flex-col items-center'>
       <div data-page-index={pageIndex} style={{ width: `${(pw * zoom) / 100}px`, height: `${(ph * zoom) / 100}px` }}
-        className='relative shadow-md rounded-sm mx-2 my-2'>
+        className='relative shadow-lg rounded-sm mx-2 my-3'>
         <img src={pageData.image} className='w-full h-full' alt={`Page ${pageIndex + 1}`} />
         <RedactionOverlay pageIndex={pageIndex} pageWidth={pw} pageHeight={ph} pageData={pageData}
           redactions={redactions} selectedId={selectedId} currentHighlight={currentHighlight}
