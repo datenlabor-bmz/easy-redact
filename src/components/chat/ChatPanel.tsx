@@ -86,9 +86,9 @@ export function ChatPanel({
   return (
     <div className='flex flex-col h-full bg-card'>
       {/* Panel header */}
-      <div className='shrink-0 h-11 flex items-center justify-between px-3 border-b bg-muted/50'>
-        <span className='text-xs font-medium text-foreground'>Schwärzungs-Assistent</span>
-        <div className='flex items-center gap-1'>
+      <div className='@container/chat shrink-0 min-h-11 flex items-center justify-between gap-1 px-3 py-2 border-b bg-muted/50 flex-wrap'>
+        <span className='text-xs font-medium text-foreground @[220px]/chat:block hidden'>Schwärzungs-Assistent</span>
+        <div className='flex items-center gap-1 flex-wrap justify-end ml-auto'>
           <SettingsPopover session={session}
             onConsentChange={onConsentChange}
             onRedactionModeChange={onRedactionModeChange}

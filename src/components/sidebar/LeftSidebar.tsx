@@ -128,7 +128,7 @@ function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, 
     <div>
       {[...byPage.entries()].map(([pageIdx, rs]) => (
         <div key={pageIdx}>
-          <div className='px-3 py-1.5 bg-muted/30 text-[11px] font-semibold text-muted-foreground sticky top-0'>
+          <div className='px-3 py-1.5 bg-card text-[11px] font-semibold text-muted-foreground sticky top-0 z-10'>
             Seite {pageIdx + 1}
           </div>
           <div>
@@ -167,7 +167,7 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
     <div>
       {[...groups.entries()].map(([group, persons]) => (
         <div key={group}>
-          <div className='group/cat pl-3 pr-5 py-1.5 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between'>
+          <div className='group/cat pl-3 pr-5 py-1.5 bg-card text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between sticky top-0 z-10'>
             <span>{group}</span>
             <div className='flex gap-1 opacity-0 group-hover/cat:opacity-100 transition-opacity'>
               <Button variant='ghost' size='icon' className='h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50'
@@ -222,12 +222,12 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
   const suggestedCount = redactions.filter(r => r.status === 'suggested').length
 
   return (
-    <div className='flex flex-col h-full border-r bg-card'>
+    <div className='@container flex flex-col h-full border-r bg-card'>
       <Tabs defaultValue='list' className='flex-1 flex flex-col min-h-0'>
         {/* Header: title | tabs (truly centered) | counters + delete */}
-        <div className='h-11 px-2 border-b bg-muted/50 shrink-0 grid grid-cols-[1fr_auto_1fr] items-center'>
-          {/* Left: title */}
-          <span className='text-xs font-medium text-foreground'>Schwärzungen</span>
+        <div className='h-11 px-2 border-b bg-muted/50 shrink-0 grid grid-cols-[1fr_auto_1fr] items-center overflow-hidden'>
+          {/* Left: title — hidden when narrow */}
+          <span className='text-xs font-medium text-foreground @[280px]:block hidden'>Schwärzungen</span>
 
           {/* Center: tabs */}
           <TabsList className='h-7 p-0.5 gap-0'>
@@ -245,8 +245,8 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
             ))}
           </TabsList>
 
-          {/* Right: counters + delete */}
-          <div className='flex items-center justify-end gap-1.5'>
+          {/* Right: counters + delete — hidden when narrow */}
+          <div className='@[240px]:flex hidden items-center justify-end gap-1.5'>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className='text-[10px] text-muted-foreground tabular-nums cursor-default'>{visibleCount} Vorschläge</span>

@@ -255,10 +255,10 @@ export default function App() {
 
         {/* Center — unified tab+toolbar header + PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
-          {/* Unified header: tabs left, zoom+export right */}
-          <div className='shrink-0 flex items-center gap-1 px-2 border-b bg-muted/50 h-11 overflow-hidden'>
+          {/* Unified header: tabs left, zoom+export right — wraps when narrow */}
+          <div className='shrink-0 flex flex-wrap items-center gap-1 px-2 border-b bg-muted/50 min-h-11 py-1.5'>
             {/* Tabs */}
-            <div className='flex items-center gap-0.5 flex-1 overflow-x-auto min-w-0'>
+            <div className='flex items-center gap-0.5 flex-wrap min-w-0'>
               {files.map((f, i) => (
                 <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
                   className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${i === activeFileIdx ? 'bg-background shadow-sm border text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-background/60'}`}>
@@ -281,7 +281,7 @@ export default function App() {
             )}
             {/* Zoom + export — only when a file is open */}
             {activeFile && (
-              <div className='flex items-center gap-1 shrink-0 ml-1'>
+              <div className='flex items-center gap-1 shrink-0 ml-auto'>
                 <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.max(25, zoom - 25))}>
                   <Minus className='h-3.5 w-3.5' />
                 </Button>
