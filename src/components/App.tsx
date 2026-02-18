@@ -28,6 +28,34 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Resizable panels
+  const [leftWidth, setLeftWidth] = useState(() => {
+    if (typeof window === 'undefined') return 260
+    return parseInt(localStorage.getItem('er-left-width') ?? '260')
+  })
+  const [rightWidth, setRightWidth] = useState(() => {
+    if (typeof window === 'undefined') return 380
+    return parseInt(localStorage.getItem('er-right-width') ?? '380')
+  })
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const startDrag = useCallback((side: 'left' | 'right') => (e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startW = side === 'left' ? leftWidth : rightWidth
+
+    const onMove = (ev: MouseEvent) => {
+      const containerW = containerRef.current?.offsetWidth ?? window.innerWidth
+      const delta = side === 'left' ? ev.clientX - startX : startX - ev.clientX
+      const next = Math.max(160, Math.min(containerW * 0.4, startW + delta))
+      if (side === 'left') { setLeftWidth(next); localStorage.setItem('er-left-width', String(Math.round(next))) }
+      else { setRightWidth(next); localStorage.setItem('er-right-width', String(Math.round(next))) }
+    }
+    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [leftWidth, rightWidth])
+
   useEffect(() => {
     loadSession().then(setSession)
     loadChat().then(setChatMessages)
@@ -199,13 +227,19 @@ export default function App() {
       </header>
 
       {/* Three-panel layout */}
-      <div className='flex flex-1 min-h-0'>
-        <div className='w-52 shrink-0'>
+      <div ref={containerRef} className='flex flex-1 min-h-0 select-none'>
+        {/* Left sidebar */}
+        <div style={{ width: leftWidth }} className='shrink-0 flex flex-col min-w-0'>
           <LeftSidebar pages={pages} redactions={session.redactions} selectedId={selectedId}
             onSelectRedaction={setSelectedId} onAccept={acceptRedaction} onIgnore={ignoreRedaction}
             onNavigatePage={handleNavigatePage} />
         </div>
 
+        {/* Left drag handle */}
+        <div onMouseDown={startDrag('left')}
+          className='w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10' />
+
+        {/* Center — PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
           {activeFile ? (
             <PdfViewer file={activeFile} redactions={session.redactions} selectedId={selectedId} zoom={zoom}
@@ -229,7 +263,12 @@ export default function App() {
           )}
         </div>
 
-        <div className='w-80 shrink-0 flex flex-col border-l'>
+        {/* Right drag handle */}
+        <div onMouseDown={startDrag('right')}
+          className='w-1 shrink-0 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10' />
+
+        {/* Right — Chat */}
+        <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
           <ConsentBar consent={session.consent} onConsentChange={mode => updateSession({ consent: mode })} />
           <div className='flex-1 min-h-0'>
             <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
