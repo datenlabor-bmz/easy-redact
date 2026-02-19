@@ -6,8 +6,20 @@ import { Providers } from '@/components/Providers'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'),
   title: 'EasyRedact — KI-gestützte Dokumentenschwärzung',
   description: 'Agentenbasierte KI-Schwärzung für PDF und DOCX — für IFG-Anfragen und PII',
+  openGraph: {
+    title: 'EasyRedact — KI-gestützte Dokumentenschwärzung',
+    description: 'Agentenbasierte KI-Schwärzung für PDF und DOCX — für IFG-Anfragen und PII',
+    type: 'website',
+    locale: 'de_DE',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'EasyRedact — KI-gestützte Dokumentenschwärzung',
+    description: 'Agentenbasierte KI-Schwärzung für PDF und DOCX — für IFG-Anfragen und PII',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

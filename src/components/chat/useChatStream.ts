@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ConsentMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot } from '@/types'
+import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ConsentMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot, DocumentMeta, DocumentPage } from '@/types'
 
 export type { ChatMessage, ToolCall }
 
@@ -9,7 +9,8 @@ interface UseChatStreamOptions {
   consent: ConsentMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
-  documentPages?: Array<{ pageIndex: number; text: string }>
+  documentPages?: DocumentPage[]
+  documents?: DocumentMeta[]
   redactions?: Redaction[]
   onSuggestionsReceived?: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
   // Called when user picks a consent mode from the inline consent box
@@ -68,9 +69,10 @@ export function useChatStream(opts: UseChatStreamOptions) {
       }
     }
 
-    const { redactionMode, foiJurisdiction, documentPages, redactions } = optsRef.current
+    const { redactionMode, foiJurisdiction, documentPages, documents, redactions } = optsRef.current
     const effectiveConsent = overrideConsent ?? optsRef.current.consent
 
+    const docNameMap = Object.fromEntries((documents ?? []).map(d => [d.idbKey, d.name]))
     const currentRedactions: RedactionSnapshot[] | undefined = redactions?.length
       ? redactions.filter(r => r.status !== 'ignored').map(r => ({
           id: r.id,
@@ -80,6 +82,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           person: r.person,
           personGroup: r.personGroup,
           documentKey: r.documentKey,
+          documentName: docNameMap[r.documentKey],
         }))
       : undefined
 

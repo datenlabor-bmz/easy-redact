@@ -11,7 +11,7 @@ import { ChatPanel } from '@/components/chat/ChatPanel'
 import { SettingsPopover } from '@/components/SettingsPopover'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
-import type { Redaction, Session, PageData, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
+import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
 
 export default function App() {
@@ -22,10 +22,10 @@ export default function App() {
   const [zoom, setZoom] = useState(100)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pages, setPages] = useState<PageData[]>([])
-  const [documentPages, setDocumentPages] = useState<Array<{ pageIndex: number; text: string }>>([])
-  const [pendingSuggestions, setPendingSuggestions] = useState<RedactionSuggestion[]>([])
-  const [pendingTextRanges, setPendingTextRanges] = useState<TextRangeSuggestion[]>([])
-  const [pendingPageRanges, setPendingPageRanges] = useState<PageRangeSuggestion[]>([])
+  const [documentPages, setDocumentPages] = useState<DocumentPage[]>([])
+  // Per-document pending suggestions: docKey → {suggestions, textRanges, pageRanges}
+  const [pendingByDoc, setPendingByDoc] = useState<Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }>>({})
+  const pendingChatTriggerDocKey = useRef<string | null>(null)
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -141,8 +141,10 @@ export default function App() {
     setActiveFileIdx(newFiles.length - 1)
     setSelectedId(null)
 
+    let lastKey = ''
     for (const pdf of pdfs) {
       const key = generateUUID()
+      lastKey = key
       await saveFile(key, pdf.name, await pdf.arrayBuffer())
       updateSession({
         documents: [...(session?.documents ?? []), { name: pdf.name, idbKey: key }],
@@ -154,8 +156,7 @@ export default function App() {
     pendingChatTrigger.current = consent
       ? `[System: Neue Dokumente hochgeladen: ${names}. Zugriff bereits erteilt. Lies die Dokumente und mache Schwärzungsvorschläge.]`
       : `[System: Neue Dokumente hochgeladen: ${names}. Bitte Dokumentenzugriff anfordern und dann analysieren.]`
-    // Reset extracted pages so the effect below fires fresh
-    setDocumentPages([])
+    pendingChatTriggerDocKey.current = lastKey
   }, [files, session, updateSession])
 
   useEffect(() => {
@@ -175,20 +176,28 @@ export default function App() {
     handleFiles(e.dataTransfer.files)
   }, [handleFiles])
 
-  const handleTextExtracted = useCallback((text: string, pageIndex: number) => {
+  const sessionRef = useRef<Session | null>(null)
+  sessionRef.current = session
+
+  const handleTextExtracted = useCallback((text: string, pageIndex: number, docKey: string) => {
     setDocumentPages(prev => {
-      const next = prev.filter(p => p.pageIndex !== pageIndex)
-      return [...next, { pageIndex, text }].sort((a, b) => a.pageIndex - b.pageIndex)
+      const next = prev.filter(p => !(p.documentKey === docKey && p.pageIndex === pageIndex))
+      const docName = sessionRef.current?.documents.find(d => d.idbKey === docKey)?.name ?? ''
+      return [...next, { documentKey: docKey, documentName: docName, pageIndex, text }]
+        .sort((a, b) => a.documentKey.localeCompare(b.documentKey) || a.pageIndex - b.pageIndex)
     })
   }, [])
 
-  // Fire pending chat trigger once all pages have been text-extracted
+  // Fire pending chat trigger once all pages of the newly uploaded doc have been extracted
   useEffect(() => {
-    if (!pendingChatTrigger.current) return
+    if (!pendingChatTrigger.current || !pendingChatTriggerDocKey.current) return
     if (!pages.length) return
-    if (documentPages.length < pages.length) return
+    const targetKey = pendingChatTriggerDocKey.current
+    const docPages = documentPages.filter(p => p.documentKey === targetKey)
+    if (docPages.length < pages.length) return
     const msg = pendingChatTrigger.current
     pendingChatTrigger.current = null
+    pendingChatTriggerDocKey.current = null
     chatTriggerRef.current?.(msg)
   }, [documentPages, pages])
 
@@ -354,16 +363,19 @@ export default function App() {
                   <Upload className='h-3 w-3' /> Hochladen
                 </button>
               </div>
-              <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
-                onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
-                onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
-                onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
-                pendingSuggestions={pendingSuggestions} pendingTextRanges={pendingTextRanges} pendingPageRanges={pendingPageRanges}
-                onSuggestionsApplied={() => { setPendingSuggestions([]); setPendingTextRanges([]); setPendingPageRanges([]) }}
-                exportRef={exportRef}
-                onAccept={acceptRedaction} onIgnore={ignoreRedaction}
-                foiRules={foiRules}
-                redactionMode={session.redactionMode} />
+            <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
+              documentKey={activeDocKey} documentName={session.documents[activeFileIdx]?.name}
+              onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
+              onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
+              onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
+              pendingSuggestions={pendingByDoc[activeDocKey]?.suggestions}
+              pendingTextRanges={pendingByDoc[activeDocKey]?.textRanges}
+              pendingPageRanges={pendingByDoc[activeDocKey]?.pageRanges}
+              onSuggestionsApplied={() => setPendingByDoc(prev => { const next = { ...prev }; delete next[activeDocKey]; return next })}
+              exportRef={exportRef}
+              onAccept={acceptRedaction} onIgnore={ignoreRedaction}
+              foiRules={foiRules}
+              redactionMode={session.redactionMode} />
             </div>
           ) : (
             <div
@@ -388,9 +400,13 @@ export default function App() {
         {/* Right — Chat */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
           <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
+            documents={session.documents}
             documentNames={session.documents.map(d => d.name)}
             triggerRef={chatTriggerRef}
-            onDeferredTrigger={msg => { pendingChatTrigger.current = `[System: ${msg}]` }}
+            onDeferredTrigger={msg => {
+              pendingChatTrigger.current = `[System: ${msg}]`
+              pendingChatTriggerDocKey.current = session.documents[activeFileIdx]?.idbKey ?? null
+            }}
             foiJurisdiction={session.foiJurisdiction}
             documentPages={documentPages}
             initialMessages={chatMessages}
@@ -399,9 +415,13 @@ export default function App() {
               remove.forEach(id => {
                 if (session.redactions.find(r => r.id === id)?.status === 'suggested') removeRedaction(id)
               })
-              setPendingSuggestions(suggestions)
-              setPendingTextRanges(textRanges)
-              setPendingPageRanges(pageRanges)
+              // Group by documentKey, defaulting to the currently active doc
+              const byDoc: Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }> = {}
+              const ensure = (k: string) => { if (!byDoc[k]) byDoc[k] = { suggestions: [], textRanges: [], pageRanges: [] } }
+              for (const s of suggestions) { const k = s.documentKey || activeDocKey; ensure(k); byDoc[k].suggestions.push(s) }
+              for (const r of textRanges) { const k = r.documentKey || activeDocKey; ensure(k); byDoc[k].textRanges.push(r) }
+              for (const r of pageRanges) { const k = r.documentKey || activeDocKey; ensure(k); byDoc[k].pageRanges.push(r) }
+              setPendingByDoc(byDoc)
             }}
             onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
             onConsentChange={mode => updateSession({ consent: mode })} />

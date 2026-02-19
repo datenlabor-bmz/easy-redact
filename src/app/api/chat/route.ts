@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
         if (currentRedactions?.length) {
           const lines = currentRedactions.map(r =>
-            `- ID: ${r.id} | Status: ${r.status} | Seite ${r.pageIndex + 1} | "${r.text}"${r.person ? ` | Person: ${r.person}` : ''}${r.personGroup ? ` (${r.personGroup})` : ''}`
+            `- ID: ${r.id} | Status: ${r.status} | Dokument: ${r.documentName ?? r.documentKey} | Seite ${r.pageIndex + 1} | "${r.text}"${r.person ? ` | Person: ${r.person}` : ''}${r.personGroup ? ` (${r.personGroup})` : ''}`
           )
           apiMessages.push({
             role: 'system',

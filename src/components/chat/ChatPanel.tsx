@@ -8,13 +8,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
-import type { ConsentMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction } from '@/types'
+import type { ConsentMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction, DocumentMeta, DocumentPage } from '@/types'
 
 interface ChatPanelProps {
   consent: ConsentMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
-  documentPages?: Array<{ pageIndex: number; text: string }>
+  documentPages?: DocumentPage[]
+  documents?: DocumentMeta[]
   redactions?: Redaction[]
   documentNames?: string[]
   initialMessages?: Msg[]
@@ -27,12 +28,12 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  consent, redactionMode, foiJurisdiction, documentPages, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
+  consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
   onSuggestionsReceived, onRedactionAction, onMessagesChange, onConsentChange,
 }: ChatPanelProps) {
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages } =
     useChatStream({
-      consent, redactionMode, foiJurisdiction, documentPages, redactions,
+      consent, redactionMode, foiJurisdiction, documentPages, documents, redactions,
       onSuggestionsReceived,
       onConsentGranted: onConsentChange,
     })

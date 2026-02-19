@@ -74,6 +74,13 @@ export interface Redaction {
   isIndeterminate?: boolean
 }
 
+export interface DocumentPage {
+  documentKey: string
+  documentName: string
+  pageIndex: number
+  text: string
+}
+
 export interface RedactionSuggestion {
   text: string          // search text to locate in PDF
   pageIndex: number
@@ -82,6 +89,7 @@ export interface RedactionSuggestion {
   personGroup?: string
   rule?: RedactionRule
   reason?: string
+  documentKey?: string
 }
 
 export interface TextRangeSuggestion {
@@ -94,6 +102,7 @@ export interface TextRangeSuggestion {
   personGroup?: string
   reason?: string
   rule?: RedactionRule
+  documentKey?: string
 }
 
 export interface PageRangeSuggestion {
@@ -104,6 +113,7 @@ export interface PageRangeSuggestion {
   personGroup?: string
   reason?: string
   rule?: RedactionRule
+  documentKey?: string
 }
 
 // ── Session ───────────────────────────────────────────────────────────────────
@@ -198,6 +208,7 @@ export interface RedactionSnapshot {
   person?: string
   personGroup?: string
   documentKey: string
+  documentName?: string
 }
 
 export interface ChatRequest {
@@ -206,6 +217,6 @@ export interface ChatRequest {
   consent: ConsentMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
-  documentPages?: Array<{ pageIndex: number; text: string }>
+  documentPages?: DocumentPage[]
   currentRedactions?: RedactionSnapshot[]
 }

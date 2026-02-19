@@ -21,7 +21,9 @@ export interface PdfViewerProps {
   onSelectionChange: (id: string | null) => void
   onZoomChange: (zoom: number) => void
   onExport: (blob: Blob, applied: boolean) => void
-  onPageTextExtracted?: (text: string, pageIndex: number) => void
+  documentKey?: string
+  documentName?: string
+  onPageTextExtracted?: (text: string, pageIndex: number, documentKey: string) => void
   onPagesLoaded?: (pages: PageData[]) => void
   pendingSuggestions?: RedactionSuggestion[]
   pendingTextRanges?: TextRangeSuggestion[]
@@ -35,6 +37,7 @@ export interface PdfViewerProps {
 export function PdfViewer({
   file, redactions, selectedId, zoom, onRedactionAdd, onRedactionRemove,
   onRedactionUpdate, onSelectionChange, onZoomChange, onExport,
+  documentKey, documentName,
   onPageTextExtracted, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
   onSuggestionsApplied, exportRef,
   onAccept, onIgnore, foiRules, redactionMode,
@@ -70,7 +73,7 @@ export function PdfViewer({
         const words = await getPageWords(i)
         if (onPageTextExtracted) {
           const text = lines.map((l: any) => l.text ?? l.spans?.map((s: any) => s.text).join('') ?? '').join(' ')
-          onPageTextExtracted(text, i)
+          onPageTextExtracted(text, i, documentKey ?? '')
         }
         stack.push({
           image: URL.createObjectURL(new Blob([new Uint8Array(pngData)], { type: 'image/png' })),

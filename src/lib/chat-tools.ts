@@ -1,4 +1,4 @@
-import type { RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AskUserQuestion } from '@/types'
+import type { DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AskUserQuestion } from '@/types'
 
 // ── Tool schemas for OpenAI function calling ───────────────────────────────────
 
@@ -56,8 +56,9 @@ export const tools = [
             items: {
               type: 'object',
               properties: {
+                documentKey: { type: 'string', description: 'documentKey from read_documents response — identifies which document this redaction belongs to' },
                 text: { type: 'string', description: 'Exact text string to find and redact in the document' },
-                pageIndex: { type: 'number', description: '0-based page index' },
+                pageIndex: { type: 'number', description: '0-based page index within that document' },
                 confidence: { type: 'string', enum: ['high', 'low'], description: 'high = certain, low = ambiguous individual case' },
                 person: { type: 'string', description: 'Name of the person or organisation this redaction belongs to — use the actual name (e.g. "Max Mustermann", "Diversifix e. V."), never leave empty' },
                 personGroup: { type: 'string', description: 'Group category, e.g. "Privatpersonen", "Bundesbeamte", "Organisationen"' },
@@ -73,7 +74,7 @@ export const tools = [
                   required: ['title'],
                 },
               },
-              required: ['text', 'pageIndex', 'confidence', 'person', 'personGroup'],
+              required: ['text', 'pageIndex', 'confidence', 'person', 'personGroup', 'documentKey'],
             },
           },
           textRanges: {
@@ -82,6 +83,7 @@ export const tools = [
             items: {
               type: 'object',
               properties: {
+                documentKey: { type: 'string', description: 'documentKey from read_documents' },
                 startText: { type: 'string', description: 'Exact text at the START of the range (first few words)' },
                 startPage: { type: 'number', description: '0-based page index where startText appears' },
                 endText: { type: 'string', description: 'Exact text at the END of the range (last few words)' },
@@ -92,7 +94,7 @@ export const tools = [
                 reason: { type: 'string' },
                 rule: { type: 'object', properties: { title: { type: 'string' }, reference: { type: 'string' }, group: { type: 'string' } }, required: ['title'] },
               },
-              required: ['startText', 'startPage', 'endText', 'endPage', 'confidence', 'person', 'personGroup'],
+              required: ['documentKey', 'startText', 'startPage', 'endText', 'endPage', 'confidence', 'person', 'personGroup'],
             },
           },
           pageRanges: {
@@ -101,6 +103,7 @@ export const tools = [
             items: {
               type: 'object',
               properties: {
+                documentKey: { type: 'string', description: 'documentKey from read_documents' },
                 fromPage: { type: 'number', description: '0-based page index, inclusive start' },
                 toPage: { type: 'number', description: '0-based page index, inclusive end' },
                 confidence: { type: 'string', enum: ['high', 'low'] },
@@ -109,7 +112,7 @@ export const tools = [
                 reason: { type: 'string' },
                 rule: { type: 'object', properties: { title: { type: 'string' }, reference: { type: 'string' }, group: { type: 'string' } }, required: ['title'] },
               },
-              required: ['fromPage', 'toPage', 'confidence', 'person', 'personGroup'],
+              required: ['documentKey', 'fromPage', 'toPage', 'confidence', 'person', 'personGroup'],
             },
           },
           remove: {
@@ -147,7 +150,7 @@ export const readDocumentsTool = {
   type: 'function' as const,
   function: {
     name: 'read_documents',
-    description: 'Read the text content of all uploaded documents. Only available after the user has granted document access consent. Returns page-by-page text content.',
+    description: 'Read the text content of all uploaded documents. Only available after the user has granted document access consent. Returns content grouped by document — use the documentKey from each document when making suggestions.',
     parameters: {
       type: 'object',
       properties: {},
@@ -188,6 +191,7 @@ export function executeRequestDocumentAccess(args: Record<string, unknown>): { s
 export function executeSuggestRedactions(args: Record<string, unknown>): { special: SpecialToolResult; toolResult: ToolResult } {
   const raw = args.suggestions as Array<Record<string, unknown>>
   const suggestions: RedactionSuggestion[] = raw.map(s => ({
+    documentKey: s.documentKey as string | undefined,
     text: s.text as string,
     pageIndex: s.pageIndex as number,
     confidence: s.confidence as RedactionSuggestion['confidence'],
@@ -197,6 +201,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
     rule: s.rule as RedactionSuggestion['rule'],
   }))
   const textRanges: TextRangeSuggestion[] = ((args.textRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
+    documentKey: r.documentKey as string | undefined,
     startText: r.startText as string,
     startPage: r.startPage as number,
     endText: r.endText as string,
@@ -208,6 +213,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
     rule: r.rule as TextRangeSuggestion['rule'],
   }))
   const pageRanges: PageRangeSuggestion[] = ((args.pageRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
+    documentKey: r.documentKey as string | undefined,
     fromPage: r.fromPage as number,
     toPage: r.toPage as number,
     confidence: r.confidence as PageRangeSuggestion['confidence'],
@@ -224,16 +230,20 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
   }
 }
 
-export function executeReadDocuments(documentPages: Array<{ pageIndex: number; text: string }> | undefined): ToolResult {
+export function executeReadDocuments(documentPages: DocumentPage[] | undefined): ToolResult {
   if (!documentPages || documentPages.length === 0) {
     return { success: false, error: 'No document content available. User must upload documents first.' }
   }
+  // Group pages by document
+  const docMap = new Map<string, { documentKey: string; documentName: string; pages: { pageIndex: number; text: string }[] }>()
+  for (const p of documentPages) {
+    if (!docMap.has(p.documentKey)) docMap.set(p.documentKey, { documentKey: p.documentKey, documentName: p.documentName, pages: [] })
+    docMap.get(p.documentKey)!.pages.push({ pageIndex: p.pageIndex, text: p.text })
+  }
+  const documents = Array.from(docMap.values()).map(d => ({ ...d, pageCount: d.pages.length }))
   return {
     success: true,
-    data: {
-      pageCount: documentPages.length,
-      pages: documentPages,
-    },
+    data: { documentCount: documents.length, documents },
   }
 }
 
