@@ -68,7 +68,7 @@ export default function OGImage() {
                 letterSpacing: '-2px',
               }}
             >
-              KI-gestützte
+              Sensible Daten.
             </div>
             <div
               style={{
@@ -80,11 +80,11 @@ export default function OGImage() {
                 letterSpacing: '-2px',
               }}
             >
-              Schwärzung
+              Automatisch geschwärzt.
             </div>
           </div>
           <div style={{ color: '#6b85b0', fontSize: '24px', fontFamily: 'sans-serif', fontWeight: 400 }}>
-            PDF & DOCX · IFG-konform · Lokal & privat
+            Hochladen · Schwärzen · Exportieren
           </div>
         </div>
 
