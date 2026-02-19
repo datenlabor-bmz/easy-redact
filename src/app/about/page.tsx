@@ -37,9 +37,9 @@ function MockChat() {
 
 function MockRedactions() {
   const items = [
-    { text: 'Max Mustermann', color: 'rgba(0,0,0,0.45)', suggested: false },
+    { text: 'Thomas Berger', color: 'rgba(0,0,0,0.45)', suggested: false },
     { text: 'maria@example.de', color: 'rgba(253,224,71,0.5)', suggested: true },
-    { text: 'Kerem Demir', color: 'rgba(0,0,0,0.45)', suggested: false },
+    { text: 'Lena Hoffmann', color: 'rgba(0,0,0,0.45)', suggested: false },
     { text: '+49 30 12345678', color: 'rgba(253,224,71,0.25)', suggested: true, low: true },
   ]
   return (
@@ -82,7 +82,7 @@ function MockFOI() {
           <div className='px-2 py-0.5 text-muted-foreground/60'>Internationale Beziehungen</div>
           <div className='px-2 py-0.5 text-muted-foreground/60'>Öffentliche Sicherheit</div>
         </div>
-        <div className='px-2 py-1 rounded bg-primary/15 text-primary font-medium'>Personenbezogene Daten</div>
+        <div className='pl-[22px] pr-2 py-1 rounded bg-primary/15 text-primary font-medium'>Personenbezogene Daten</div>
         <div className='flex items-center gap-1 px-2 py-1 rounded text-muted-foreground'>
           <ChevronDown className='h-2.5 w-2.5 rotate-[-90deg]' />
           <span className='font-medium'>IP &amp; Geschäftsgeheimnisse</span>
@@ -98,16 +98,16 @@ function MockManual() {
       <p>Am 18. November 2024 fand ein Video-Call statt.</p>
       <p className='mt-1'>
         Anwesend:{' '}
-        <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Godela von Drygalski</span>
+        <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Anna Schneider</span>
         ,{' '}
-        <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Julia Sommer</span>
+        <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Peter Krause</span>
         ,{' '}
-        <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Kerem Demir</span>
+        <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Lena Hoffmann</span>
       </p>
       <p className='mt-1'>
         Kontakt:{' '}
         <span style={{ background: 'rgba(253,224,71,0.25)', padding: '1px 2px' }} className='text-muted-foreground'>
-          k.demir@example.de
+          l.hoffmann@example.de
         </span>
       </p>
     </div>
@@ -120,20 +120,20 @@ function MockPersons() {
       <div className='text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1'>Privatpersonen</div>
       <div className='mx-1 rounded-lg ring-1 ring-border'>
         <div className='flex items-center pl-3 pr-2 py-1.5 gap-2 border-b border-border/50'>
-          <span className='flex-1 font-medium text-foreground'>Godela von Drygalski</span>
+          <span className='flex-1 font-medium text-foreground'>Anna Schneider</span>
           <Check className='h-3 w-3 text-green-600' />
           <X className='h-3 w-3 text-red-500' />
         </div>
-        <div className='px-3 py-1.5'><span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 3px' }}>Godela von Drygalski</span></div>
-        <div className='px-3 py-1.5'><span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 3px' }}>von Drygalski</span></div>
+        <div className='px-3 py-1.5'><span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 3px' }}>Anna Schneider</span></div>
+        <div className='px-3 py-1.5'><span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 3px' }}>Schneider</span></div>
       </div>
       <div className='mx-1 rounded-lg ring-1 ring-border'>
         <div className='flex items-center pl-3 pr-2 py-1.5 gap-2 border-b border-border/50'>
-          <span className='flex-1 font-medium text-foreground'>Kerem Demir</span>
+          <span className='flex-1 font-medium text-foreground'>Thomas Berger</span>
           <Check className='h-3 w-3 text-green-600' />
           <X className='h-3 w-3 text-red-500' />
         </div>
-        <div className='px-3 py-1.5'><span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 3px' }}>Kerem Demir</span></div>
+        <div className='px-3 py-1.5'><span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 3px' }}>Thomas Berger</span></div>
       </div>
     </div>
   )
@@ -141,23 +141,23 @@ function MockPersons() {
 
 function MockPrivacy() {
   const options = [
-    { id: 'none', label: 'Nicht freigegeben', icon: '🔒' },
-    { id: 'cloud', label: 'Cloud-KI', icon: '☁️', active: true },
-    { id: 'local', label: 'Lokales LLM', icon: '🏠', muted: true },
+    { id: 'cloud',   label: 'Cloud-KI',          sub: 'Azure OpenAI — keine Data Retention', active: true,  muted: false },
+    { id: 'local',   label: 'Lokales LLM',       sub: 'Ollama-kompatibler Endpunkt',     active: false, muted: false },
+    { id: 'spacy',   label: 'spaCy NLP',         sub: 'Docker only',                    active: false, muted: true },
+    { id: 'browser', label: 'Browser NLP',       sub: 'In-Browser, vollständig offline', active: false, muted: true },
   ]
   return (
-    <div className='p-3 flex flex-col gap-1.5 text-[11px]'>
+    <div className='p-3 flex flex-col gap-1 text-[11px]'>
       <div className='text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1'>Datenverarbeitung</div>
       {options.map(o => (
-        <div key={o.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${o.active ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-foreground'} ${o.muted ? 'opacity-50' : ''}`}>
-          <span>{o.icon}</span>
-          <span className='font-medium'>{o.label}</span>
-          {o.muted && <span className='ml-auto text-[9px] opacity-60'>coming soon</span>}
+        <div key={o.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${o.active ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-foreground'} ${o.muted ? 'opacity-40' : ''}`}>
+          <div className='flex-1 min-w-0'>
+            <div className='font-medium'>{o.label}</div>
+            {o.sub && <div className={`text-[9px] truncate ${o.active ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{o.sub}</div>}
+          </div>
+          {o.muted && <span className='text-[9px] opacity-60 shrink-0'>coming soon</span>}
         </div>
       ))}
-      <div className='mt-1 flex items-center gap-1.5 text-[10px] text-emerald-600 bg-emerald-50 rounded px-2 py-1'>
-        <span>✓</span> DSGVO-konform · Keine Data Retention
-      </div>
     </div>
   )
 }
@@ -176,7 +176,7 @@ function MockMultiDoc() {
       <div className='text-[10px] text-muted-foreground font-mono leading-relaxed'>
         <p>Betreff: Antrag auf Akteneinsicht</p>
         <p className='mt-1'>Datum: 18.11.2024</p>
-        <p className='mt-1'>Ansprechpartner: <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Max Mustermann</span></p>
+        <p className='mt-1'>Ansprechpartner: <span style={{ background: 'rgba(253,224,71,0.5)', padding: '1px 2px' }}>Thomas Berger</span></p>
       </div>
       <div className='text-[10px] text-muted-foreground bg-muted/50 rounded px-2 py-1'>
         KI-Assistent hat Kontext über alle 3 Dokumente
@@ -240,7 +240,7 @@ const features = [
   },
   {
     title: 'Datensouveränität',
-    description: 'Wahl zwischen Azure OpenAI (DSGVO-konform, keine Datenspeicherung, kein Modelltraining), lokalem Sprachmodell auf eigener Infrastruktur oder lokalem Sprachverarbeitungsmodell ohne jede Cloud-Verbindung.',
+    description: 'Wahl zwischen Azure OpenAI (DSGVO-konform, keine Data Retention), einem Ollama-kompatiblen Sprachmodell auf eigener Infrastruktur, oder vollständig lokalen NLP-Modellen im Browser oder per Docker — ohne jede Cloud-Verbindung.',
     mockup: <MockPrivacy />,
   },
   {
@@ -272,7 +272,7 @@ export default function AboutPage() {
       {/* Hero */}
       <section className='flex flex-col items-center text-center px-6 pt-16 pb-12 gap-5'>
         <h1 className='text-4xl font-bold tracking-tight max-w-xl'>
-          Cursor für Dokumentenschwärzung
+          Sensitive Daten.<br />Automatisch geschwärzt.
         </h1>
         <p className='text-lg text-gray-500 leading-relaxed max-w-lg'>
           EasyRedact kombiniert einen intelligenten KI-Assistenten mit einem vollständigen PDF-Editor —
