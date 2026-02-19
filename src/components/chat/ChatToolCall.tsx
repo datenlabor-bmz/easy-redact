@@ -26,11 +26,21 @@ export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
   const Icon = TOOL_ICONS[toolCall.name] ?? Brain
   const canExpand = !NO_EXPAND.has(toolCall.name) && toolCall.result !== undefined
 
-  // suggest_redactions: just show count
+  // suggest_redactions: show added + removed counts
   if (toolCall.name === 'suggest_redactions') {
-    const count = Array.isArray((toolCall.args as any)?.suggestions)
-      ? (toolCall.args as any).suggestions.length
-      : null
+    const added = Array.isArray((toolCall.args as any)?.suggestions)
+      ? (toolCall.args as any).suggestions.length : null
+    const removed = Array.isArray((toolCall.args as any)?.remove)
+      ? (toolCall.args as any).remove.length : 0
+    const label = (() => {
+      if (toolCall.status === 'running') return 'Schwärzungen werden bearbeitet…'
+      if (toolCall.status === 'error') return 'Fehler beim Vorschlagen'
+      const parts: string[] = []
+      if (added != null && added > 0) parts.push(`${added} vorgeschlagen`)
+      if (removed > 0) parts.push(`${removed} entfernt`)
+      if (parts.length === 0) return added != null ? `${added} Schwärzungen vorgeschlagen` : 'Schwärzungen vorgeschlagen'
+      return parts.join(', ')
+    })()
     return (
       <div className='flex items-center gap-1.5 text-xs text-muted-foreground py-0.5'>
         {toolCall.status === 'running'
@@ -38,10 +48,7 @@ export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
           : toolCall.status === 'error'
             ? <AlertCircle className='h-3 w-3 text-destructive' />
             : <Check className='h-3 w-3' />}
-        {toolCall.status === 'running' ? 'Schwärzungen werden vorgeschlagen…'
-          : toolCall.status === 'error' ? 'Fehler beim Vorschlagen'
-          : count != null ? `${count} Schwärzung${count !== 1 ? 'en' : ''} vorgeschlagen`
-          : 'Schwärzungen vorgeschlagen'}
+        {label}
       </div>
     )
   }

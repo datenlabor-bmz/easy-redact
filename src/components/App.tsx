@@ -103,6 +103,14 @@ export default function App() {
     updateRedaction(id, { status: 'ignored', shouldApply: false })
   }, [updateRedaction])
 
+  const removeRedaction = useCallback((id: string) => {
+    setSession(prev => {
+      const next = { ...prev!, redactions: prev!.redactions.filter(r => r.id !== id) }
+      saveSession(next)
+      return next
+    })
+  }, [])
+
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {
     const arr = Array.from(fileList)
     const pdfs: File[] = []
@@ -370,7 +378,13 @@ export default function App() {
             foiJurisdiction={session.foiJurisdiction}
             documentPages={documentPages}
             initialMessages={chatMessages}
-            onSuggestionsReceived={setPendingSuggestions}
+            redactions={session.redactions}
+            onSuggestionsReceived={(suggestions, remove) => {
+              remove.forEach(id => {
+                if (session.redactions.find(r => r.id === id)?.status === 'suggested') removeRedaction(id)
+              })
+              setPendingSuggestions(suggestions)
+            }}
             onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
             session={session}
             onConsentChange={mode => updateSession({ consent: mode })}

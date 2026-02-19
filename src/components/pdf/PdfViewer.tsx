@@ -94,6 +94,7 @@ export function PdfViewer({
           const parts = matchQuads.map(q => quadToPart(q as number[]))
           onRedactionAdd({
             id: generateUUID(), documentKey: '', pageIndex: s.pageIndex, parts,
+            searchText: s.text,
             status: 'suggested', confidence: s.confidence,
             person: s.person, personGroup: s.personGroup,
             rule: s.rule, reason: s.reason,

@@ -62,6 +62,7 @@ export interface Redaction {
   documentKey: string   // idbKey of the document this redaction belongs to; stamped by App.addRedaction
   pageIndex: number
   parts: RedactionPart[]
+  searchText?: string   // original search text used to locate this redaction (set for AI suggestions)
   rule?: RedactionRule
   status: RedactionStatus
   confidence?: RedactionConfidence
@@ -150,7 +151,7 @@ export type SSEEvent =
   | { type: 'text_delta'; content: string }
   | { type: 'consent_required'; reason: string }
   | { type: 'ask_user'; question: AskUserQuestion }
-  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[] }
+  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; remove: string[] }
   | { type: 'done' }
   | { type: 'error'; message: string }
 
@@ -167,6 +168,16 @@ export interface ApiChatMessage {
   }>
 }
 
+export interface RedactionSnapshot {
+  id: string
+  status: RedactionStatus
+  pageIndex: number
+  text: string
+  person?: string
+  personGroup?: string
+  documentKey: string
+}
+
 export interface ChatRequest {
   messages: ApiChatMessage[]
   model: 'cloud' | 'local'
@@ -174,4 +185,5 @@ export interface ChatRequest {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: Array<{ pageIndex: number; text: string }>
+  currentRedactions?: RedactionSnapshot[]
 }

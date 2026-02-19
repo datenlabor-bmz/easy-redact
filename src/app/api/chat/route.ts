@@ -22,7 +22,7 @@ async function* streamCompletion(client: any, model: string, messages: ApiChatMe
 
 export async function POST(req: Request) {
   const body: ChatRequest = await req.json()
-  const { messages, model, consent, redactionMode, foiJurisdiction, documentPages } = body
+  const { messages, model, consent, redactionMode, foiJurisdiction, documentPages, currentRedactions } = body
 
   console.log('[chat] POST', { consent, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
   console.log('[chat] messages', JSON.stringify(messages.map(m => ({ role: m.role, content: m.content?.slice(0, 80) }))))
@@ -51,6 +51,16 @@ export async function POST(req: Request) {
           { role: 'system', content: systemPrompt },
           ...messages,
         ]
+
+        if (currentRedactions?.length) {
+          const lines = currentRedactions.map(r =>
+            `- ID: ${r.id} | Status: ${r.status} | Seite ${r.pageIndex + 1} | "${r.text}"${r.person ? ` | Person: ${r.person}` : ''}${r.personGroup ? ` (${r.personGroup})` : ''}`
+          )
+          apiMessages.push({
+            role: 'system',
+            content: `Aktueller Schwärzungsstatus (vollständig, ${currentRedactions.length} Einträge):\n${lines.join('\n')}\n\nNur Einträge mit Status "suggested" können über das remove-Array in suggest_redactions entfernt werden.`,
+          })
+        }
 
         let iterations = 0
         while (iterations < 20) {
@@ -152,7 +162,7 @@ export async function POST(req: Request) {
               } else if (special.type === 'ask_user') {
                 send(ctrl, { type: 'ask_user', question: special.question })
               } else if (special.type === 'suggest_redactions') {
-                send(ctrl, { type: 'suggest_redactions', suggestions: special.suggestions })
+                send(ctrl, { type: 'suggest_redactions', suggestions: special.suggestions, remove: special.remove })
               }
             }
 

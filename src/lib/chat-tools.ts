@@ -76,6 +76,11 @@ export const tools = [
               required: ['text', 'pageIndex', 'confidence', 'person', 'personGroup'],
             },
           },
+          remove: {
+            type: 'array',
+            description: 'IDs of existing suggested redactions to remove. Only redactions with status "suggested" can be removed. Use the IDs from the current redaction snapshot provided in the system context.',
+            items: { type: 'string' },
+          },
         },
         required: ['suggestions'],
       },
@@ -123,7 +128,7 @@ export type ToolResult = { success: true; data: unknown } | { success: false; er
 export type SpecialToolResult =
   | { type: 'consent_required'; reason: string }
   | { type: 'ask_user'; question: AskUserQuestion }
-  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[] }
+  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; remove: string[] }
 
 export function executeAskUser(args: Record<string, unknown>): { special: SpecialToolResult; toolResult: ToolResult } {
   const question: AskUserQuestion = {
@@ -155,9 +160,10 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
     reason: s.reason as string | undefined,
     rule: s.rule as RedactionSuggestion['rule'],
   }))
+  const remove = (args.remove as string[] | undefined) ?? []
   return {
-    special: { type: 'suggest_redactions', suggestions },
-    toolResult: { success: true, data: `${suggestions.length} Schwärzungsvorschläge wurden im Dokument markiert.` },
+    special: { type: 'suggest_redactions', suggestions, remove },
+    toolResult: { success: true, data: `${suggestions.length} Vorschläge hinzugefügt, ${remove.length} entfernt.` },
   }
 }
 

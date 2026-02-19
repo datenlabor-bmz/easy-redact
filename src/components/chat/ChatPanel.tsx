@@ -9,18 +9,19 @@ import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
 import { SettingsPopover } from '@/components/SettingsPopover'
-import type { ConsentMode, RedactionMode, RedactionSuggestion, ChatMessage as Msg, Session } from '@/types'
+import type { ConsentMode, RedactionMode, RedactionSuggestion, ChatMessage as Msg, Session, Redaction } from '@/types'
 
 interface ChatPanelProps {
   consent: ConsentMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: Array<{ pageIndex: number; text: string }>
+  redactions?: Redaction[]
   documentNames?: string[]
   initialMessages?: Msg[]
   triggerRef?: React.MutableRefObject<((msg: string) => void) | null>
   onDeferredTrigger?: (msg: string) => void  // for triggers that need pages to be ready first
-  onSuggestionsReceived: (suggestions: RedactionSuggestion[]) => void
+  onSuggestionsReceived: (suggestions: RedactionSuggestion[], remove: string[]) => void
   onRedactionAction?: (redactionId: string, action: 'accepted' | 'ignored') => void
   onMessagesChange?: (messages: Msg[]) => void
   session: Session
@@ -31,13 +32,13 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  consent, redactionMode, foiJurisdiction, documentPages, documentNames, initialMessages, triggerRef, onDeferredTrigger,
+  consent, redactionMode, foiJurisdiction, documentPages, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
   onSuggestionsReceived, onRedactionAction, onMessagesChange,
   session, onConsentChange, onRedactionModeChange, onFoiJurisdictionChange, onModelSettingsChange,
 }: ChatPanelProps) {
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages } =
     useChatStream({
-      consent, redactionMode, foiJurisdiction, documentPages,
+      consent, redactionMode, foiJurisdiction, documentPages, redactions,
       onSuggestionsReceived,
       onConsentGranted: onConsentChange,
     })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, ConsentMode, RedactionMode, ApiChatMessage } from '@/types'
+import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, ConsentMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot } from '@/types'
 
 export type { ChatMessage, ToolCall }
 
@@ -10,7 +10,8 @@ interface UseChatStreamOptions {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: Array<{ pageIndex: number; text: string }>
-  onSuggestionsReceived?: (suggestions: RedactionSuggestion[]) => void
+  redactions?: Redaction[]
+  onSuggestionsReceived?: (suggestions: RedactionSuggestion[], remove: string[]) => void
   // Called when user picks a consent mode from the inline consent box
   onConsentGranted?: (mode: ConsentMode) => void
 }
@@ -63,8 +64,20 @@ export function useChatStream(opts: UseChatStreamOptions) {
       }
     }
 
-    const { redactionMode, foiJurisdiction, documentPages } = optsRef.current
+    const { redactionMode, foiJurisdiction, documentPages, redactions } = optsRef.current
     const effectiveConsent = overrideConsent ?? optsRef.current.consent
+
+    const currentRedactions: RedactionSnapshot[] | undefined = redactions?.length
+      ? redactions.filter(r => r.status !== 'ignored').map(r => ({
+          id: r.id,
+          status: r.status,
+          pageIndex: r.pageIndex,
+          text: r.searchText ?? '(Freihand-Schwärzung)',
+          person: r.person,
+          personGroup: r.personGroup,
+          documentKey: r.documentKey,
+        }))
+      : undefined
 
     console.log('[chat] sendMessage', { content: content.slice(0, 80), effectiveConsent, apiMessageCount: apiMessages.length })
     console.log('[chat] apiMessages', apiMessages.map(m => ({ role: m.role, content: m.content?.slice(0, 60) })))
@@ -79,6 +92,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           model: effectiveConsent === 'local' ? 'local' : 'cloud',
           consent: effectiveConsent, redactionMode, foiJurisdiction,
           documentPages: effectiveConsent ? documentPages : undefined,
+          currentRedactions,
         }),
         signal: abortRef.current.signal,
       })
@@ -124,7 +138,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, question: event.question } : m))
                 break
               case 'suggest_redactions':
-                optsRef.current.onSuggestionsReceived?.(event.suggestions)
+                optsRef.current.onSuggestionsReceived?.(event.suggestions, event.remove ?? [])
                 break
               case 'error':
                 setError(event.message)
