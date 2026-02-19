@@ -210,7 +210,7 @@ function MockExport() {
 const features = [
   {
     title: 'KI-Assistent',
-    description: 'Ein Chat-Agent liest das Dokument, stellt gezielte Rückfragen und schlägt in einem Schritt alle relevanten Schwärzungen vor — mit Konfidenzangabe für jeden Vorschlag.',
+    description: 'Ein Chat-Agent liest das Dokument, stellt gezielte Rückfragen und schlägt in einem Schritt alle relevanten Schwärzungen vor — mit Konfidenzwert für jeden Vorschlag.',
     mockup: <MockChat />,
   },
   {
@@ -219,7 +219,7 @@ const features = [
     mockup: <MockRedactions />,
   },
   {
-    title: 'Informationsfreiheits-Modus',
+    title: 'Informationsfreiheitsmodus',
     description: 'Im Informationsfreiheitsmodus wird jeder Schwärzung ein konkreter Rechtsgrund zugeordnet — §3–6 Informationsfreiheitsgesetz Bund, EU-Verordnung 1049/2001 und weitere Rechtsordnungen.',
     mockup: <MockFOI />,
   },
@@ -272,7 +272,7 @@ export default function AboutPage() {
       {/* Hero */}
       <section className='flex flex-col items-center text-center px-6 pt-16 pb-12 gap-5'>
         <h1 className='text-4xl font-bold tracking-tight max-w-xl'>
-          Sensitive Daten.<br />Automatisch geschwärzt.
+          Sensible Daten.<br />Automatisch geschwärzt.
         </h1>
         <p className='text-lg text-gray-500 leading-relaxed max-w-lg'>
           EasyRedact kombiniert einen intelligenten KI-Assistenten mit einem PDF-Viewer —
@@ -292,7 +292,7 @@ export default function AboutPage() {
 
       {/* Features */}
       <section id='features' className='px-6 py-10 max-w-5xl mx-auto w-full'>
-        <p className='text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-8'>Platform Features</p>
+        <p className='text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-8'>Features</p>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           {features.map(f => (
             <div key={f.title} className='rounded-xl border border-gray-200 bg-gray-50/50 overflow-hidden flex flex-col'>
