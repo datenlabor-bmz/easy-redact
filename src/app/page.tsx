@@ -1,9 +1,12 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-const App = dynamic(() => import('@/components/App'), { ssr: false })
-
-export default function Home() {
-  return <App />
+export default function RootPage() {
+  const router = useRouter()
+  useEffect(() => {
+    router.replace(localStorage.getItem('hasVisitedApp') ? '/app' : '/about')
+  }, [router])
+  return null
 }

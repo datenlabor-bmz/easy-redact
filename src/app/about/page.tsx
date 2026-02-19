@@ -264,7 +264,7 @@ export default function AboutPage() {
           </div>
           <span className='font-semibold text-sm'>EasyRedact</span>
         </Link>
-        <Link href='/' className='ml-auto flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors font-medium'>
+        <Link href='/app' className='ml-auto flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors font-medium'>
           Zur App <ArrowRight className='h-3 w-3' />
         </Link>
       </header>
@@ -279,7 +279,7 @@ export default function AboutPage() {
           für Schwärzungen nach Datenschutz- und Informationsfreiheitsrecht.
         </p>
         <div className='flex items-center gap-3 flex-wrap justify-center'>
-          <Link href='/'
+          <Link href='/app'
             className='flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors'>
             App öffnen <ArrowRight className='h-4 w-4' />
           </Link>
@@ -333,7 +333,7 @@ export default function AboutPage() {
             ))}
           </div>
           <div className='flex justify-center'>
-            <Link href='/'
+            <Link href='/app'
               className='flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors'>
               Jetzt starten <ArrowRight className='h-4 w-4' />
             </Link>
