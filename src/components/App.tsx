@@ -340,7 +340,7 @@ export default function App() {
           {activeFile ? (
             <div className='flex flex-col flex-1 min-h-0 overflow-hidden'>
               {/* Tabs strip */}
-              <div className='shrink-0 flex items-center gap-0.5 px-2 pt-1.5 pb-1 flex-wrap min-w-0 bg-muted/50 border-b'>
+              <div className='shrink-0 flex items-center gap-0.5 px-2 pt-1.5 pb-1 flex-wrap min-w-0 bg-muted border-b'>
                 {files.map((f, i) => (
                   <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
                     className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${i === activeFileIdx ? 'bg-muted shadow-sm border text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}`}>
