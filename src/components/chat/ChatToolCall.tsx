@@ -28,18 +28,18 @@ export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
 
   // suggest_redactions: show added + removed counts
   if (toolCall.name === 'suggest_redactions') {
-    const added = Array.isArray((toolCall.args as any)?.suggestions)
-      ? (toolCall.args as any).suggestions.length : null
-    const removed = Array.isArray((toolCall.args as any)?.remove)
-      ? (toolCall.args as any).remove.length : 0
+    const args = toolCall.args as any
+    const added = (Array.isArray(args?.suggestions) ? args.suggestions.length : 0)
+      + (Array.isArray(args?.textRanges) ? args.textRanges.length : 0)
+      + (Array.isArray(args?.pageRanges) ? args.pageRanges.length : 0)
+    const removed = Array.isArray(args?.remove) ? args.remove.length : 0
     const label = (() => {
       if (toolCall.status === 'running') return 'Schwärzungen werden bearbeitet…'
       if (toolCall.status === 'error') return 'Fehler beim Vorschlagen'
       const parts: string[] = []
-      if (added != null && added > 0) parts.push(`${added} vorgeschlagen`)
+      if (added > 0) parts.push(`${added} vorgeschlagen`)
       if (removed > 0) parts.push(`${removed} entfernt`)
-      if (parts.length === 0) return added != null ? `${added} Schwärzungen vorgeschlagen` : 'Schwärzungen vorgeschlagen'
-      return parts.join(', ')
+      return parts.length ? parts.join(', ') : 'Schwärzungen vorgeschlagen'
     })()
     return (
       <div className='flex items-center gap-1.5 text-xs text-muted-foreground py-0.5'>

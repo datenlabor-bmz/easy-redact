@@ -84,6 +84,28 @@ export interface RedactionSuggestion {
   reason?: string
 }
 
+export interface TextRangeSuggestion {
+  startText: string
+  startPage: number
+  endText: string
+  endPage: number
+  confidence: RedactionConfidence
+  person?: string
+  personGroup?: string
+  reason?: string
+  rule?: RedactionRule
+}
+
+export interface PageRangeSuggestion {
+  fromPage: number  // pageIndex, inclusive
+  toPage: number    // pageIndex, inclusive
+  confidence: RedactionConfidence
+  person?: string
+  personGroup?: string
+  reason?: string
+  rule?: RedactionRule
+}
+
 // ── Session ───────────────────────────────────────────────────────────────────
 
 export type ConsentMode = 'cloud' | 'local' | null
@@ -151,7 +173,7 @@ export type SSEEvent =
   | { type: 'text_delta'; content: string }
   | { type: 'consent_required'; reason: string }
   | { type: 'ask_user'; question: AskUserQuestion }
-  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; remove: string[] }
+  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[]; remove: string[] }
   | { type: 'done' }
   | { type: 'error'; message: string }
 

@@ -1,4 +1,4 @@
-import type { RedactionSuggestion, AskUserQuestion } from '@/types'
+import type { RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AskUserQuestion } from '@/types'
 
 // ── Tool schemas for OpenAI function calling ───────────────────────────────────
 
@@ -76,6 +76,42 @@ export const tools = [
               required: ['text', 'pageIndex', 'confidence', 'person', 'personGroup'],
             },
           },
+          textRanges: {
+            type: 'array',
+            description: 'Redact a continuous block of text spanning one or more pages. Use for paragraphs, sections, or appendices. Provide the first few words of the block as startText and the last few words as endText.',
+            items: {
+              type: 'object',
+              properties: {
+                startText: { type: 'string', description: 'Exact text at the START of the range (first few words)' },
+                startPage: { type: 'number', description: '0-based page index where startText appears' },
+                endText: { type: 'string', description: 'Exact text at the END of the range (last few words)' },
+                endPage: { type: 'number', description: '0-based page index where endText appears (may equal startPage)' },
+                confidence: { type: 'string', enum: ['high', 'low'] },
+                person: { type: 'string', description: 'Person or organisation this range belongs to' },
+                personGroup: { type: 'string', description: 'Group category' },
+                reason: { type: 'string' },
+                rule: { type: 'object', properties: { title: { type: 'string' }, reference: { type: 'string' }, group: { type: 'string' } }, required: ['title'] },
+              },
+              required: ['startText', 'startPage', 'endText', 'endPage', 'confidence', 'person', 'personGroup'],
+            },
+          },
+          pageRanges: {
+            type: 'array',
+            description: 'Redact entire pages. Use for full appendices or attachments. Page indices come from the read_documents response (0-based).',
+            items: {
+              type: 'object',
+              properties: {
+                fromPage: { type: 'number', description: '0-based page index, inclusive start' },
+                toPage: { type: 'number', description: '0-based page index, inclusive end' },
+                confidence: { type: 'string', enum: ['high', 'low'] },
+                person: { type: 'string' },
+                personGroup: { type: 'string' },
+                reason: { type: 'string' },
+                rule: { type: 'object', properties: { title: { type: 'string' }, reference: { type: 'string' }, group: { type: 'string' } }, required: ['title'] },
+              },
+              required: ['fromPage', 'toPage', 'confidence', 'person', 'personGroup'],
+            },
+          },
           remove: {
             type: 'array',
             description: 'IDs of existing suggested redactions to remove. Only redactions with status "suggested" can be removed. Use the IDs from the current redaction snapshot provided in the system context.',
@@ -128,7 +164,7 @@ export type ToolResult = { success: true; data: unknown } | { success: false; er
 export type SpecialToolResult =
   | { type: 'consent_required'; reason: string }
   | { type: 'ask_user'; question: AskUserQuestion }
-  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; remove: string[] }
+  | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[]; remove: string[] }
 
 export function executeAskUser(args: Record<string, unknown>): { special: SpecialToolResult; toolResult: ToolResult } {
   const question: AskUserQuestion = {
@@ -160,10 +196,31 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
     reason: s.reason as string | undefined,
     rule: s.rule as RedactionSuggestion['rule'],
   }))
+  const textRanges: TextRangeSuggestion[] = ((args.textRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
+    startText: r.startText as string,
+    startPage: r.startPage as number,
+    endText: r.endText as string,
+    endPage: r.endPage as number,
+    confidence: r.confidence as TextRangeSuggestion['confidence'],
+    person: r.person as string | undefined,
+    personGroup: r.personGroup as string | undefined,
+    reason: r.reason as string | undefined,
+    rule: r.rule as TextRangeSuggestion['rule'],
+  }))
+  const pageRanges: PageRangeSuggestion[] = ((args.pageRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
+    fromPage: r.fromPage as number,
+    toPage: r.toPage as number,
+    confidence: r.confidence as PageRangeSuggestion['confidence'],
+    person: r.person as string | undefined,
+    personGroup: r.personGroup as string | undefined,
+    reason: r.reason as string | undefined,
+    rule: r.rule as PageRangeSuggestion['rule'],
+  }))
   const remove = (args.remove as string[] | undefined) ?? []
+  const total = suggestions.length + textRanges.length + pageRanges.length
   return {
-    special: { type: 'suggest_redactions', suggestions, remove },
-    toolResult: { success: true, data: `${suggestions.length} Vorschläge hinzugefügt, ${remove.length} entfernt.` },
+    special: { type: 'suggest_redactions', suggestions, textRanges, pageRanges, remove },
+    toolResult: { success: true, data: `${total} Vorschläge hinzugefügt (${suggestions.length} Textstellen, ${textRanges.length} Textbereiche, ${pageRanges.length} Seitenbereiche), ${remove.length} entfernt.` },
   }
 }
 

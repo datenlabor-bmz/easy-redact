@@ -162,7 +162,7 @@ export async function POST(req: Request) {
               } else if (special.type === 'ask_user') {
                 send(ctrl, { type: 'ask_user', question: special.question })
               } else if (special.type === 'suggest_redactions') {
-                send(ctrl, { type: 'suggest_redactions', suggestions: special.suggestions, remove: special.remove })
+                send(ctrl, { type: 'suggest_redactions', suggestions: special.suggestions, textRanges: special.textRanges, pageRanges: special.pageRanges, remove: special.remove })
               }
             }
 
@@ -172,9 +172,9 @@ export async function POST(req: Request) {
               content: JSON.stringify(result.success ? result.data : { error: result.error }),
             })
 
-            // Stop the loop immediately — user must act outside the chat before we continue
-            if (special?.type === 'consent_required') {
-              console.log('[chat] consent_required → stopping loop')
+            // Stop the loop — user must respond before we continue
+            if (special?.type === 'consent_required' || special?.type === 'ask_user') {
+              console.log(`[chat] ${special.type} → stopping loop`)
               send(ctrl, { type: 'done' })
               return
             }

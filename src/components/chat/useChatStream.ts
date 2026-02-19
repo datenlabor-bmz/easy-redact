@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, ConsentMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot } from '@/types'
+import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ConsentMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot } from '@/types'
 
 export type { ChatMessage, ToolCall }
 
@@ -11,7 +11,7 @@ interface UseChatStreamOptions {
   foiJurisdiction?: string
   documentPages?: Array<{ pageIndex: number; text: string }>
   redactions?: Redaction[]
-  onSuggestionsReceived?: (suggestions: RedactionSuggestion[], remove: string[]) => void
+  onSuggestionsReceived?: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
   // Called when user picks a consent mode from the inline consent box
   onConsentGranted?: (mode: ConsentMode) => void
 }
@@ -27,6 +27,10 @@ export function useChatStream(opts: UseChatStreamOptions) {
   optsRef.current = opts
 
   const sendMessage = useCallback(async (content: string, overrideConsent?: ConsentMode) => {
+    if (abortRef.current) {
+      console.warn('[chat] sendMessage called while already streaming — ignoring')
+      return
+    }
     const isSystem = content.startsWith('[System:')
     const userMsg: ChatMessage = { id: generateId(), role: 'user', content, timestamp: new Date().toISOString(), hidden: isSystem }
     setMessages(prev => [...prev, userMsg])
@@ -138,7 +142,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
                 setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, question: event.question } : m))
                 break
               case 'suggest_redactions':
-                optsRef.current.onSuggestionsReceived?.(event.suggestions, event.remove ?? [])
+                optsRef.current.onSuggestionsReceived?.(event.suggestions, event.textRanges ?? [], event.pageRanges ?? [], event.remove ?? [])
                 break
               case 'error':
                 setError(event.message)

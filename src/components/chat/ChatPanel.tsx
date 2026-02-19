@@ -8,8 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
-import { SettingsPopover } from '@/components/SettingsPopover'
-import type { ConsentMode, RedactionMode, RedactionSuggestion, ChatMessage as Msg, Session, Redaction } from '@/types'
+import type { ConsentMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction } from '@/types'
 
 interface ChatPanelProps {
   consent: ConsentMode
@@ -20,21 +19,16 @@ interface ChatPanelProps {
   documentNames?: string[]
   initialMessages?: Msg[]
   triggerRef?: React.MutableRefObject<((msg: string) => void) | null>
-  onDeferredTrigger?: (msg: string) => void  // for triggers that need pages to be ready first
-  onSuggestionsReceived: (suggestions: RedactionSuggestion[], remove: string[]) => void
+  onDeferredTrigger?: (msg: string) => void
+  onSuggestionsReceived: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
   onRedactionAction?: (redactionId: string, action: 'accepted' | 'ignored') => void
   onMessagesChange?: (messages: Msg[]) => void
-  session: Session
   onConsentChange: (mode: ConsentMode) => void
-  onRedactionModeChange: (mode: RedactionMode) => void
-  onFoiJurisdictionChange: (id: string) => void
-  onModelSettingsChange: (key: keyof Session['modelSettings'], value: string) => void
 }
 
 export function ChatPanel({
   consent, redactionMode, foiJurisdiction, documentPages, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
-  onSuggestionsReceived, onRedactionAction, onMessagesChange,
-  session, onConsentChange, onRedactionModeChange, onFoiJurisdictionChange, onModelSettingsChange,
+  onSuggestionsReceived, onRedactionAction, onMessagesChange, onConsentChange,
 }: ChatPanelProps) {
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages } =
     useChatStream({
@@ -87,24 +81,17 @@ export function ChatPanel({
   return (
     <div className='flex flex-col h-full bg-card'>
       {/* Panel header */}
-      <div className='@container/chat shrink-0 min-h-11 flex items-center justify-between gap-1 px-3 py-2 border-b bg-muted/50 flex-wrap'>
-        <span className='text-xs font-medium text-foreground @[220px]/chat:block hidden'>Schwärzungs-Assistent</span>
-        <div className='flex items-center gap-1 flex-wrap justify-end ml-auto'>
-          <SettingsPopover session={session}
-            onConsentChange={onConsentChange}
-            onRedactionModeChange={onRedactionModeChange}
-            onFoiJurisdictionChange={onFoiJurisdictionChange}
-            onModelSettingsChange={onModelSettingsChange} />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant='ghost' size='icon' className='h-6 w-6 text-muted-foreground hover:text-destructive'
-                onClick={() => { setMessages([]); onMessagesChange?.([]) }}>
-                <Trash2 className='h-3.5 w-3.5' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='bottom'>Gespräch löschen</TooltipContent>
-          </Tooltip>
-        </div>
+      <div className='shrink-0 h-11 flex items-center justify-between gap-1 px-3 border-b bg-muted/50'>
+        <span className='text-xs font-medium text-foreground'>Schwärzungs-Assistent</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='ghost' size='icon' className='h-6 w-6 text-muted-foreground hover:text-destructive'
+              onClick={() => { setMessages([]); onMessagesChange?.([]) }}>
+              <Trash2 className='h-3.5 w-3.5' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side='bottom'>Gespräch löschen</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Messages */}

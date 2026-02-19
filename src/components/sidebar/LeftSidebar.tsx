@@ -252,13 +252,13 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
   return (
     <div className='@container flex flex-col h-full border-r bg-card'>
       <Tabs defaultValue='list' className='flex-1 flex flex-col min-h-0'>
-        {/* Header: title | tabs (truly centered) | counters + delete */}
-        <div className='h-11 px-2 border-b bg-muted/50 shrink-0 grid grid-cols-[1fr_auto_1fr] items-center overflow-hidden'>
+        {/* Header: title | tabs (centered) | counters + delete */}
+        <div className='h-11 px-2 border-b bg-muted/50 shrink-0 flex items-center overflow-hidden'>
           {/* Left: title — hidden when narrow */}
-          <span className='text-xs font-medium text-foreground @[280px]:block hidden'>Schwärzungen</span>
+          <span className='text-xs font-medium text-foreground @[280px]:block hidden shrink-0'>Schwärzungen</span>
 
           {/* Center: tabs */}
-          <TabsList className='h-7 p-0.5 gap-0'>
+          <TabsList className='h-7 p-0.5 gap-0 mx-auto shrink-0'>
             {([
               { value: 'thumbnails', icon: LayoutGrid, label: 'Seitenvorschau' },
               { value: 'list',       icon: List,        label: 'Chronologische Liste' },
@@ -273,18 +273,18 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
             ))}
           </TabsList>
 
-          {/* Right: counters + delete — hidden when narrow */}
-          <div className='@[240px]:flex hidden items-center justify-end gap-1.5'>
+          {/* Right: counters (wide only) + delete (always) */}
+          <div className='flex items-center gap-1.5 ml-auto shrink-0'>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className='text-[10px] text-muted-foreground tabular-nums cursor-default'>{visibleCount} Vorschläge</span>
+                <span className='@[360px]:inline-block hidden text-[10px] text-muted-foreground tabular-nums cursor-default'>{visibleCount} Vorschläge</span>
               </TooltipTrigger>
               <TooltipContent side='bottom'>Schwärzungen gesamt (ohne ignorierte)</TooltipContent>
             </Tooltip>
             {suggestedCount > 0 && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className='text-[10px] text-amber-600 tabular-nums cursor-default'>{suggestedCount} offen</span>
+                  <span className='@[360px]:inline-block hidden text-[10px] text-amber-600 tabular-nums cursor-default'>{suggestedCount} offen</span>
                 </TooltipTrigger>
                 <TooltipContent side='bottom'>KI-Vorschläge noch nicht bestätigt</TooltipContent>
               </Tooltip>

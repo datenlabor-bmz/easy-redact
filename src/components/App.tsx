@@ -8,9 +8,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { PdfViewer } from '@/components/pdf/PdfViewer'
 import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
+import { SettingsPopover } from '@/components/SettingsPopover'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
-import type { Redaction, Session, PageData, RedactionSuggestion, ChatMessage, RedactionRule } from '@/types'
+import type { Redaction, Session, PageData, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
 
 export default function App() {
@@ -23,6 +24,8 @@ export default function App() {
   const [pages, setPages] = useState<PageData[]>([])
   const [documentPages, setDocumentPages] = useState<Array<{ pageIndex: number; text: string }>>([])
   const [pendingSuggestions, setPendingSuggestions] = useState<RedactionSuggestion[]>([])
+  const [pendingTextRanges, setPendingTextRanges] = useState<TextRangeSuggestion[]>([])
+  const [pendingPageRanges, setPendingPageRanges] = useState<PageRangeSuggestion[]>([])
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -238,17 +241,23 @@ export default function App() {
   return (
     <div className='flex flex-col h-screen bg-background overflow-hidden'>
       {/* Header */}
-      <header className='shrink-0 flex items-center gap-3 px-4 border-b bg-muted/50 h-11'>
+      <header className='shrink-0 flex items-center gap-2 px-4 border-b bg-muted/50 h-11'>
         <div className='flex items-center gap-2 shrink-0'>
           <div className='w-7 h-7 rounded-lg bg-primary flex items-center justify-center'>
             <span className='text-primary-foreground text-xs font-bold'>E</span>
           </div>
           <span className='font-semibold text-sm'>EasyRedact</span>
         </div>
-        <Link href='/about'
-          className='ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors'>
-          Über EasyRedact
-        </Link>
+        <div className='ml-auto flex items-center gap-1'>
+          <SettingsPopover session={session} onConsentChange={mode => updateSession({ consent: mode })}
+            onRedactionModeChange={mode => updateSession({ redactionMode: mode })}
+            onFoiJurisdictionChange={id => updateSession({ foiJurisdiction: id })}
+            onModelSettingsChange={(key, value) => updateSession({ modelSettings: { ...session.modelSettings, [key]: value } })} />
+          <Link href='/about'
+            className='text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap'>
+            Über EasyRedact
+          </Link>
+        </div>
       </header>
 
       {/* Three-panel layout */}
@@ -277,35 +286,12 @@ export default function App() {
         <div onMouseDown={startDrag('left')}
           className='w-px shrink-0 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors z-10' />
 
-        {/* Center — unified tab+toolbar header + PDF viewer or upload prompt */}
+        {/* Center — toolbar header + PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
-          {/* Unified header: tabs left, zoom+export right — wraps when narrow */}
-          <div className='shrink-0 flex flex-wrap items-center gap-1 px-2 border-b bg-muted/50 min-h-11 py-1.5'>
-            {/* Tabs */}
-            <div className='flex items-center gap-0.5 flex-wrap min-w-0'>
-              {files.map((f, i) => (
-                <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
-                  className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${i === activeFileIdx ? 'bg-background shadow-sm border text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-background/60'}`}>
-                  <FileText className='h-3 w-3 shrink-0' />
-                  <span className='max-w-[130px] truncate'>{f.name}</span>
-                  <X className='h-2.5 w-2.5 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive' onClick={e => { e.stopPropagation(); removeFile(i) }} />
-                </button>
-              ))}
-              <button onClick={() => fileInputRef.current?.click()}
-                className='flex items-center gap-1 px-2 h-6 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors shrink-0'>
-                <Upload className='h-3 w-3' /> Hochladen
-              </button>
-            </div>
-            {/* Error */}
-            {error && (
-              <div className='flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded shrink-0'>
-                <AlertCircle className='h-3 w-3' /> {error}
-                <button onClick={() => setError(null)}><X className='h-3 w-3' /></button>
-              </div>
-            )}
-            {/* Zoom + export — only when a file is open */}
+          {/* Header: zoom left, export right — compact, no wrapping */}
+          <div className='shrink-0 flex items-center gap-1 px-2 border-b bg-muted/50 h-11'>
             {activeFile && (
-              <div className='flex items-center gap-1 shrink-0 ml-auto'>
+              <>
                 <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.max(25, zoom - 25))}>
                   <Minus className='h-3.5 w-3.5' />
                 </Button>
@@ -313,7 +299,13 @@ export default function App() {
                 <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.min(300, zoom + 25))}>
                   <Plus className='h-3.5 w-3.5' />
                 </Button>
-                <div className='flex gap-1 ml-1'>
+                {error && (
+                  <div className='flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded shrink-0 ml-2'>
+                    <AlertCircle className='h-3 w-3' /> {error}
+                    <button onClick={() => setError(null)}><X className='h-3 w-3' /></button>
+                  </div>
+                )}
+                <div className='flex gap-1 ml-auto shrink-0'>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button variant='outline' size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(false)}>
@@ -327,7 +319,7 @@ export default function App() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(true)}>
-                        <FileLock2 className='h-3 w-3' /> Schwärzen und Speichern
+                        <FileLock2 className='h-3 w-3' /> Schwärzen
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side='bottom' className='max-w-56 text-center'>
@@ -335,20 +327,44 @@ export default function App() {
                     </TooltipContent>
                   </Tooltip>
                 </div>
+              </>
+            )}
+            {!activeFile && error && (
+              <div className='flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded shrink-0'>
+                <AlertCircle className='h-3 w-3' /> {error}
+                <button onClick={() => setError(null)}><X className='h-3 w-3' /></button>
               </div>
             )}
           </div>
 
           {activeFile ? (
-            <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
-              onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
-              onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
-              onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
-              pendingSuggestions={pendingSuggestions} onSuggestionsApplied={() => setPendingSuggestions([])}
-              exportRef={exportRef}
-              onAccept={acceptRedaction} onIgnore={ignoreRedaction}
-              foiRules={foiRules}
-              redactionMode={session.redactionMode} />
+            <div className='flex flex-col flex-1 min-h-0 overflow-hidden'>
+              {/* Tabs strip */}
+              <div className='shrink-0 flex items-center gap-0.5 px-2 pt-1.5 pb-1 flex-wrap min-w-0 bg-muted/50 border-b'>
+                {files.map((f, i) => (
+                  <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
+                    className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${i === activeFileIdx ? 'bg-muted shadow-sm border text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}`}>
+                    <FileText className='h-3 w-3 shrink-0' />
+                    <span className='max-w-[130px] truncate'>{f.name}</span>
+                    <X className='h-2.5 w-2.5 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive' onClick={e => { e.stopPropagation(); removeFile(i) }} />
+                  </button>
+                ))}
+                <button onClick={() => fileInputRef.current?.click()}
+                  className='flex items-center gap-1 px-2 h-6 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors shrink-0'>
+                  <Upload className='h-3 w-3' /> Hochladen
+                </button>
+              </div>
+              <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
+                onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
+                onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
+                onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
+                pendingSuggestions={pendingSuggestions} pendingTextRanges={pendingTextRanges} pendingPageRanges={pendingPageRanges}
+                onSuggestionsApplied={() => { setPendingSuggestions([]); setPendingTextRanges([]); setPendingPageRanges([]) }}
+                exportRef={exportRef}
+                onAccept={acceptRedaction} onIgnore={ignoreRedaction}
+                foiRules={foiRules}
+                redactionMode={session.redactionMode} />
+            </div>
           ) : (
             <div
               className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}
@@ -379,18 +395,16 @@ export default function App() {
             documentPages={documentPages}
             initialMessages={chatMessages}
             redactions={session.redactions}
-            onSuggestionsReceived={(suggestions, remove) => {
+            onSuggestionsReceived={(suggestions, textRanges, pageRanges, remove) => {
               remove.forEach(id => {
                 if (session.redactions.find(r => r.id === id)?.status === 'suggested') removeRedaction(id)
               })
               setPendingSuggestions(suggestions)
+              setPendingTextRanges(textRanges)
+              setPendingPageRanges(pageRanges)
             }}
             onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
-            session={session}
-            onConsentChange={mode => updateSession({ consent: mode })}
-            onRedactionModeChange={mode => updateSession({ redactionMode: mode })}
-            onFoiJurisdictionChange={id => updateSession({ foiJurisdiction: id })}
-            onModelSettingsChange={(key, value) => updateSession({ modelSettings: { ...session.modelSettings, [key]: value } })} />
+            onConsentChange={mode => updateSession({ consent: mode })} />
         </div>
       </div>
 
