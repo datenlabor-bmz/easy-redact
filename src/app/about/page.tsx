@@ -240,7 +240,7 @@ const features = [
   },
   {
     title: 'Datensouveränität',
-    description: 'Wahl zwischen Azure OpenAI (DSGVO-konform, keine Data Retention), einem Ollama-kompatiblen Sprachmodell auf eigener Infrastruktur, oder vollständig lokalen NLP-Modellen im Browser oder per Docker — ohne jede Cloud-Verbindung.',
+    description: 'Wahl zwischen Azure OpenAI (DSGVO-konform, keine Data Retention), einem Ollama-kompatiblen Sprachmodell auf eigenem Server, oder vollständig lokaler Sprachverarbeitung im Browser — ohne jede Cloud-Verbindung.',
     mockup: <MockPrivacy />,
   },
   {
@@ -275,8 +275,8 @@ export default function AboutPage() {
           Sensitive Daten.<br />Automatisch geschwärzt.
         </h1>
         <p className='text-lg text-gray-500 leading-relaxed max-w-lg'>
-          EasyRedact kombiniert einen intelligenten KI-Assistenten mit einem vollständigen PDF-Editor —
-          für schnelle, rechtssichere Schwärzungen nach Datenschutz- und Informationsfreiheitsrecht.
+          EasyRedact kombiniert einen intelligenten KI-Assistenten mit einem PDF-Viewer —
+          für Schwärzungen nach Datenschutz- und Informationsfreiheitsrecht.
         </p>
         <div className='flex items-center gap-3 flex-wrap justify-center'>
           <Link href='/'
