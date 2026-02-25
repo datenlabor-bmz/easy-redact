@@ -67,6 +67,18 @@ export default function App() {
     loadChat().then(setChatMessages)
   }, [])
 
+  // Intercept Ctrl+scroll → drive PDF zoom instead of browser zoom
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const base = Math.abs(e.deltaY) < 10 ? 1.015 : 1.001
+      setZoom(z => Math.min(300, Math.max(25, Math.round(z * Math.pow(base, -e.deltaY)))))
+    }
+    window.addEventListener('wheel', onWheel, { passive: false })
+    return () => { window.removeEventListener('wheel', onWheel) }
+  }, [])
+
   // Load FOI rules when in FOI mode + jurisdiction set
   useEffect(() => {
     if (session?.redactionMode !== 'foi' || !session.foiJurisdiction) { setFoiRules([]); return }
@@ -347,7 +359,7 @@ export default function App() {
           </div>
 
           {activeFile ? (
-            <div className='flex flex-col flex-1 min-h-0 overflow-hidden'>
+            <div className='flex flex-col flex-1 min-h-0'>
               {/* Tabs strip */}
               <div className='shrink-0 flex items-center gap-0.5 px-2 pt-1.5 pb-1 flex-wrap min-w-0 bg-muted'>
                 {files.map((f, i) => (

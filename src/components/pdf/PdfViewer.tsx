@@ -52,9 +52,25 @@ export function PdfViewer({
   const [metadata, setMetadata] = useState<Record<string, string>>({})
   const [fieldsToRemove, setFieldsToRemove] = useState<Set<string>>(new Set())
   const pdfViewerRef = useRef<HTMLDivElement>(null)
+  const rerenderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dragRef = useRef<{ rect: DOMRect; pw: number; ph: number; pageIndex: number } | null>(null)
   const currentHighlightRef = useRef<HighlightInProgress | null>(null)
   useEffect(() => { currentHighlightRef.current = currentHighlight }, [currentHighlight])
+
+  // Re-render page images at the new zoom resolution (debounced)
+  useEffect(() => {
+    if (!pages.length) return
+    if (rerenderTimerRef.current) clearTimeout(rerenderTimerRef.current)
+    rerenderTimerRef.current = setTimeout(async () => {
+      const zoomFactor = zoom / 100
+      const updated = await Promise.all(pages.map(async (page, i) => {
+        URL.revokeObjectURL(page.image)
+        const pngData = await renderPage(i, zoomFactor)
+        return { ...page, image: URL.createObjectURL(new Blob([new Uint8Array(pngData)], { type: 'image/png' })) }
+      }))
+      setPages(updated)
+    }, 300)
+  }, [zoom])
 
   // Load document
   useEffect(() => {
@@ -244,9 +260,10 @@ export function PdfViewer({
   const showRuleOverlay = redactionMode === 'foi' && foiRules?.length && selectedRedaction
 
   return (
-    <div className='flex flex-col h-full'>
+    <div className='flex flex-col flex-1 min-h-0'>
       {/* Pages */}
-      <div ref={pdfViewerRef} className='flex-1 overflow-auto flex flex-col items-center bg-muted relative'>
+      <div ref={pdfViewerRef} className='flex-1 overflow-auto bg-muted relative'>
+        <div className='flex flex-col items-center min-w-max'>
         <MetadataPanel metadata={metadata} fieldsToRemove={fieldsToRemove} onChange={setFieldsToRemove} />
         {pages.map((page, i) => (
           <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
@@ -268,6 +285,7 @@ export function PdfViewer({
             onClose={() => onSelectionChange(null)}
           />
         )}
+        </div>
       </div>
     </div>
   )

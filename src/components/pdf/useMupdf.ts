@@ -38,13 +38,13 @@ export function useMupdf() {
     return mupdfWorker.current!.loadDocumentAndAnnotations(arrayBuffer)
   }, [])
 
-  const renderPage = useCallback((pageIndex: number) => {
+  const renderPage = useCallback((pageIndex: number, zoomFactor = 1) => {
     if (!document.current) {
       throw new Error('Document not loaded')
     }
     return mupdfWorker.current!.renderPageAsImage(
       pageIndex,
-      (window.devicePixelRatio * 96) / 72
+      (window.devicePixelRatio * 96 * zoomFactor) / 72
     )
   }, [])
 
