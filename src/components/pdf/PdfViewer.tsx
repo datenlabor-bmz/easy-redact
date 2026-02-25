@@ -49,6 +49,9 @@ export function PdfViewer({
   const [isLoading, setIsLoading] = useState(false)
   const [currentHighlight, setCurrentHighlight] = useState<HighlightInProgress | null>(null)
   const pdfViewerRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<{ rect: DOMRect; pw: number; ph: number; pageIndex: number } | null>(null)
+  const currentHighlightRef = useRef<HighlightInProgress | null>(null)
+  useEffect(() => { currentHighlightRef.current = currentHighlight }, [currentHighlight])
 
   // Load document
   useEffect(() => {
@@ -170,35 +173,48 @@ export function PdfViewer({
     const page = pages[pageIndex]
     const [, , pw, ph] = page.bounds
     const rect = e.currentTarget.getBoundingClientRect()
+    dragRef.current = { rect, pw, ph, pageIndex }
     const x = (e.clientX - rect.left) * (pw / rect.width)
     const y = (e.clientY - rect.top) * (ph / rect.height)
     const startWord = page.words.find((w: WordData) => x >= w.bbox.x0 && x <= w.bbox.x1 && y >= w.bbox.y0 && y <= w.bbox.y1) ?? null
     setCurrentHighlight({ pageIndex, type: startWord ? 'text' : 'freehand', startX: x, startY: y, endX: x, endY: y, startWord, endWord: startWord })
   }
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  useEffect(() => {
     if (!currentHighlight) return
-    const page = pages[currentHighlight.pageIndex]
-    const [, , pw, ph] = page.bounds
-    const rect = e.currentTarget.getBoundingClientRect()
-    const cx = (e.clientX - rect.left) * (pw / rect.width)
-    const cy = (e.clientY - rect.top) * (ph / rect.height)
-    const endWord = currentHighlight.type === 'text'
-      ? (page.words.find((w: WordData) => cx >= w.bbox.x0 && cx <= w.bbox.x1 && cy >= w.bbox.y0 && cy <= w.bbox.y1) ?? currentHighlight.endWord)
-      : currentHighlight.endWord
-    setCurrentHighlight({ ...currentHighlight, endX: cx, endY: cy, endWord })
-  }
+    const drag = dragRef.current!
+    const page = pages[drag.pageIndex]
 
-  const handleMouseUp = () => {
-    if (currentHighlight) {
-      const r = finalizeHighlight(pages[currentHighlight.pageIndex], currentHighlight)
-      if (currentHighlight.type === 'freehand' && r.parts[0].width * r.parts[0].height < 100) {
-        setCurrentHighlight(null); return
-      }
-      onRedactionAdd(r)
+    const onMove = (e: MouseEvent) => {
+      const cx = Math.max(0, Math.min((e.clientX - drag.rect.left) * (drag.pw / drag.rect.width), drag.pw))
+      const cy = Math.max(0, Math.min((e.clientY - drag.rect.top) * (drag.ph / drag.rect.height), drag.ph))
+      setCurrentHighlight(prev => {
+        if (!prev) return null
+        const endWord = prev.type === 'text'
+          ? (page.words.find((w: WordData) => cx >= w.bbox.x0 && cx <= w.bbox.x1 && cy >= w.bbox.y0 && cy <= w.bbox.y1) ?? prev.endWord)
+          : prev.endWord
+        return { ...prev, endX: cx, endY: cy, endWord }
+      })
     }
-    setCurrentHighlight(null)
-  }
+
+    const onUp = () => {
+      const hl = currentHighlightRef.current
+      if (hl) {
+        const r = finalizeHighlight(pages[hl.pageIndex], hl)
+        if (hl.type !== 'freehand' || r.parts[0].width * r.parts[0].height >= 100) onRedactionAdd(r)
+      }
+      setCurrentHighlight(null)
+      dragRef.current = null
+    }
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!currentHighlight])
 
   const handleExport = async (apply: boolean) => {
     const annotations = redactionsToAnnotations(redactions)
@@ -227,7 +243,7 @@ export function PdfViewer({
           <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
             selectedId={selectedId} currentHighlight={currentHighlight}
             onRedactionClick={(id, e) => { e.stopPropagation(); onSelectionChange(id) }}
-            onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
+            onMouseDown={handleMouseDown}
             onAccept={onAccept} onIgnore={onIgnore} />
         ))}
         {showRuleOverlay && selectedRedaction && (

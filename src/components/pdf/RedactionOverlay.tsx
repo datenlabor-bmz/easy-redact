@@ -79,16 +79,13 @@ export interface RedactionOverlayProps {
   currentHighlight: HighlightInProgress | null
   onRedactionClick: (id: string, e: React.MouseEvent) => void
   onMouseDown: (e: React.MouseEvent<SVGSVGElement>, pageIndex: number) => void
-  onMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void
-  onMouseUp: () => void
   onAccept?: (id: string) => void
   onIgnore?: (id: string) => void
 }
 
 export function RedactionOverlay({
   pageIndex, pageWidth, pageHeight, pageData, redactions, selectedId,
-  currentHighlight, onRedactionClick, onMouseDown, onMouseMove, onMouseUp,
-  onAccept, onIgnore,
+  currentHighlight, onRedactionClick, onMouseDown, onAccept, onIgnore,
 }: RedactionOverlayProps) {
   const [lastHoveredId, setLastHoveredId] = useState<string | null>(null)
   const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex && r.status !== 'ignored')
@@ -102,8 +99,7 @@ export function RedactionOverlay({
   return (
     <svg width='100%' height='100%' viewBox={`0 0 ${pageWidth} ${pageHeight}`}
       style={{ position: 'absolute', top: 0, left: 0, cursor: 'crosshair' }}
-      onMouseDown={(e) => onMouseDown(e, pageIndex)}
-      onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+      onMouseDown={(e) => onMouseDown(e, pageIndex)}>
 
       {/* Pass 1: all highlight boxes */}
       {pageRedactions.map(r => (
