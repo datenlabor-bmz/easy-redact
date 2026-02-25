@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, RedactionRule, RedactionMode } from '@/types'
+import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, RedactionRule, RedactionMode, RedactionPart } from '@/types'
 import { useMupdf } from './useMupdf'
 import { finalizeHighlight, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
 import { PdfPage } from './PdfPage'
@@ -33,6 +33,9 @@ export interface PdfViewerProps {
   exportRef?: React.MutableRefObject<((apply: boolean) => void) | null>
   foiRules?: RedactionRule[]
   redactionMode?: RedactionMode
+  searchQuery?: string
+  onSearchInfoChange?: (info: { current: number, total: number }) => void
+  searchNavigateRef?: React.MutableRefObject<((dir: 1|-1) => void) | null>
 }
 
 export function PdfViewer({
@@ -42,6 +45,7 @@ export function PdfViewer({
   onPageTextExtracted, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
   onSuggestionsApplied, exportRef,
   onAccept, onIgnore, foiRules, redactionMode,
+  searchQuery, onSearchInfoChange, searchNavigateRef,
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
     getPageContent, getPageBounds, getPageWords, getMetadata, getRedactedDocument, searchPage } = useMupdf()
@@ -51,6 +55,9 @@ export function PdfViewer({
   const [currentHighlight, setCurrentHighlight] = useState<HighlightInProgress | null>(null)
   const [metadata, setMetadata] = useState<Record<string, string>>({})
   const [fieldsToRemove, setFieldsToRemove] = useState<Set<string>>(new Set())
+  const [searchMatches, setSearchMatches] = useState<Map<number, RedactionPart[][]>>(new Map())
+  const [searchMatchIdx, setSearchMatchIdx] = useState(0)
+  const searchFlatRef = useRef<{ pageIndex: number, matchIdx: number }[]>([])
   const pdfViewerRef = useRef<HTMLDivElement>(null)
   const rerenderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dragRef = useRef<{ rect: DOMRect; pw: number; ph: number; pageIndex: number } | null>(null)
@@ -71,6 +78,49 @@ export function PdfViewer({
       setPages(updated)
     }, 300)
   }, [zoom])
+
+  // Search across all pages (debounced)
+  useEffect(() => {
+    if (!searchQuery?.trim() || !pages.length) {
+      setSearchMatches(new Map())
+      searchFlatRef.current = []
+      onSearchInfoChange?.({ current: 0, total: 0 })
+      return
+    }
+    const timer = setTimeout(() => {
+      Promise.all(pages.map(async (_, i) => {
+        const quads = await searchPage(i, searchQuery) as number[][][]
+        return [i, quads.map(matchQuads => matchQuads.map(q => quadToPart(q)))] as const
+      })).then(results => {
+        const withMatches = results.filter(([, v]) => v.length > 0)
+        const map = new Map(withMatches)
+        const flat = withMatches.flatMap(([pageIndex, matches]) =>
+          matches.map((_, matchIdx) => ({ pageIndex, matchIdx }))
+        )
+        setSearchMatches(map)
+        searchFlatRef.current = flat
+        setSearchMatchIdx(0)
+        onSearchInfoChange?.({ current: flat.length > 0 ? 1 : 0, total: flat.length })
+        if (flat.length > 0) scrollToPage(flat[0].pageIndex)
+      })
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [searchQuery, pages.length])
+
+  // Wire navigation to searchNavigateRef
+  useEffect(() => {
+    if (!searchNavigateRef) return
+    searchNavigateRef.current = (dir: 1|-1) => {
+      const flat = searchFlatRef.current
+      if (!flat.length) return
+      setSearchMatchIdx(prev => {
+        const next = ((prev + dir) % flat.length + flat.length) % flat.length
+        onSearchInfoChange?.({ current: next + 1, total: flat.length })
+        scrollToPage(flat[next].pageIndex)
+        return next
+      })
+    }
+  })
 
   // Load document
   useEffect(() => {
@@ -265,13 +315,18 @@ export function PdfViewer({
       <div ref={pdfViewerRef} className='flex-1 overflow-auto bg-muted relative'>
         <div className='flex flex-col items-center min-w-max'>
         <MetadataPanel metadata={metadata} fieldsToRemove={fieldsToRemove} onChange={setFieldsToRemove} />
-        {pages.map((page, i) => (
-          <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
-            selectedId={selectedId} currentHighlight={currentHighlight}
-            onRedactionClick={(id, e) => { e.stopPropagation(); onSelectionChange(id) }}
-            onMouseDown={handleMouseDown}
-            onAccept={onAccept} onIgnore={onIgnore} />
-        ))}
+        {pages.map((page, i) => {
+          const currentFlat = searchFlatRef.current[searchMatchIdx]
+          return (
+            <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
+              selectedId={selectedId} currentHighlight={currentHighlight}
+              onRedactionClick={(id, e) => { e.stopPropagation(); onSelectionChange(id) }}
+              onMouseDown={handleMouseDown}
+              onAccept={onAccept} onIgnore={onIgnore}
+              searchMatches={searchMatches.get(i)}
+              searchCurrentMatch={currentFlat?.pageIndex === i ? currentFlat.matchIdx : -1} />
+          )
+        })}
         {showRuleOverlay && selectedRedaction && (
           <RuleSelectorOverlay
             redaction={selectedRedaction}

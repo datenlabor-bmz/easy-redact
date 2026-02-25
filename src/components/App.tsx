@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2 } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { PdfViewer } from '@/components/pdf/PdfViewer'
@@ -29,6 +29,10 @@ export default function App() {
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchMatchInfo, setSearchMatchInfo] = useState({ current: 0, total: 0 })
+  const searchNavigateRef = useRef<((dir: 1|-1) => void) | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportRef = useRef<((apply: boolean) => void) | null>(null)
   const chatTriggerRef = useRef<((msg: string) => void) | null>(null)
@@ -67,7 +71,7 @@ export default function App() {
     loadChat().then(setChatMessages)
   }, [])
 
-  // Intercept Ctrl+scroll → drive PDF zoom instead of browser zoom
+  // Intercept Ctrl+scroll → drive PDF zoom; Ctrl+F → focus search
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return
@@ -75,8 +79,16 @@ export default function App() {
       const base = Math.abs(e.deltaY) < 10 ? 1.015 : 1.001
       setZoom(z => Math.min(300, Math.max(25, Math.round(z * Math.pow(base, -e.deltaY)))))
     }
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
+      }
+    }
     window.addEventListener('wheel', onWheel, { passive: false })
-    return () => { window.removeEventListener('wheel', onWheel) }
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('wheel', onWheel); window.removeEventListener('keydown', onKey) }
   }, [])
 
   // Load FOI rules when in FOI mode + jurisdiction set
@@ -326,6 +338,21 @@ export default function App() {
                     <button onClick={() => setError(null)}><X className='h-3 w-3' /></button>
                   </div>
                 )}
+                <div className='flex items-center gap-1.5 ml-3 px-2 h-7 rounded-md hover:bg-accent transition-colors'>
+                  <Search className='h-3.5 w-3.5 text-muted-foreground shrink-0' />
+                  <input ref={searchInputRef} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); searchNavigateRef.current?.(e.shiftKey ? -1 : 1) }
+                      if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur() }
+                    }}
+                    placeholder='Suchen…'
+                    className='w-28 text-xs bg-transparent focus:outline-none placeholder:text-muted-foreground' />
+                  {searchMatchInfo.total > 0 && (
+                    <span className='text-[10px] text-muted-foreground tabular-nums shrink-0'>
+                      {searchMatchInfo.current}/{searchMatchInfo.total}
+                    </span>
+                  )}
+                </div>
                 <div className='flex gap-1 ml-auto shrink-0'>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -387,7 +414,10 @@ export default function App() {
               exportRef={exportRef}
               onAccept={acceptRedaction} onIgnore={ignoreRedaction}
               foiRules={foiRules}
-              redactionMode={session.redactionMode} />
+              redactionMode={session.redactionMode}
+              searchQuery={searchQuery}
+              onSearchInfoChange={setSearchMatchInfo}
+              searchNavigateRef={searchNavigateRef} />
             </div>
           ) : (
             <div

@@ -81,11 +81,14 @@ export interface RedactionOverlayProps {
   onMouseDown: (e: React.MouseEvent<SVGSVGElement>, pageIndex: number) => void
   onAccept?: (id: string) => void
   onIgnore?: (id: string) => void
+  searchMatches?: RedactionPart[][]
+  searchCurrentMatch?: number
 }
 
 export function RedactionOverlay({
   pageIndex, pageWidth, pageHeight, pageData, redactions, selectedId,
   currentHighlight, onRedactionClick, onMouseDown, onAccept, onIgnore,
+  searchMatches, searchCurrentMatch,
 }: RedactionOverlayProps) {
   const [lastHoveredId, setLastHoveredId] = useState<string | null>(null)
   const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex && r.status !== 'ignored')
@@ -100,6 +103,16 @@ export function RedactionOverlay({
     <svg width='100%' height='100%' viewBox={`0 0 ${pageWidth} ${pageHeight}`}
       style={{ position: 'absolute', top: 0, left: 0, cursor: 'crosshair' }}
       onMouseDown={(e) => onMouseDown(e, pageIndex)}>
+
+      {/* Search highlights */}
+      {searchMatches?.map((parts, i) => parts.map((p, j) => (
+        <rect key={`s-${i}-${j}`} x={p.x} y={p.y} width={p.width} height={p.height}
+          fill={i === searchCurrentMatch ? '#2563eb' : '#60a5fa'}
+          fillOpacity={i === searchCurrentMatch ? 0.55 : 0.3}
+          stroke={i === searchCurrentMatch ? '#2563eb' : 'none'}
+          strokeWidth={i === searchCurrentMatch ? 1.5 : 0}
+          pointerEvents='none' />
+      )))}
 
       {/* Pass 1: all highlight boxes */}
       {pageRedactions.map(r => (
