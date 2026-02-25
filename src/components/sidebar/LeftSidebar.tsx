@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Check, X, LayoutGrid, List, Users, BoxSelect, Trash2, Scale } from 'lucide-react'
+import { Check, X, LayoutGrid, List, Users, BoxSelect, Trash2, Scale, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Redaction, PageData, RedactionRule, RedactionMode } from '@/types'
 import { getRedactionText } from '@/components/pdf/geometry'
 import { RuleSelector } from '@/components/RuleSelector'
@@ -66,7 +66,10 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
   foiRules?: RedactionRule[]; onRuleChange?: (rule?: RedactionRule) => void
 }) {
   const [ruleOpen, setRuleOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   if (r.status === 'ignored') return null
+
+  const TEXT_LIMIT = 120
 
   const isSuggested = r.status === 'suggested'
   const isLow = r.confidence === 'low'
@@ -91,7 +94,15 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
       <div className='flex-1 min-w-0'>
         {text ? (
           <p className={`text-xs font-mono leading-relaxed break-words whitespace-pre-wrap ${isSuggested && isLow ? 'text-muted-foreground' : ''}`}>
-            <span style={{ ...highlightStyle, padding: '1px 3px' }}>{text}</span>
+            <span style={{ ...highlightStyle, padding: '1px 3px' }}>
+              {expanded || text.length <= TEXT_LIMIT ? text : text.slice(0, TEXT_LIMIT) + '…'}
+            </span>
+            {text.length > TEXT_LIMIT && (
+              <button onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
+                className='ml-1 inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors align-middle'>
+                {expanded ? <ChevronUp className='h-3 w-3' /> : <ChevronDown className='h-3 w-3' />}
+              </button>
+            )}
           </p>
         ) : (
           <div className='flex items-center gap-1.5 text-[11px] text-muted-foreground italic'>
