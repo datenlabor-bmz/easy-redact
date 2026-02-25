@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PdfViewer } from '@/components/pdf/PdfViewer'
 import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
@@ -29,6 +30,7 @@ export default function App() {
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectMode, setSelectMode] = useState<'text' | 'freehand'>('text')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMatchInfo, setSearchMatchInfo] = useState({ current: 0, total: 0 })
   const searchNavigateRef = useRef<((dir: 1|-1) => void) | null>(null)
@@ -332,13 +334,31 @@ export default function App() {
                 <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.min(300, zoom + 25))}>
                   <Plus className='h-3.5 w-3.5' />
                 </Button>
+                <div className='w-px h-4 bg-border mx-1 shrink-0' />
+                <Tabs value={selectMode} onValueChange={v => setSelectMode(v as 'text' | 'freehand')}>
+                  <TabsList className='h-7 p-0.5 gap-0'>
+                    <Tooltip>
+                      <TooltipTrigger asChild><span className='inline-flex h-full aspect-square'>
+                        <TabsTrigger value='text' className='h-full w-full px-0'><Type className='h-3 w-3' /></TabsTrigger>
+                      </span></TooltipTrigger>
+                      <TooltipContent side='bottom'>Textauswahl</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild><span className='inline-flex h-full aspect-square'>
+                        <TabsTrigger value='freehand' className='h-full w-full px-0'><BoxSelect className='h-3 w-3' /></TabsTrigger>
+                      </span></TooltipTrigger>
+                      <TooltipContent side='bottom'>Freihandauswahl</TooltipContent>
+                    </Tooltip>
+                  </TabsList>
+                </Tabs>
+                <div className='w-px h-4 bg-border mx-1 shrink-0' />
                 {error && (
                   <div className='flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded shrink-0 ml-2'>
                     <AlertCircle className='h-3 w-3' /> {error}
                     <button onClick={() => setError(null)}><X className='h-3 w-3' /></button>
                   </div>
                 )}
-                <div className='flex items-center gap-1.5 ml-3 px-2 h-7 rounded-md hover:bg-accent transition-colors'>
+                <div className='flex items-center gap-1.5 px-2 h-7 rounded-md hover:bg-accent transition-colors'>
                   <Search className='h-3.5 w-3.5 text-muted-foreground shrink-0' />
                   <input ref={searchInputRef} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     onKeyDown={e => {
@@ -417,7 +437,8 @@ export default function App() {
               redactionMode={session.redactionMode}
               searchQuery={searchQuery}
               onSearchInfoChange={setSearchMatchInfo}
-              searchNavigateRef={searchNavigateRef} />
+              searchNavigateRef={searchNavigateRef}
+              selectMode={selectMode} />
             </div>
           ) : (
             <div

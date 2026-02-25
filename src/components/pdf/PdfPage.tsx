@@ -16,10 +16,11 @@ export interface PdfPageProps {
   onIgnore?: (id: string) => void
   searchMatches?: RedactionPart[][]
   searchCurrentMatch?: number
+  selectMode?: 'text' | 'freehand'
 }
 
 export function PdfPage({ pageIndex, pageData, zoom, redactions, selectedId, currentHighlight,
-  onRedactionClick, onMouseDown, onAccept, onIgnore, searchMatches, searchCurrentMatch }: PdfPageProps) {
+  onRedactionClick, onMouseDown, onAccept, onIgnore, searchMatches, searchCurrentMatch, selectMode }: PdfPageProps) {
   const [, , pw, ph] = pageData.bounds
   return (
     <div className='flex flex-col items-center'>
@@ -30,7 +31,8 @@ export function PdfPage({ pageIndex, pageData, zoom, redactions, selectedId, cur
           redactions={redactions} selectedId={selectedId} currentHighlight={currentHighlight}
           onRedactionClick={onRedactionClick} onMouseDown={onMouseDown}
           onAccept={onAccept} onIgnore={onIgnore}
-          searchMatches={searchMatches} searchCurrentMatch={searchCurrentMatch} />
+          searchMatches={searchMatches} searchCurrentMatch={searchCurrentMatch}
+          selectMode={selectMode} />
       </div>
       <p className='text-xs text-muted-foreground mb-3'>Seite {pageIndex + 1}</p>
     </div>

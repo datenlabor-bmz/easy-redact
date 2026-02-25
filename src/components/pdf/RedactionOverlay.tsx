@@ -83,12 +83,13 @@ export interface RedactionOverlayProps {
   onIgnore?: (id: string) => void
   searchMatches?: RedactionPart[][]
   searchCurrentMatch?: number
+  selectMode?: 'text' | 'freehand'
 }
 
 export function RedactionOverlay({
   pageIndex, pageWidth, pageHeight, pageData, redactions, selectedId,
   currentHighlight, onRedactionClick, onMouseDown, onAccept, onIgnore,
-  searchMatches, searchCurrentMatch,
+  searchMatches, searchCurrentMatch, selectMode,
 }: RedactionOverlayProps) {
   const [lastHoveredId, setLastHoveredId] = useState<string | null>(null)
   const pageRedactions = redactions.filter(r => r.pageIndex === pageIndex && r.status !== 'ignored')
@@ -101,7 +102,7 @@ export function RedactionOverlay({
 
   return (
     <svg width='100%' height='100%' viewBox={`0 0 ${pageWidth} ${pageHeight}`}
-      style={{ position: 'absolute', top: 0, left: 0, cursor: 'crosshair' }}
+      style={{ position: 'absolute', top: 0, left: 0, cursor: selectMode === 'text' ? 'text' : 'crosshair' }}
       onMouseDown={(e) => onMouseDown(e, pageIndex)}>
 
       {/* Search highlights */}

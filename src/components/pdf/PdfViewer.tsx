@@ -36,6 +36,7 @@ export interface PdfViewerProps {
   searchQuery?: string
   onSearchInfoChange?: (info: { current: number, total: number }) => void
   searchNavigateRef?: React.MutableRefObject<((dir: 1|-1) => void) | null>
+  selectMode?: 'text' | 'freehand'
 }
 
 export function PdfViewer({
@@ -45,7 +46,7 @@ export function PdfViewer({
   onPageTextExtracted, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
   onSuggestionsApplied, exportRef,
   onAccept, onIgnore, foiRules, redactionMode,
-  searchQuery, onSearchInfoChange, searchNavigateRef,
+  searchQuery, onSearchInfoChange, searchNavigateRef, selectMode = 'text',
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
     getPageContent, getPageBounds, getPageWords, getMetadata, getRedactedDocument, searchPage } = useMupdf()
@@ -247,11 +248,13 @@ export function PdfViewer({
     const page = pages[pageIndex]
     const [, , pw, ph] = page.bounds
     const rect = e.currentTarget.getBoundingClientRect()
-    dragRef.current = { rect, pw, ph, pageIndex }
     const x = (e.clientX - rect.left) * (pw / rect.width)
     const y = (e.clientY - rect.top) * (ph / rect.height)
     const startWord = page.words.find((w: WordData) => x >= w.bbox.x0 && x <= w.bbox.x1 && y >= w.bbox.y0 && y <= w.bbox.y1) ?? null
-    setCurrentHighlight({ pageIndex, type: startWord ? 'text' : 'freehand', startX: x, startY: y, endX: x, endY: y, startWord, endWord: startWord })
+    if (selectMode === 'text' && !startWord) return
+    dragRef.current = { rect, pw, ph, pageIndex }
+    const type = selectMode === 'freehand' ? 'freehand' : (startWord ? 'text' : 'freehand')
+    setCurrentHighlight({ pageIndex, type, startX: x, startY: y, endX: x, endY: y, startWord, endWord: startWord })
   }
 
   useEffect(() => {
@@ -324,7 +327,8 @@ export function PdfViewer({
               onMouseDown={handleMouseDown}
               onAccept={onAccept} onIgnore={onIgnore}
               searchMatches={searchMatches.get(i)}
-              searchCurrentMatch={currentFlat?.pageIndex === i ? currentFlat.matchIdx : -1} />
+              searchCurrentMatch={currentFlat?.pageIndex === i ? currentFlat.matchIdx : -1}
+              selectMode={selectMode} />
           )
         })}
         {showRuleOverlay && selectedRedaction && (
