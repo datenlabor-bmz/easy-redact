@@ -83,11 +83,16 @@ export function useMupdf() {
     return mupdfWorker.current!.getPageCount()
   }, [])
 
-  const getRedactedDocument = useCallback((annotations: any[], applyRedactions: boolean = true) => {
+  const getMetadata = useCallback(() => {
+    if (!document.current) throw new Error('Document not loaded')
+    return mupdfWorker.current!.getMetadata()
+  }, [])
+
+  const getRedactedDocument = useCallback((annotations: any[], applyRedactions: boolean = true, fieldsToRemove: string[] = []) => {
     if (!document.current) {
       throw new Error('Document not loaded')
     }
-    return mupdfWorker.current!.getRedactedDocument(annotations, applyRedactions)
+    return mupdfWorker.current!.getRedactedDocument(annotations, applyRedactions, fieldsToRemove)
   }, [])
 
   return {
@@ -99,6 +104,7 @@ export function useMupdf() {
     getPageContent,
     getPageBounds,
     getPageWords,
+    getMetadata,
     getRedactedDocument,
     searchPage
   }

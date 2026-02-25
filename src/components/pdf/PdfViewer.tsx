@@ -6,6 +6,7 @@ import { useMupdf } from './useMupdf'
 import { finalizeHighlight, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
 import { PdfPage } from './PdfPage'
 import { RuleSelectorOverlay } from './RuleSelectorOverlay'
+import { MetadataPanel } from './MetadataPanel'
 import { Loader2 } from 'lucide-react'
 
 export interface PdfViewerProps {
@@ -43,11 +44,13 @@ export function PdfViewer({
   onAccept, onIgnore, foiRules, redactionMode,
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
-    getPageContent, getPageBounds, getPageWords, getRedactedDocument, searchPage } = useMupdf()
+    getPageContent, getPageBounds, getPageWords, getMetadata, getRedactedDocument, searchPage } = useMupdf()
 
   const [pages, setPages] = useState<PageData[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [currentHighlight, setCurrentHighlight] = useState<HighlightInProgress | null>(null)
+  const [metadata, setMetadata] = useState<Record<string, string>>({})
+  const [fieldsToRemove, setFieldsToRemove] = useState<Set<string>>(new Set())
   const pdfViewerRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ rect: DOMRect; pw: number; ph: number; pageIndex: number } | null>(null)
   const currentHighlightRef = useRef<HighlightInProgress | null>(null)
@@ -59,6 +62,8 @@ export function PdfViewer({
 
     const init = async () => {
       setPages([])
+      setMetadata({})
+      setFieldsToRemove(new Set())
       setIsLoading(true)
       const buf = await file.arrayBuffer()
       const existing = await loadDocumentAndAnnotations(buf)
@@ -86,6 +91,9 @@ export function PdfViewer({
       }
       setPages(stack)
       onPagesLoaded?.(stack)
+      const meta = await getMetadata()
+      setMetadata(meta)
+      setFieldsToRemove(new Set(Object.keys(meta)))
       setIsLoading(false)
     }
     init()
@@ -218,7 +226,7 @@ export function PdfViewer({
 
   const handleExport = async (apply: boolean) => {
     const annotations = redactionsToAnnotations(redactions)
-    const blob = await getRedactedDocument(annotations, apply)
+    const blob = await getRedactedDocument(annotations, apply, [...fieldsToRemove])
     onExport(blob, apply)
   }
 
@@ -239,6 +247,7 @@ export function PdfViewer({
     <div className='flex flex-col h-full'>
       {/* Pages */}
       <div ref={pdfViewerRef} className='flex-1 overflow-auto flex flex-col items-center bg-muted relative'>
+        <MetadataPanel metadata={metadata} fieldsToRemove={fieldsToRemove} onChange={setFieldsToRemove} />
         {pages.map((page, i) => (
           <PdfPage key={i} pageIndex={i} pageData={page} zoom={zoom} redactions={redactions}
             selectedId={selectedId} currentHighlight={currentHighlight}

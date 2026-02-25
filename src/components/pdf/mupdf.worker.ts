@@ -166,7 +166,19 @@ export class MupdfWorker {
     return words
   }
 
-  getRedactedDocument(annotations: any[], applyRedactions: boolean = true) {
+  getMetadata(): Record<string, string> {
+    if (!this.pdfdocument) throw new Error('Document not loaded')
+    const result: Record<string, string> = {}
+    const info = this.pdfdocument.getTrailer().get('Info')
+    if (info && !info.isNull() && info.isDictionary()) {
+      info.forEach((val: any, key: string) => {
+        if (typeof key === 'string' && val.isString()) result[key] = val.asString()
+      })
+    }
+    return result
+  }
+
+  getRedactedDocument(annotations: any[], applyRedactions: boolean = true, fieldsToRemove: string[] = []) {
     if (!this.pdfdocument) throw new Error('Document not loaded')
 
     const doc = mupdf.Document.openDocument(
@@ -197,7 +209,18 @@ export class MupdfWorker {
     if (applyRedactions) {
       doc.bake()
     }
-    const output = doc.saveToBuffer()
+
+    if (fieldsToRemove.length) {
+      try {
+        const info = doc.getTrailer().get('Info')
+        if (info && !info.isNull() && info.isDictionary()) {
+          for (const key of fieldsToRemove) info.delete(key)
+        }
+      } catch {}
+      try { doc.getTrailer().get('Root').delete('Metadata') } catch {}
+    }
+
+    const output = doc.saveToBuffer(fieldsToRemove.length ? 'garbage,regenerate-id' : '')
     const pdfBlob = new Blob([output.asUint8Array() as unknown as BlobPart], {
       type: 'application/pdf'
     })
