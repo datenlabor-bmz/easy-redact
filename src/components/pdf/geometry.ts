@@ -72,8 +72,10 @@ export function redactionsToAnnotations(redactions: Redaction[]) {
   }))
 }
 
-const overlaps = (w: { bbox: { x0: number; y0: number; x1: number; y1: number } }, r: { x: number; y: number; width: number; height: number }) =>
-  !(w.bbox.x1 < r.x || w.bbox.x0 > r.x + r.width || w.bbox.y1 < r.y || w.bbox.y0 > r.y + r.height)
+const overlaps = (w: { bbox: { x0: number; y0: number; x1: number; y1: number } }, r: { x: number; y: number; width: number; height: number }) => {
+  const cy = (w.bbox.y0 + w.bbox.y1) / 2
+  return w.bbox.x1 >= r.x && w.bbox.x0 <= r.x + r.width && cy >= r.y && cy <= r.y + r.height
+}
 
 export function getRedactionText(redaction: Redaction, page: PageData): string {
   const words = [...page.words].sort((a, b) => {
