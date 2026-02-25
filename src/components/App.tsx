@@ -197,10 +197,31 @@ export default function App() {
     })()
   }, [session?.documents])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault(); setIsDragging(false)
-    handleFiles(e.dataTransfer.files)
+  const handleDrop = useCallback((e: React.DragEvent | DragEvent) => {
+    e.preventDefault(); setIsDragging(false); dragCountRef.current = 0
+    handleFiles((e as React.DragEvent).dataTransfer?.files ?? (e as DragEvent).dataTransfer?.files ?? null)
   }, [handleFiles])
+
+  const dragCountRef = useRef(0)
+  useEffect(() => {
+    const onEnter = (e: DragEvent) => {
+      if (!e.dataTransfer?.types.includes('Files')) return
+      dragCountRef.current++; setIsDragging(true)
+    }
+    const onLeave = () => { if (--dragCountRef.current <= 0) { dragCountRef.current = 0; setIsDragging(false) } }
+    const onOver = (e: DragEvent) => { if (e.dataTransfer?.types.includes('Files')) e.preventDefault() }
+    const onDrop = (e: DragEvent) => { e.preventDefault(); handleDrop(e); dragCountRef.current = 0; setIsDragging(false) }
+    window.addEventListener('dragenter', onEnter)
+    window.addEventListener('dragleave', onLeave)
+    window.addEventListener('dragover', onOver)
+    window.addEventListener('drop', onDrop)
+    return () => {
+      window.removeEventListener('dragenter', onEnter)
+      window.removeEventListener('dragleave', onLeave)
+      window.removeEventListener('dragover', onOver)
+      window.removeEventListener('drop', onDrop)
+    }
+  }, [handleDrop])
 
   const sessionRef = useRef<Session | null>(null)
   sessionRef.current = session
@@ -322,7 +343,7 @@ export default function App() {
           className='w-px shrink-0 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors z-10' />
 
         {/* Center — toolbar header + PDF viewer or upload prompt */}
-        <div className='flex-1 min-w-0 flex flex-col overflow-hidden'>
+        <div className='flex-1 min-w-0 flex flex-col overflow-hidden relative'>
           {/* Header: zoom left, export right — compact, no wrapping */}
           <div className='shrink-0 flex items-center gap-1 px-2 border-b bg-muted/50 h-11'>
             {activeFile && (
@@ -442,16 +463,20 @@ export default function App() {
             </div>
           ) : (
             <div
-              className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}
-              onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}>
+              className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}>
               <Upload className='h-10 w-10 text-muted-foreground/40' />
               <div className='text-center'>
                 <p className='font-medium text-sm'>PDF oder DOCX hochladen</p>
                 <p className='text-xs text-muted-foreground mt-1'>Drag & Drop oder klicken zum Auswählen</p>
               </div>
               <Button onClick={() => fileInputRef.current?.click()}>Datei auswählen</Button>
+            </div>
+          )}
+          {/* Drop overlay when a document is already open */}
+          {activeFile && isDragging && (
+            <div className='absolute inset-0 z-50 m-3 rounded-2xl border-2 border-dashed border-primary bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 pointer-events-none'>
+              <Upload className='h-10 w-10 text-primary/60' />
+              <p className='font-medium text-sm text-primary'>PDF hier ablegen</p>
             </div>
           )}
         </div>
