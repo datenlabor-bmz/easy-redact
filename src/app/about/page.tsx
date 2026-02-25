@@ -278,16 +278,10 @@ export default function AboutPage() {
           EasyRedact kombiniert einen intelligenten KI-Assistenten mit einem PDF-Viewer —
           für Schwärzungen nach Datenschutz- und Informationsfreiheitsrecht.
         </p>
-        <div className='flex items-center gap-3 flex-wrap justify-center'>
-          <Link href='/app'
-            className='flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors'>
-            App öffnen <ArrowRight className='h-4 w-4' />
-          </Link>
-          <a href='#features'
-            className='flex items-center gap-2 border border-gray-200 px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors text-gray-700'>
-            Features entdecken
-          </a>
-        </div>
+        <Link href='/app'
+          className='flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors'>
+          App öffnen <ArrowRight className='h-4 w-4' />
+        </Link>
       </section>
 
       {/* Features */}
