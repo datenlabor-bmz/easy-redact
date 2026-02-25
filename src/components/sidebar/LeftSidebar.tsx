@@ -150,9 +150,9 @@ function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, 
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
   foiRules?: RedactionRule[]; onRuleChange?: (id: string, rule?: RedactionRule) => void
 }) {
-  const sorted = [...redactions].sort((a, b) =>
-    a.pageIndex !== b.pageIndex ? a.pageIndex - b.pageIndex : (a.parts[0]?.y ?? 0) - (b.parts[0]?.y ?? 0)
-  )
+  const sorted = [...redactions]
+    .filter(r => r.status !== 'ignored')
+    .sort((a, b) => a.pageIndex !== b.pageIndex ? a.pageIndex - b.pageIndex : (a.parts[0]?.y ?? 0) - (b.parts[0]?.y ?? 0))
 
   if (!sorted.length) return <p className='text-xs text-muted-foreground p-4 text-center'>Keine Schwärzungen vorhanden</p>
 
@@ -204,8 +204,10 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
 
   return (
     <div>
-      {[...groups.entries()].map(([group, persons]) => (
-        <div key={group}>
+      {[...groups.entries()].map(([group, persons]) => {
+        const hasVisible = [...persons.values()].some(rs => rs.some(r => r.status !== 'ignored'))
+        if (!hasVisible) return null
+        return (<div key={group}>
           <div className='group/cat pl-3 pr-5 py-1.5 bg-card text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center justify-between sticky top-0 z-10'>
             <span>{group}</span>
             <div className='flex gap-1 opacity-0 group-hover/cat:opacity-100 transition-opacity'>
@@ -249,7 +251,8 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
             </div>
           )})}
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
