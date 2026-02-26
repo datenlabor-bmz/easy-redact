@@ -145,7 +145,7 @@ function MockPrivacy() {
   const options = [
     { id: 'cloud',   label: 'Cloud-KI',          sub: 'Azure OpenAI — keine Data Retention', active: true,  muted: false },
     { id: 'local',   label: 'Lokales LLM',       sub: 'Ollama-kompatibler Endpunkt',     active: false, muted: false },
-    { id: 'spacy',   label: 'spaCy NLP',         sub: 'Docker only',                    active: false, muted: true },
+    { id: 'spacy',   label: 'Lokale NLP',         sub: 'Ohne KI-Modell',                 active: false, muted: true },
     { id: 'browser', label: 'Browser NLP',       sub: 'In-Browser, vollständig offline', active: false, muted: true },
   ]
   return (

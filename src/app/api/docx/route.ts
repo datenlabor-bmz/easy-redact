@@ -9,7 +9,7 @@ const LIBREOFFICE = process.env.LIBREOFFICE_PATH
 export async function POST(req: Request) {
   if (!LIBREOFFICE) {
     return new Response(
-      JSON.stringify({ error: 'DOCX-Konvertierung ist nur in der Docker-Umgebung verfügbar. Bitte nutzen Sie die Docker-Installation für diese Funktion.' }),
+      JSON.stringify({ error: 'DOCX conversion is not available. LibreOffice is not configured (set LIBREOFFICE_PATH).' }),
       { status: 501, headers: { 'Content-Type': 'application/json' } }
     )
   }
