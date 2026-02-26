@@ -119,7 +119,8 @@
     "redactTooltip": "Текст удалён необратимо — готово к публикации",
     "loading": "Загрузка…",
     "about": "О EasyRedact",
-    "docxError": "Ошибка конвертации DOCX"
+    "docxError": "Ошибка конвертации DOCX",
+    "converting": "Конвертация DOCX в PDF…"
   },
   "About": {
     "toApp": "Открыть приложение",

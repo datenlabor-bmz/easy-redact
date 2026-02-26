@@ -119,7 +119,8 @@
     "redactTooltip": "تمت إزالة النص بشكل لا رجعة فيه — جاهز للنشر",
     "loading": "جارٍ التحميل…",
     "about": "حول EasyRedact",
-    "docxError": "فشل تحويل DOCX"
+    "docxError": "فشل تحويل DOCX",
+    "converting": "جارٍ تحويل DOCX إلى PDF…"
   },
   "About": {
     "toApp": "فتح التطبيق",

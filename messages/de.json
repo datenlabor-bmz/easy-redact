@@ -119,7 +119,8 @@
     "redactTooltip": "Text unwiderruflich entfernt — bereit zur Veröffentlichung",
     "loading": "Laden…",
     "about": "Über EasyRedact",
-    "docxError": "DOCX-Konvertierung fehlgeschlagen"
+    "docxError": "DOCX-Konvertierung fehlgeschlagen",
+    "converting": "DOCX wird konvertiert…"
   },
   "About": {
     "toApp": "Zur App",

@@ -119,7 +119,8 @@
     "redactTooltip": "Texto eliminado de forma irreversible — listo para publicación",
     "loading": "Cargando…",
     "about": "Acerca de EasyRedact",
-    "docxError": "Error al convertir DOCX"
+    "docxError": "Error al convertir DOCX",
+    "converting": "Convirtiendo DOCX a PDF…"
   },
   "About": {
     "toApp": "Abrir app",

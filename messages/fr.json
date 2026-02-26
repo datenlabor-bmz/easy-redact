@@ -119,7 +119,8 @@
     "redactTooltip": "Texte définitivement supprimé — prêt pour la publication",
     "loading": "Chargement…",
     "about": "À propos d'EasyRedact",
-    "docxError": "Échec de la conversion DOCX"
+    "docxError": "Échec de la conversion DOCX",
+    "converting": "Conversion DOCX en PDF…"
   },
   "About": {
     "toApp": "Ouvrir l'app",

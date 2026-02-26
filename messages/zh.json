@@ -119,7 +119,8 @@
     "redactTooltip": "文本已不可逆删除——可供发布",
     "loading": "加载中…",
     "about": "关于EasyRedact",
-    "docxError": "DOCX转换失败"
+    "docxError": "DOCX转换失败",
+    "converting": "正在将DOCX转换为PDF…"
   },
   "About": {
     "toApp": "打开应用",

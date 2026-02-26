@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from '@/lib/navigation'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
-import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -35,6 +35,7 @@ export default function App() {
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [converting, setConverting] = useState(false)
   const [selectMode, setSelectMode] = useState<'text' | 'freehand'>('text')
   const [redactConfirmOpen, setRedactConfirmOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -152,16 +153,19 @@ export default function App() {
 
     for (const f of arr) {
       if (f.name.endsWith('.docx') || f.type.includes('wordprocessingml')) {
-        const form = new FormData()
-        form.append('file', f)
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/docx`, { method: 'POST', body: form })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setError(data.error ?? t('docxError'))
-          continue
-        }
-        const blob = await res.blob()
-        pdfs.push(new File([blob], f.name.replace('.docx', '.pdf'), { type: 'application/pdf' }))
+        setConverting(true)
+        try {
+          const form = new FormData()
+          form.append('file', f)
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/docx`, { method: 'POST', body: form })
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}))
+            setError(data.error ?? t('docxError'))
+            continue
+          }
+          const blob = await res.blob()
+          pdfs.push(new File([blob], f.name.replace('.docx', '.pdf'), { type: 'application/pdf' }))
+        } finally { setConverting(false) }
       } else if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) {
         pdfs.push(f)
       }
@@ -471,12 +475,21 @@ export default function App() {
           ) : (
             <div
               className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}>
-              <Upload className='h-10 w-10 text-muted-foreground/40' />
-              <div className='text-center'>
-                <p className='font-medium text-sm'>{t('uploadTitle')}</p>
-                <p className='text-xs text-muted-foreground mt-1'>{t('uploadHint')}</p>
-              </div>
-              <Button onClick={() => fileInputRef.current?.click()}>{t('selectFile')}</Button>
+              {converting ? (
+                <>
+                  <Loader2 className='h-10 w-10 text-primary animate-spin' />
+                  <p className='text-sm text-muted-foreground'>{t('converting')}</p>
+                </>
+              ) : (
+                <>
+                  <Upload className='h-10 w-10 text-muted-foreground/40' />
+                  <div className='text-center'>
+                    <p className='font-medium text-sm'>{t('uploadTitle')}</p>
+                    <p className='text-xs text-muted-foreground mt-1'>{t('uploadHint')}</p>
+                  </div>
+                  <Button onClick={() => fileInputRef.current?.click()}>{t('selectFile')}</Button>
+                </>
+              )}
             </div>
           )}
           {/* Drop overlay when a document is already open */}

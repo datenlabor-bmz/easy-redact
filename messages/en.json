@@ -119,7 +119,8 @@
     "redactTooltip": "Text irreversibly removed — ready for publication",
     "loading": "Loading…",
     "about": "About EasyRedact",
-    "docxError": "DOCX conversion failed"
+    "docxError": "DOCX conversion failed",
+    "converting": "Converting DOCX to PDF…"
   },
   "About": {
     "toApp": "Open app",
