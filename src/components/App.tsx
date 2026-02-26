@@ -154,7 +154,7 @@ export default function App() {
       if (f.name.endsWith('.docx') || f.type.includes('wordprocessingml')) {
         const form = new FormData()
         form.append('file', f)
-        const res = await fetch('/api/docx', { method: 'POST', body: form })
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/docx`, { method: 'POST', body: form })
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
           setError(data.error ?? t('docxError'))

@@ -30,7 +30,10 @@ const securityHeaders = [
   },
 ]
 
+const basePath = process.env.BASE_PATH || ''
+
 const nextConfig: NextConfig = {
+  ...(basePath ? { basePath } : {}),
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },

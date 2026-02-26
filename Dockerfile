@@ -22,6 +22,11 @@ RUN npm ci
 # Copy source
 COPY . .
 
+# Subpath support (e.g. /easyredact for datenlabor.bmz.bund.de/easyredact/)
+ARG BASE_PATH=""
+ENV BASE_PATH=$BASE_PATH
+ENV NEXT_PUBLIC_BASE_PATH=$BASE_PATH
+
 # Build Next.js
 RUN npm run build
 

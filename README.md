@@ -84,6 +84,16 @@ docker run -p 3000:3000 --env-file .env.local easy-redact
 
 DOCX upload and spaCy NLP are only available in the Docker build; they return HTTP 501 otherwise.
 
+### Subpath deployment
+
+To serve the app under a subpath (e.g. `datenlabor.bmz.bund.de/easyredact/`), pass `BASE_PATH` at build time:
+
+```bash
+docker build --build-arg BASE_PATH=/easyredact -t easy-redact .
+```
+
+This sets the Next.js `basePath`, which rewrites all routes, assets, and API endpoints. The nginx reverse proxy should forward requests to `/easyredact/...` as-is — do not strip the prefix.
+
 ## Tech Stack
 
 - **Next.js 15** (App Router) + **React 19**
