@@ -153,6 +153,28 @@
     "featureExportTitle": "Exportar",
     "featureExportDesc": "Exportación de vista previa con resaltados visibles para revisión interna. Exportación final con texto eliminado de forma irreversible — listo para publicación."
   },
+  "Onboarding": {
+    "title": "Antes de empezar",
+    "subtitle": "Lea estas indicaciones antes de usar EasyRedact.",
+    "reviewTitle": "Revise siempre las sugerencias de la IA",
+    "reviewDesc": "La IA puede pasar por alto fragmentos o señalar otros de forma incorrecta. Usted es el responsable de revisar cada propuesta antes de exportar el documento.",
+    "modesTitle": "Cómo se procesan sus documentos",
+    "cloudLabel": "IA en la nube (Azure OpenAI)",
+    "cloudDesc": "El texto se envía a Microsoft Azure (UE, Suecia) con su consentimiento expreso. Cumple el RGPD: sin retención de datos ni entrenamiento de modelos.",
+    "localLabel": "IA local (en su servidor)",
+    "localDesc": "El texto nunca sale de la infraestructura de su organización. Recomendado para documentos especialmente sensibles.",
+    "classifiedTitle": "Documentos confidenciales o clasificados",
+    "classifiedDesc": "Para documentos confidenciales o con restricciones de difusión, no use la IA en la nube. Opte por la IA local o realice las redacciones manualmente.",
+    "acknowledgement": "He leído y entendido estas indicaciones y asumo la responsabilidad personal de revisar todas las propuestas de redacción.",
+    "proceed": "Empezar"
+  },
+  "RedactConfirm": {
+    "title": "Redactar y descargar",
+    "detail": "En el PDF descargado, todos los fragmentos marcados quedarán redactados de forma segura: los textos e imágenes subyacentes se eliminarán permanentemente.",
+    "description": "Usted es responsable de la integridad y exactitud de las redacciones. No confíe ciegamente en la IA — revise todas las propuestas antes de descargar.",
+    "cancel": "Seguir editando",
+    "confirm": "Descargar PDF redactado"
+  },
   "MetadataPanel": {
     "heading": "Metadatos",
     "remove": "Eliminar",

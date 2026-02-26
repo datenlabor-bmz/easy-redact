@@ -153,6 +153,28 @@
     "featureExportTitle": "导出",
     "featureExportDesc": "带可见标记的预览导出，供内部审查；最终导出含不可逆删除文本，可直接发布。"
   },
+  "Onboarding": {
+    "title": "开始之前",
+    "subtitle": "使用 EasyRedact 前，请阅读以下注意事项。",
+    "reviewTitle": "务必亲自核查 AI 建议",
+    "reviewDesc": "AI 可能遗漏某些内容，也可能错误标记无需处理的段落。导出前，您需对每条建议进行核查，并对结果承担个人责任。",
+    "modesTitle": "文档处理方式",
+    "cloudLabel": "云端 AI（Azure OpenAI）",
+    "cloudDesc": "在您明确同意后，文档文本将发送至 Microsoft Azure（欧盟，瑞典）。符合 GDPR 要求——数据不被保留，不用于模型训练。",
+    "localLabel": "本地 AI（您的服务器）",
+    "localDesc": "文档文本始终保留在您组织的基础设施内，不外传。适用于处理高度敏感的文件。",
+    "classifiedTitle": "保密或受限文件",
+    "classifiedDesc": "处理保密文件或传阅范围受限的文件时，请勿使用云端 AI，应使用本地 AI 或手动涂黑。",
+    "acknowledgement": "我已阅读并理解上述须知，并承担对所有涂黑建议进行人工核查的个人责任。",
+    "proceed": "开始使用"
+  },
+  "RedactConfirm": {
+    "title": "涂黑并下载",
+    "detail": "下载的 PDF 中，所有标记段落将被安全涂黑，其下方的文字和图像将被永久移除。",
+    "description": "您须对涂黑内容的完整性和准确性负责。请勿盲目依赖 AI，下载前务必核查所有建议。",
+    "cancel": "继续编辑",
+    "confirm": "下载涂黑版 PDF"
+  },
   "MetadataPanel": {
     "heading": "元数据",
     "remove": "移除",

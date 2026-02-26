@@ -153,6 +153,28 @@
     "featureExportTitle": "Export",
     "featureExportDesc": "Vorschau-Export mit sichtbaren Markierungen zur internen Prüfung. Finaler Export mit unwiderruflich entferntem Text — bereit zur Veröffentlichung."
   },
+  "Onboarding": {
+    "title": "Bevor Sie beginnen",
+    "subtitle": "Bitte lesen Sie diese Hinweise, bevor Sie EasyRedact verwenden.",
+    "reviewTitle": "KI-Vorschläge stets selbst prüfen",
+    "reviewDesc": "Die KI kann Schwärzungen übersehen oder falsche Vorschläge machen. Sie tragen die persönliche Verantwortung für die Prüfung aller Vorschläge vor dem Export.",
+    "modesTitle": "So werden Ihre Dokumente verarbeitet",
+    "cloudLabel": "Cloud-KI (Azure OpenAI)",
+    "cloudDesc": "Der Dokumenttext wird nach Ihrer ausdrücklichen Einwilligung an Microsoft Azure (EU, Schweden) übermittelt. DSGVO-konform – keine Datenspeicherung, kein Modelltraining.",
+    "localLabel": "Lokale KI (auf Ihrem Server)",
+    "localDesc": "Der Dokumenttext verlässt die Infrastruktur Ihrer Organisation nicht. Empfohlen für besonders schutzbedürftige Dokumente.",
+    "classifiedTitle": "Eingestufte Dokumente (VS-NfD und höher)",
+    "classifiedDesc": "Für als VS-NfD oder höher eingestufte Dokumente darf die Cloud-KI nicht verwendet werden. Nutzen Sie die lokale KI oder nehmen Sie Schwärzungen manuell vor.",
+    "acknowledgement": "Ich habe die Hinweise zur Kenntnis genommen und übernehme die persönliche Verantwortung für die Prüfung aller Schwärzungsvorschläge.",
+    "proceed": "Loslegen"
+  },
+  "RedactConfirm": {
+    "title": "Schwärzen und herunterladen",
+    "detail": "Im heruntergeladenen PDF werden alle zur Schwärzung markierten Stellen sicher geschwärzt und darunterliegende Texte und Bilder entfernt.",
+    "description": "Sie sind verantwortlich für die Vollständigkeit und Korrektheit der Schwärzungen. Verlassen Sie sich nicht blind auf die KI, und überprüfen Sie die Vorschläge.",
+    "cancel": "Weiter bearbeiten",
+    "confirm": "Geschwärztes PDF herunterladen"
+  },
   "MetadataPanel": {
     "heading": "Metadaten",
     "remove": "Entfernen",

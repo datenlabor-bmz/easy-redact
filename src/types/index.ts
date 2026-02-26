@@ -134,6 +134,7 @@ export interface Session {
   consent: ConsentMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
+  onboardingAccepted?: boolean
   modelSettings: {
     cloudDeployment: string
     localBase: string

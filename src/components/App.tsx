@@ -16,6 +16,8 @@ import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, delet
 import { generateUUID } from '@/components/pdf/geometry'
 import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
+import { OnboardingModal } from '@/components/OnboardingModal'
+import { RedactConfirmDialog } from '@/components/RedactConfirmDialog'
 
 export default function App() {
   const t = useTranslations('App')
@@ -34,6 +36,7 @@ export default function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectMode, setSelectMode] = useState<'text' | 'freehand'>('text')
+  const [redactConfirmOpen, setRedactConfirmOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMatchInfo, setSearchMatchInfo] = useState({ current: 0, total: 0 })
   const searchNavigateRef = useRef<((dir: 1|-1) => void) | null>(null)
@@ -411,7 +414,7 @@ export default function App() {
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(true)}>
+                      <Button size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => setRedactConfirmOpen(true)}>
                         <FileLock2 className='h-3 w-3' /> {t('redact')}
                       </Button>
                     </TooltipTrigger>
@@ -522,6 +525,17 @@ export default function App() {
 
       <input ref={fileInputRef} type='file' accept='.pdf,.docx,application/pdf' multiple className='hidden'
         onChange={e => e.target.files && handleFiles(e.target.files)} />
+
+      <OnboardingModal
+        open={!session.onboardingAccepted}
+        onAccept={() => updateSession({ onboardingAccepted: true })}
+      />
+
+      <RedactConfirmDialog
+        open={redactConfirmOpen}
+        onConfirm={() => { setRedactConfirmOpen(false); exportRef.current?.(true) }}
+        onCancel={() => setRedactConfirmOpen(false)}
+      />
     </div>
   )
 }

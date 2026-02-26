@@ -153,6 +153,28 @@
     "featureExportTitle": "Export",
     "featureExportDesc": "Export de prévisualisation avec surlignages visibles pour la révision interne. Export final avec texte définitivement supprimé — prêt pour la publication."
   },
+  "Onboarding": {
+    "title": "Avant de commencer",
+    "subtitle": "Prenez un moment pour lire ces informations avant d'utiliser EasyRedact.",
+    "reviewTitle": "Vérifiez toujours les suggestions de l'IA",
+    "reviewDesc": "L'IA peut manquer certains passages ou en signaler d'incorrects. Vous êtes personnellement responsable de la vérification de chaque suggestion avant tout export.",
+    "modesTitle": "Traitement de vos documents",
+    "cloudLabel": "IA cloud (Azure OpenAI)",
+    "cloudDesc": "Le texte est transmis à Microsoft Azure (UE, Suède) après votre accord explicite. Conforme au RGPD — aucune conservation des données, aucun entraînement de modèle.",
+    "localLabel": "IA locale (sur votre serveur)",
+    "localDesc": "Le texte ne quitte jamais l'infrastructure de votre organisation. Recommandé pour les documents particulièrement sensibles.",
+    "classifiedTitle": "Documents sensibles ou confidentiels",
+    "classifiedDesc": "Pour les documents confidentiels ou à diffusion restreinte, n'utilisez pas l'IA cloud. Privilégiez l'IA locale ou le caviardage manuel.",
+    "acknowledgement": "J'ai lu et compris ces informations et j'accepte la responsabilité personnelle de vérifier l'ensemble des suggestions de caviardage.",
+    "proceed": "Commencer"
+  },
+  "RedactConfirm": {
+    "title": "Caviarder et télécharger",
+    "detail": "Dans le PDF téléchargé, tous les passages marqués seront caviardés de manière sécurisée — les textes et images sous-jacents seront définitivement supprimés.",
+    "description": "Vous êtes responsable de l'exhaustivité et de l'exactitude des caviardages. Ne vous fiez pas aveuglément à l'IA — vérifiez chaque suggestion avant de télécharger.",
+    "cancel": "Continuer à éditer",
+    "confirm": "Télécharger le PDF caviarder"
+  },
   "MetadataPanel": {
     "heading": "Métadonnées",
     "remove": "Supprimer",

@@ -153,6 +153,28 @@
     "featureExportTitle": "Export",
     "featureExportDesc": "Preview export with visible highlights for internal review. Final export with irreversibly removed text — ready for publication."
   },
+  "Onboarding": {
+    "title": "Before you start",
+    "subtitle": "Please take a moment to read these notices before using EasyRedact.",
+    "reviewTitle": "Always review AI suggestions yourself",
+    "reviewDesc": "The AI can miss redactions or flag incorrect passages. You are personally responsible for checking every suggestion before exporting.",
+    "modesTitle": "How your documents are processed",
+    "cloudLabel": "Cloud AI (Azure OpenAI)",
+    "cloudDesc": "Document text is sent to Microsoft Azure (EU, Sweden) after your explicit consent. GDPR-compliant — no data retention, no model training.",
+    "localLabel": "Local AI (on your server)",
+    "localDesc": "Document text never leaves your organisation's infrastructure. Recommended for particularly sensitive material.",
+    "classifiedTitle": "Classified documents",
+    "classifiedDesc": "For classified or otherwise sensitive documents, do not use Cloud AI. Use Local AI or redact manually.",
+    "acknowledgement": "I have read and understood these notices and accept personal responsibility for reviewing all redaction suggestions.",
+    "proceed": "Get started"
+  },
+  "RedactConfirm": {
+    "title": "Redact and download",
+    "detail": "The downloaded PDF will have all marked passages securely redacted — underlying text and images are permanently removed.",
+    "description": "You are responsible for the completeness and accuracy of the redactions. Do not rely blindly on the AI — review all suggestions before downloading.",
+    "cancel": "Keep editing",
+    "confirm": "Download redacted PDF"
+  },
   "MetadataPanel": {
     "heading": "Metadata",
     "remove": "Remove",
