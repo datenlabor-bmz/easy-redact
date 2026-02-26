@@ -82,6 +82,12 @@ docker build -t easy-redact .
 docker run -p 3000:3000 --env-file .env.local easy-redact
 ```
 
+For production deployment on `linux/amd64` (e.g. when building on Apple Silicon):
+
+```bash
+docker buildx build --platform linux/amd64 -t easy-redact .
+```
+
 DOCX upload and spaCy NLP are only available in the Docker build; they return HTTP 501 otherwise.
 
 ### Subpath deployment
