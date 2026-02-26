@@ -7,30 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useTranslations } from 'next-intl'
 import { getJurisdictions } from '@/lib/redaction-rules'
 import type { ConsentMode, JurisdictionMeta, RedactionMode, Session } from '@/types'
 
-// ── Shared option lists ────────────────────────────────────────────────────────
-
 const localLlmEnabled = process.env.NEXT_PUBLIC_LOCAL_LLM_ENABLED === 'true'
 
-const CONSENT_OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string; available: boolean }> = [
-  { mode: null,    label: 'Nicht freigegeben', icon: Lock,   desc: 'Kein Dokumentinhalt wird an externe Dienste übertragen',                                  available: true },
-  { mode: 'cloud', label: 'Cloud-KI',          icon: Cloud,  desc: 'Azure OpenAI — DSGVO-konform, keine Data Retention, kein Training auf Ihren Daten',         available: true },
-  { mode: 'local', label: 'Lokales LLM',        icon: Server, desc: 'Ollama-kompatibler Endpunkt auf Ihrem eigenen GPU-Server — keine externe Datenübertragung', available: localLlmEnabled },
-  { mode: null,    label: 'spaCy NLP',          icon: Brain,  desc: 'Lokale NLP-Analyse ohne KI-Modell (Docker only)',                                          available: false },
-  { mode: null,    label: 'Browser NLP',        icon: Globe,  desc: 'In-Browser Transformer — vollständig offline (in Entwicklung)',                             available: false },
-]
-
-const REDACTION_MODES: Array<{ mode: RedactionMode; label: string; icon: React.ElementType; desc: string }> = [
-  { mode: 'pii', label: 'Personendaten',        icon: User,       desc: 'Schwärzt Namen, Adressen, Kontaktdaten und andere personenbezogene Daten' },
-  { mode: 'foi', label: 'Informationsfreiheit', icon: FileSearch, desc: 'Schwärzt nach den Ausnahmetatbeständen des jeweiligen Informationsfreiheitsgesetzes' },
-]
-
-// ── Shared option button list ──────────────────────────────────────────────────
-
 function OptionList<T>({ options, isActive, onSelect }: {
-  options: Array<{ value: T; label: string; icon: React.ElementType; desc: string; available?: boolean }>
+  options: Array<{ value: T; label: string; icon: React.ElementType; desc: string; available?: boolean; comingSoon?: string }>
   isActive: (v: T, i: number) => boolean
   onSelect: (v: T) => void
 }) {
@@ -48,7 +32,7 @@ function OptionList<T>({ options, isActive, onSelect }: {
                   ${isActive(opt.value, i) ? 'bg-primary text-primary-foreground' : available ? 'hover:bg-muted text-foreground' : ''}`}>
                 <Icon className='h-3.5 w-3.5 shrink-0' />
                 <span className='flex-1'>{opt.label}</span>
-                {!available && <span className='text-[9px] text-muted-foreground/40 font-normal'>coming soon</span>}
+                {!available && <span className='text-[9px] text-muted-foreground/40 font-normal'>{opt.comingSoon}</span>}
               </button>
             </TooltipTrigger>
             <TooltipContent side='left' className='max-w-52'>{opt.desc}</TooltipContent>
@@ -59,7 +43,7 @@ function OptionList<T>({ options, isActive, onSelect }: {
   )
 }
 
-// ── Datenverarbeitung popover ──────────────────────────────────────────────────
+// ── Consent popover ────────────────────────────────────────────────────────────
 
 interface ConsentPopoverProps {
   session: Session
@@ -68,18 +52,27 @@ interface ConsentPopoverProps {
 }
 
 export function ConsentPopover({ session, onConsentChange, onModelSettingsChange }: ConsentPopoverProps) {
+  const t = useTranslations('SettingsPopover')
   const [open, setOpen] = useState(false)
   const [showModelFields, setShowModelFields] = useState(false)
 
+  const CONSENT_OPTIONS = [
+    { mode: null as ConsentMode,    label: t('notReleased'), icon: Lock,   desc: t('notReleasedDesc'),  available: true },
+    { mode: 'cloud' as ConsentMode, label: t('cloudLabel'),  icon: Cloud,  desc: t('cloudDesc'),        available: true },
+    { mode: 'local' as ConsentMode, label: t('localLabel'),  icon: Server, desc: t('localDesc'),        available: localLlmEnabled },
+    { mode: null as ConsentMode,    label: t('spacyLabel'),  icon: Brain,  desc: t('spacyDesc'),        available: false },
+    { mode: null as ConsentMode,    label: t('browserLabel'),icon: Globe,  desc: t('browserDesc'),      available: false },
+  ]
+
   const active = CONSENT_OPTIONS.find(o => o.available && (
-    o.mode === session.consent && (o.mode !== null || o.label === 'Nicht freigegeben')
+    o.mode === session.consent && (o.mode !== null || o.label === t('notReleased'))
   )) ?? CONSENT_OPTIONS[0]
   const ActiveIcon = active.icon
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant='ghost' size='sm' className='gap-1.5 h-7 px-2 text-xs text-muted-foreground hover:text-foreground'>
+        <Button variant='ghost' size='sm' className='gap-1.5 h-7 px-2 has-[>svg]:px-2 text-xs text-muted-foreground hover:text-foreground'>
           <ActiveIcon className='h-3.5 w-3.5' />
           <span>{active.label}</span>
         </Button>
@@ -88,9 +81,9 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
       <PopoverContent align='end' className='w-64 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
           <div className='px-3 pt-3 pb-1'>
-            <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>Datenverarbeitung</p>
+            <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>{t('dataProcessing')}</p>
             <OptionList
-              options={CONSENT_OPTIONS.map(o => ({ value: o.mode, label: o.label, icon: o.icon, desc: o.desc, available: o.available }))}
+              options={CONSENT_OPTIONS.map(o => ({ value: o.mode, label: o.label, icon: o.icon, desc: o.desc, available: o.available, comingSoon: t('comingSoon') }))}
               isActive={(v, i) => i === 0 ? session.consent === null : v === session.consent && v !== null}
               onSelect={onConsentChange} />
           </div>
@@ -99,11 +92,11 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
             <div className='px-3 pb-2'>
               <button tabIndex={-1} onClick={() => setShowModelFields(v => !v)}
                 className='mt-1 text-[10px] text-muted-foreground hover:text-foreground w-full text-left flex items-center gap-1'>
-                <span>{showModelFields ? '▾' : '▸'}</span> Modell-Einstellungen
+                <span>{showModelFields ? '▾' : '▸'}</span> {t('modelSettings')}
               </button>
               {showModelFields && session.consent === 'cloud' && (
                 <div className='mt-1.5'>
-                  <label className='text-[10px] text-muted-foreground block mb-0.5'>Azure Deployment</label>
+                  <label className='text-[10px] text-muted-foreground block mb-0.5'>{t('azureDeployment')}</label>
                   <input className='w-full text-xs border rounded px-2 py-1 bg-background'
                     value={session.modelSettings.cloudDeployment}
                     onChange={e => onModelSettingsChange('cloudDeployment', e.target.value)} />
@@ -112,13 +105,13 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
               {showModelFields && session.consent === 'local' && (
                 <div className='mt-1.5 flex flex-col gap-1.5'>
                   <div>
-                    <label className='text-[10px] text-muted-foreground block mb-0.5'>API Base URL</label>
+                    <label className='text-[10px] text-muted-foreground block mb-0.5'>{t('apiBaseUrl')}</label>
                     <input className='w-full text-xs border rounded px-2 py-1 bg-background'
                       value={session.modelSettings.localBase}
                       onChange={e => onModelSettingsChange('localBase', e.target.value)} />
                   </div>
                   <div>
-                    <label className='text-[10px] text-muted-foreground block mb-0.5'>Modell</label>
+                    <label className='text-[10px] text-muted-foreground block mb-0.5'>{t('model')}</label>
                     <input className='w-full text-xs border rounded px-2 py-1 bg-background'
                       value={session.modelSettings.localModel}
                       onChange={e => onModelSettingsChange('localModel', e.target.value)} />
@@ -134,7 +127,7 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
               <div className='px-3 py-2 flex items-start gap-1.5'>
                 <ShieldCheck className='h-3 w-3 text-green-600 mt-0.5 shrink-0' />
                 <p className='text-[10px] text-muted-foreground leading-relaxed'>
-                  Azure OpenAI ist DSGVO-konform zertifiziert. Keine Datenspeicherung, kein Modelltraining mit Ihren Daten.
+                  {t('gdprNote')}
                 </p>
               </div>
             </>
@@ -145,7 +138,7 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
   )
 }
 
-// ── Schwärzungsmodus popover ───────────────────────────────────────────────────
+// ── Redaction mode popover ─────────────────────────────────────────────────────
 
 interface RedactionModePopoverProps {
   session: Session
@@ -154,6 +147,7 @@ interface RedactionModePopoverProps {
 }
 
 export function RedactionModePopover({ session, onRedactionModeChange, onFoiJurisdictionChange }: RedactionModePopoverProps) {
+  const t = useTranslations('SettingsPopover')
   const [open, setOpen] = useState(false)
   const [jurisdictions, setJurisdictions] = useState<JurisdictionMeta[]>([])
 
@@ -162,13 +156,18 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
       getJurisdictions().then(setJurisdictions).catch(() => {})
   }, [session.redactionMode, jurisdictions.length])
 
+  const REDACTION_MODES = [
+    { mode: 'pii' as RedactionMode, label: t('piiLabel'), icon: User,       desc: t('piiDesc') },
+    { mode: 'foi' as RedactionMode, label: t('foiLabel'), icon: FileSearch, desc: t('foiDesc') },
+  ]
+
   const active = REDACTION_MODES.find(m => m.mode === session.redactionMode) ?? REDACTION_MODES[0]
   const ActiveIcon = active.icon
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant='ghost' size='sm' className='gap-1.5 h-7 px-2 text-xs text-muted-foreground hover:text-foreground'>
+        <Button variant='ghost' size='sm' className='gap-1.5 h-7 px-2 has-[>svg]:px-2 text-xs text-muted-foreground hover:text-foreground'>
           <ActiveIcon className='h-3.5 w-3.5' />
           <span>{active.label}</span>
         </Button>
@@ -177,7 +176,7 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
       <PopoverContent align='end' className='w-64 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
           <div className='p-3'>
-            <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>Schwärzungsmodus</p>
+            <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>{t('redactionMode')}</p>
             <OptionList
               options={REDACTION_MODES.map(m => ({ value: m.mode, label: m.label, icon: m.icon, desc: m.desc }))}
               isActive={v => v === session.redactionMode}
@@ -189,10 +188,10 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
 
             {session.redactionMode === 'foi' && (
               <div className='mt-2'>
-                <label className='text-[10px] text-muted-foreground block mb-1'>Rechtsgrundlage</label>
+                <label className='text-[10px] text-muted-foreground block mb-1'>{t('jurisdiction')}</label>
                 <Select value={session.foiJurisdiction ?? ''} onValueChange={onFoiJurisdictionChange}>
                   <SelectTrigger className='h-7 text-xs w-full'>
-                    <SelectValue placeholder={jurisdictions.length ? 'Gesetz wählen…' : 'Lädt…'} />
+                    <SelectValue placeholder={jurisdictions.length ? t('chooseJurisdiction') : t('loading')} />
                   </SelectTrigger>
                   <SelectContent>
                     {jurisdictions.map(j => (
@@ -211,7 +210,7 @@ export function RedactionModePopover({ session, onRedactionModeChange, onFoiJuri
   )
 }
 
-// ── Legacy combined export (keep for any existing import) ─────────────────────
+// ── Combined export ────────────────────────────────────────────────────────────
 
 interface SettingsPopoverProps {
   session: Session

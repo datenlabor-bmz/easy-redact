@@ -3,14 +3,15 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
 import { ArrowUp, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTranslations } from 'next-intl'
 
-export function ChatInput({ onSend, onStop, isStreaming, placeholder = 'Fragen Sie den Assistenten…', suggestions = [] }: {
+export function ChatInput({ onSend, onStop, isStreaming, suggestions = [] }: {
   onSend: (msg: string) => void
   onStop?: () => void
   isStreaming: boolean
-  placeholder?: string
   suggestions?: string[]
 }) {
+  const t = useTranslations('ChatInput')
   const [value, setValue] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -48,7 +49,7 @@ export function ChatInput({ onSend, onStop, isStreaming, placeholder = 'Fragen S
       )}
       <div className='flex items-center gap-2 bg-background border rounded-2xl shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all pl-4 pr-2 py-2'>
         <textarea ref={ref} value={value} onChange={e => setValue(e.target.value)}
-          onKeyDown={onKey} placeholder={placeholder} disabled={isStreaming}
+          onKeyDown={onKey} placeholder={t('placeholder')} disabled={isStreaming}
           className='flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none max-h-[180px] py-0 leading-5 [field-sizing:content]' />
         <div className='shrink-0'>
           {isStreaming ? (

@@ -12,8 +12,8 @@ interface UseChatStreamOptions {
   documentPages?: DocumentPage[]
   documents?: DocumentMeta[]
   redactions?: Redaction[]
+  locale?: string
   onSuggestionsReceived?: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
-  // Called when user picks a consent mode from the inline consent box
   onConsentGranted?: (mode: ConsentMode) => void
 }
 
@@ -69,7 +69,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
       }
     }
 
-    const { redactionMode, foiJurisdiction, documentPages, documents, redactions } = optsRef.current
+    const { redactionMode, foiJurisdiction, documentPages, documents, redactions, locale } = optsRef.current
     const effectiveConsent = overrideConsent ?? optsRef.current.consent
 
     const docNameMap = Object.fromEntries((documents ?? []).map(d => [d.idbKey, d.name]))
@@ -78,7 +78,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           id: r.id,
           status: r.status,
           pageIndex: r.pageIndex,
-          text: r.searchText ?? '(Freihand-Schwärzung)',
+          text: r.searchText ?? '(freehand)',
           person: r.person,
           personGroup: r.personGroup,
           documentKey: r.documentKey,
@@ -100,6 +100,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           consent: effectiveConsent, redactionMode, foiJurisdiction,
           documentPages: effectiveConsent ? documentPages : undefined,
           currentRedactions,
+          locale,
         }),
         signal: abortRef.current.signal,
       })
@@ -168,7 +169,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
     console.log('[chat] grantConsent', mode, 'documentPages:', optsRef.current.documentPages?.length)
     optsRef.current.onConsentGranted?.(mode)
     setMessages(prev => prev.map(m => m.consentRequired ? { ...m, consentRequired: undefined } : m))
-    sendMessage(`[System: Dokumentenzugriff erteilt (${mode}). Rufe jetzt read_documents auf und mache danach Schwärzungsvorschläge.]`, mode)
+    sendMessage(`[System: Document access granted (${mode}). Now call read_documents and then suggest redactions.]`, mode)
   }, [sendMessage])
 
   const addSilentContext = useCallback((content: string) => {

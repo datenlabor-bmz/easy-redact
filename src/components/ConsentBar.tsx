@@ -3,6 +3,7 @@
 import { Cloud, Server, Brain, Globe, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useTranslations } from 'next-intl'
 import type { ConsentMode } from '@/types'
 
 interface ConsentBarProps {
@@ -10,21 +11,23 @@ interface ConsentBarProps {
   onConsentChange: (mode: ConsentMode) => void
 }
 
-const OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string; implemented: boolean }> = [
-  { mode: null, label: 'Nicht freigegeben', icon: Lock, desc: 'Kein Dokumentinhalt wird geteilt', implemented: true },
-  { mode: 'cloud', label: 'Cloud-KI', icon: Cloud, desc: 'Azure OpenAI (DSGVO-konform, keine Data Retention)', implemented: true },
-  { mode: 'local', label: 'Lokales LLM', icon: Server, desc: 'Ollama auf Ihrem GPU-Server', implemented: true },
-]
-
-const STUB_OPTIONS = [
-  { label: 'spaCy NLP', icon: Brain, desc: 'Lokale NLP-Verarbeitung (Docker only)' },
-  { label: 'Browser NLP', icon: Globe, desc: 'In-Browser Transformer (in Entwicklung)' },
-]
-
 export function ConsentBar({ consent, onConsentChange }: ConsentBarProps) {
+  const t = useTranslations('ConsentBar')
+
+  const OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string; implemented: boolean }> = [
+    { mode: null,    label: t('notReleased'), icon: Lock,   desc: t('notReleasedDesc'), implemented: true },
+    { mode: 'cloud', label: t('cloudLabel'),  icon: Cloud,  desc: t('cloudDesc'),       implemented: true },
+    { mode: 'local', label: t('localLabel'),  icon: Server, desc: t('localDesc'),       implemented: true },
+  ]
+
+  const STUB_OPTIONS = [
+    { label: t('spacyLabel'),   icon: Brain,  desc: t('spacyDesc') },
+    { label: t('browserLabel'), icon: Globe,  desc: t('browserDesc') },
+  ]
+
   return (
     <div className='flex items-center gap-1.5 px-3 py-1.5 bg-muted/40 border-b text-xs'>
-      <span className='text-muted-foreground font-medium mr-1 shrink-0'>Datenverarbeitung:</span>
+      <span className='text-muted-foreground font-medium mr-1 shrink-0'>{t('dataProcessing')}</span>
       {OPTIONS.map(opt => {
         const Icon = opt.icon
         const active = consent === opt.mode
@@ -55,7 +58,7 @@ export function ConsentBar({ consent, onConsentChange }: ConsentBarProps) {
                 className='flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-border text-muted-foreground/50 cursor-not-allowed'>
                 <Icon className='h-3 w-3' />
                 <span>{opt.label}</span>
-                <Badge variant='outline' className='ml-0.5 text-[9px] px-1 py-0 h-3.5'>bald</Badge>
+                <Badge variant='outline' className='ml-0.5 text-[9px] px-1 py-0 h-3.5'>{t('soon')}</Badge>
               </button>
             </TooltipTrigger>
             <TooltipContent side='bottom'><p>{opt.desc}</p></TooltipContent>

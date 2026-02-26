@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useTranslations } from 'next-intl'
 import type { RedactionRule } from '@/types'
 
 function groupRules(rules: RedactionRule[]) {
@@ -15,7 +16,6 @@ function groupRules(rules: RedactionRule[]) {
   return groups
 }
 
-// Match by title only — AI-supplied rules may have garbled reference strings
 const ruleMatches = (a?: RedactionRule, b?: RedactionRule) =>
   !!a && !!b && a.title === b.title
 
@@ -36,8 +36,7 @@ function RuleTooltipContent({ rule }: { rule: RedactionRule }) {
   )
 }
 
-// Each text item indented to `textLeft` so that chevron lives in the 16px slot to its left
-const CHEVRON_W = 16 // px — w-4
+const CHEVRON_W = 16
 
 function RuleItem({ rule, selected, onSelect, depth = 0 }: {
   rule: RedactionRule; selected: boolean; onSelect: (r: RedactionRule) => void; depth?: number
@@ -97,15 +96,10 @@ export interface RuleSelectorProps {
   rules: RedactionRule[]
   selectedRule?: RedactionRule
   onRuleSelect: (rule?: RedactionRule) => void
-  noRuleLabel?: string
-  label?: string
 }
 
-export function RuleSelector({
-  rules, selectedRule, onRuleSelect,
-  noRuleLabel = 'Keine Regel',
-  label = 'Schwärzungsgrund',
-}: RuleSelectorProps) {
+export function RuleSelector({ rules, selectedRule, onRuleSelect }: RuleSelectorProps) {
+  const t = useTranslations('RuleSelector')
   const groups = groupRules(rules)
   const matchedGroup = selectedRule
     ? Object.entries(groups).find(([, rs]) => rs.some(r => ruleMatches(r, selectedRule)))?.[0] ?? null
@@ -117,7 +111,7 @@ export function RuleSelector({
     <TooltipProvider delayDuration={400}>
       <div className='w-60 flex flex-col bg-white border rounded-lg shadow-lg py-1.5 text-sm select-none'>
         <p className='text-[10px] text-muted-foreground px-3 pt-1 pb-1.5 font-semibold uppercase tracking-wider'>
-          {label}
+          {t('label')}
         </p>
         <div className='flex flex-col px-1.5'>
           {Object.entries(groups).map(([group, groupRules]) =>
@@ -139,7 +133,7 @@ export function RuleSelector({
             className={`pr-3 py-1 rounded text-xs cursor-pointer italic transition-colors text-muted-foreground ${
               !selectedRule ? 'bg-muted/70' : 'hover:bg-muted/70'
             }`}>
-            {noRuleLabel}
+            {t('noRule')}
           </div>
         </div>
       </div>

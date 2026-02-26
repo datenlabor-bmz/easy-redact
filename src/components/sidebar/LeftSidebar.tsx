@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Check, X, LayoutGrid, List, Users, BoxSelect, Trash2, Scale, ChevronDown, ChevronUp } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { Redaction, PageData, RedactionRule, RedactionMode } from '@/types'
 import { getRedactionText } from '@/components/pdf/geometry'
 import { RuleSelector } from '@/components/RuleSelector'
@@ -28,10 +29,11 @@ interface LeftSidebarProps {
 
 // ── Thumbnails ─────────────────────────────────────────────────────────────────
 
-function ThumbnailGrid({ pages, redactions, onNavigatePage }: {
+function ThumbnailGrid({ pages, redactions, onNavigatePage, t }: {
   pages: PageData[]
   redactions: Redaction[]
   onNavigatePage: (idx: number) => void
+  t: ReturnType<typeof useTranslations<'LeftSidebar'>>
 }) {
   return (
     <div className='grid grid-cols-2 gap-2 p-2'>
@@ -40,9 +42,9 @@ function ThumbnailGrid({ pages, redactions, onNavigatePage }: {
         return (
           <button key={i} onClick={() => onNavigatePage(i)}
             className='relative rounded-sm overflow-hidden border hover:border-primary transition-colors'>
-            <img src={page.image} alt={`Seite ${i + 1}`} className='w-full object-contain' />
+            <img src={page.image} alt={`${t('page')} ${i + 1}`} className='w-full object-contain' />
             <div className='absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[10px] text-center py-0.5'>
-              Seite {i + 1}
+              {t('page')} {i + 1}
             </div>
             {count > 0 && (
               <Badge className='absolute top-1 right-1 h-5 w-5 p-0 text-[10px] flex items-center justify-center rounded-full bg-primary'>
@@ -59,18 +61,18 @@ function ThumbnailGrid({ pages, redactions, onNavigatePage }: {
 // ── Redaction list item ────────────────────────────────────────────────────────
 
 function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, variant = 'list',
-  foiRules, onRuleChange }: {
+  foiRules, onRuleChange, t }: {
   r: Redaction; page: PageData | undefined; selected: boolean
   onSelect: () => void; onAccept: () => void; onIgnore: () => void
   variant?: 'list' | 'grouped'
   foiRules?: RedactionRule[]; onRuleChange?: (rule?: RedactionRule) => void
+  t: ReturnType<typeof useTranslations<'LeftSidebar'>>
 }) {
   const [ruleOpen, setRuleOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
   if (r.status === 'ignored') return null
 
   const TEXT_LIMIT = 120
-
   const isSuggested = r.status === 'suggested'
   const isLow = r.confidence === 'low'
 
@@ -107,7 +109,7 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
         ) : (
           <div className='flex items-center gap-1.5 text-[11px] text-muted-foreground italic'>
             <BoxSelect className='h-3 w-3 shrink-0' />
-            <span style={{ ...highlightStyle, padding: '1px 3px' }}>Freihand-Schwärzung</span>
+            <span style={{ ...highlightStyle, padding: '1px 3px' }}>{t('freehand')}</span>
           </div>
         )}
         {foiRules && onRuleChange && (
@@ -116,7 +118,7 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
               <button onClick={e => { e.stopPropagation(); setRuleOpen(true) }}
                 className='mt-1 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors'>
                 <Scale className='h-2.5 w-2.5 shrink-0' />
-                <span className='truncate max-w-[120px]'>{r.rule?.title ?? 'Grund wählen…'}</span>
+                <span className='truncate max-w-[120px]'>{r.rule?.title ?? t('chooseReason')}</span>
               </button>
             </PopoverTrigger>
             <PopoverContent side='right' align='start' className='p-0 w-auto border-0 shadow-none bg-transparent'
@@ -145,16 +147,17 @@ function RedactionItem({ r, page, selected, onSelect, onAccept, onIgnore, varian
 
 // ── Chronological list ────────────────────────────────────────────────────────
 
-function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore, foiRules, onRuleChange }: {
+function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore, foiRules, onRuleChange, t }: {
   redactions: Redaction[]; pages: PageData[]; selectedId: string | null
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
   foiRules?: RedactionRule[]; onRuleChange?: (id: string, rule?: RedactionRule) => void
+  t: ReturnType<typeof useTranslations<'LeftSidebar'>>
 }) {
   const sorted = [...redactions]
     .filter(r => r.status !== 'ignored')
     .sort((a, b) => a.pageIndex !== b.pageIndex ? a.pageIndex - b.pageIndex : (a.parts[0]?.y ?? 0) - (b.parts[0]?.y ?? 0))
 
-  if (!sorted.length) return <p className='text-xs text-muted-foreground p-4 text-center'>Keine Schwärzungen vorhanden</p>
+  if (!sorted.length) return <p className='text-xs text-muted-foreground p-4 text-center'>{t('noRedactions')}</p>
 
   const byPage = sorted.reduce<Map<number, Redaction[]>>((acc, r) => {
     acc.set(r.pageIndex, [...(acc.get(r.pageIndex) ?? []), r])
@@ -166,13 +169,13 @@ function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, 
       {[...byPage.entries()].map(([pageIdx, rs]) => (
         <div key={pageIdx}>
           <div className='px-3 py-1.5 bg-card text-[11px] font-semibold text-muted-foreground sticky top-0 z-10'>
-            Seite {pageIdx + 1}
+            {t('page')} {pageIdx + 1}
           </div>
           <div>
             {rs.map(r => (
               <RedactionItem key={r.id} r={r} page={pages[r.pageIndex]} selected={selectedId === r.id}
                 onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)}
-                foiRules={foiRules} onRuleChange={rule => onRuleChange?.(r.id, rule)} />
+                foiRules={foiRules} onRuleChange={rule => onRuleChange?.(r.id, rule)} t={t} />
             ))}
           </div>
         </div>
@@ -183,24 +186,24 @@ function ChronologicalList({ redactions, pages, selectedId, onSelect, onAccept, 
 
 // ── Grouped view ──────────────────────────────────────────────────────────────
 
-function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore, foiRules, onRuleChange }: {
+function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgnore, foiRules, onRuleChange, t }: {
   redactions: Redaction[]; pages: PageData[]; selectedId: string | null
   onSelect: (id: string) => void; onAccept: (id: string) => void; onIgnore: (id: string) => void
   foiRules?: RedactionRule[]; onRuleChange?: (id: string, rule?: RedactionRule) => void
+  t: ReturnType<typeof useTranslations<'LeftSidebar'>>
 }) {
-  // Group by personGroup → person
   const groups = new Map<string, Map<string, Redaction[]>>()
   for (const r of redactions) {
-    const raw = r.personGroup ?? 'Sonstige'
-    const group = raw.toLowerCase() === 'sonstiges' ? 'Sonstige' : raw
-    const person = r.person || '(unbekannt)'
+    const raw = r.personGroup ?? t('other')
+    const group = raw.toLowerCase() === 'sonstiges' ? t('other') : raw
+    const person = r.person || t('unknown')
     if (!groups.has(group)) groups.set(group, new Map())
     const persons = groups.get(group)!
     if (!persons.has(person)) persons.set(person, [])
     persons.get(person)!.push(r)
   }
 
-  if (!groups.size) return <p className='text-xs text-muted-foreground p-4 text-center'>Keine Schwärzungen vorhanden</p>
+  if (!groups.size) return <p className='text-xs text-muted-foreground p-4 text-center'>{t('noRedactions')}</p>
 
   return (
     <div>
@@ -212,12 +215,10 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
             <span>{group}</span>
             <div className='flex gap-1 opacity-0 group-hover/cat:opacity-100 transition-opacity'>
               <Button variant='ghost' size='icon' className='h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50'
-                title='Alle akzeptieren'
                 onClick={() => persons.forEach((rs) => rs.forEach(r => r.status === 'suggested' && onAccept(r.id)))}>
                 <Check className='h-3.5 w-3.5' />
               </Button>
               <Button variant='ghost' size='icon' className='h-6 w-6 text-red-500 hover:text-red-600 hover:bg-red-50'
-                title='Alle ablehnen'
                 onClick={() => persons.forEach((rs) => rs.forEach(r => r.status === 'suggested' && onIgnore(r.id)))}>
                 <X className='h-3.5 w-3.5' />
               </Button>
@@ -227,7 +228,6 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
             const visible = rs.filter(r => r.status !== 'ignored')
             if (!visible.length) return null
             return (<div key={person} className='mx-3 mt-3 mb-1 rounded-lg ring-1 ring-border'>
-              {/* Person header inside the box */}
               <div className='flex items-center pl-3 pr-2 py-1.5 gap-2 border-b border-border/50'>
                 <span className='flex-1 text-[11px] font-medium text-foreground'>{person}</span>
                 <div className='flex gap-1 shrink-0'>
@@ -246,7 +246,7 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
               {rs.map(r => (
                 <RedactionItem key={r.id} r={r} page={pages[r.pageIndex]} selected={selectedId === r.id}
                   onSelect={() => onSelect(r.id)} onAccept={() => onAccept(r.id)} onIgnore={() => onIgnore(r.id)}
-                  variant='grouped' foiRules={foiRules} onRuleChange={rule => onRuleChange?.(r.id, rule)} />
+                  variant='grouped' foiRules={foiRules} onRuleChange={rule => onRuleChange?.(r.id, rule)} t={t} />
               ))}
             </div>
           )})}
@@ -260,66 +260,44 @@ function GroupedList({ redactions, pages, selectedId, onSelect, onAccept, onIgno
 // ── Main sidebar ──────────────────────────────────────────────────────────────
 
 export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, onAccept, onIgnore, onNavigatePage, onClearAll, foiRules, redactionMode, onRuleChange }: LeftSidebarProps) {
-  const visibleCount = redactions.filter(r => r.status !== 'ignored').length
-  const suggestedCount = redactions.filter(r => r.status === 'suggested').length
+  const t = useTranslations('LeftSidebar')
+  const [tab, setTab] = useState<'thumbnails' | 'list' | 'groups'>('list')
+  const TAB_TITLES = { thumbnails: t('pagePreview'), list: t('chronologicalList'), groups: t('groupedByPerson') }
 
   return (
     <div className='@container flex flex-col h-full border-r bg-card'>
-      <Tabs defaultValue='list' className='flex-1 flex flex-col min-h-0'>
-        {/* Header: title | tabs (centered) | counters + delete */}
-        <div className='h-11 px-2 border-b bg-muted/50 shrink-0 flex items-center overflow-hidden'>
-          {/* Left: title — hidden when narrow */}
-          <span className='text-xs font-medium text-foreground @[280px]:block hidden shrink-0'>Schwärzungen</span>
-
-          {/* Center: tabs */}
-          <TabsList className='h-7 p-0.5 gap-0 mx-auto shrink-0'>
+      <Tabs value={tab} onValueChange={v => setTab(v as typeof tab)} className='flex-1 flex flex-col min-h-0'>
+        <div className='h-11 px-2 border-b bg-muted/50 shrink-0 flex items-center gap-2 overflow-hidden'>
+          <TabsList className='h-7 p-0.5 gap-0 shrink-0'>
             {([
-              { value: 'thumbnails', icon: LayoutGrid, label: 'Seitenvorschau' },
-              { value: 'list',       icon: List,        label: 'Chronologische Liste' },
-              { value: 'groups',     icon: Users,       label: 'Nach Person gruppiert' },
-            ] as const).map(({ value, icon: Icon, label }) => (
-              <Tooltip key={value}>
-                <TooltipTrigger asChild><span className='inline-flex h-full aspect-square'>
-                  <TabsTrigger value={value} className='h-full w-full px-0'><Icon className='h-3 w-3' /></TabsTrigger>
-                </span></TooltipTrigger>
-                <TooltipContent side='bottom'>{label}</TooltipContent>
-              </Tooltip>
+              { value: 'thumbnails', icon: LayoutGrid },
+              { value: 'list',       icon: List },
+              { value: 'groups',     icon: Users },
+            ] as const).map(({ value, icon: Icon }) => (
+              <span key={value} className='inline-flex h-full aspect-square'>
+                <TabsTrigger value={value} className='h-full w-full px-0'><Icon className='h-3 w-3' /></TabsTrigger>
+              </span>
             ))}
           </TabsList>
 
-          {/* Right: counters (wide only) + delete (always) */}
-          <div className='flex items-center gap-1.5 ml-auto shrink-0'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className='@[360px]:inline-block hidden text-[10px] text-muted-foreground tabular-nums cursor-default'>{visibleCount} Vorschläge</span>
-              </TooltipTrigger>
-              <TooltipContent side='bottom'>Schwärzungen gesamt (ohne ignorierte)</TooltipContent>
-            </Tooltip>
-            {suggestedCount > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className='@[360px]:inline-block hidden text-[10px] text-amber-600 tabular-nums cursor-default'>{suggestedCount} offen</span>
-                </TooltipTrigger>
-                <TooltipContent side='bottom'>KI-Vorschläge noch nicht bestätigt</TooltipContent>
-              </Tooltip>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant='ghost' size='icon' className='h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive'
-                  onClick={onClearAll} disabled={redactions.length === 0}>
-                  <Trash2 className='h-3.5 w-3.5' />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side='bottom'>Alle Schwärzungen löschen</TooltipContent>
-            </Tooltip>
-          </div>
+          <span className='text-xs font-medium text-foreground flex-1 min-w-0 truncate'>{TAB_TITLES[tab]}</span>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant='ghost' size='icon' className='h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive'
+                onClick={onClearAll} disabled={redactions.length === 0}>
+                <Trash2 className='h-3.5 w-3.5' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side='bottom'>{t('clearAll')}</TooltipContent>
+          </Tooltip>
         </div>
 
         <TabsContent value='thumbnails' className='flex-1 mt-0 overflow-hidden'>
           <ScrollArea className='h-full'>
             {pages.length === 0
-              ? <p className='text-xs text-muted-foreground p-4 text-center'>Kein Dokument geladen</p>
-              : <ThumbnailGrid pages={pages} redactions={redactions} onNavigatePage={onNavigatePage} />}
+              ? <p className='text-xs text-muted-foreground p-4 text-center'>{t('noDocument')}</p>
+              : <ThumbnailGrid pages={pages} redactions={redactions} onNavigatePage={onNavigatePage} t={t} />}
           </ScrollArea>
         </TabsContent>
 
@@ -327,7 +305,7 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
           <ScrollArea className='h-full'>
             <ChronologicalList redactions={redactions} pages={pages} selectedId={selectedId}
               onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore}
-              foiRules={redactionMode === 'foi' ? foiRules : undefined} onRuleChange={onRuleChange} />
+              foiRules={redactionMode === 'foi' ? foiRules : undefined} onRuleChange={onRuleChange} t={t} />
           </ScrollArea>
         </TabsContent>
 
@@ -335,7 +313,7 @@ export function LeftSidebar({ pages, redactions, selectedId, onSelectRedaction, 
           <ScrollArea className='h-full'>
             <GroupedList redactions={redactions} pages={pages} selectedId={selectedId}
               onSelect={onSelectRedaction} onAccept={onAccept} onIgnore={onIgnore}
-              foiRules={redactionMode === 'foi' ? foiRules : undefined} onRuleChange={onRuleChange} />
+              foiRules={redactionMode === 'foi' ? foiRules : undefined} onRuleChange={onRuleChange} t={t} />
           </ScrollArea>
         </TabsContent>
       </Tabs>

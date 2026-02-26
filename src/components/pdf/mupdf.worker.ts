@@ -171,7 +171,7 @@ export class MupdfWorker {
     const result: Record<string, string> = {}
     const info = this.pdfdocument.getTrailer().get('Info')
     if (info && !info.isNull() && info.isDictionary()) {
-      info.forEach((val: any, key: string) => {
+      info.forEach((val: any, key: string | number) => {
         if (typeof key === 'string' && val.isString()) result[key] = val.asString()
       })
     }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Loader2, Check, AlertCircle, FileSearch, Brain, Lightbulb } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { ToolCall } from './useChatStream'
 
 const TOOL_ICONS: Record<string, React.ElementType> = {
@@ -10,15 +11,10 @@ const TOOL_ICONS: Record<string, React.ElementType> = {
   start_nlp_processing: Brain,
 }
 
-const TOOL_LABELS: Record<string, string> = {
-  read_documents: 'Dokumente gelesen',
-  suggest_redactions: '',  // handled inline
-  start_nlp_processing: 'NLP-Verarbeitung',
-}
-
 const NO_EXPAND = new Set(['ask_user', 'request_document_access', 'read_documents', 'suggest_redactions'])
 
 export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
+  const t = useTranslations('ChatToolCall')
   const [expanded, setExpanded] = useState(false)
 
   if (toolCall.name === 'ask_user') return null
@@ -34,12 +30,12 @@ export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
       + (Array.isArray(args?.pageRanges) ? args.pageRanges.length : 0)
     const removed = Array.isArray(args?.remove) ? args.remove.length : 0
     const label = (() => {
-      if (toolCall.status === 'running') return 'Schwärzungen werden bearbeitet…'
-      if (toolCall.status === 'error') return 'Fehler beim Vorschlagen'
+      if (toolCall.status === 'running') return t('processing')
+      if (toolCall.status === 'error') return t('error')
       const parts: string[] = []
-      if (added > 0) parts.push(`${added} vorgeschlagen`)
-      if (removed > 0) parts.push(`${removed} entfernt`)
-      return parts.length ? parts.join(', ') : 'Schwärzungen vorgeschlagen'
+      if (added > 0) parts.push(`${added} ${t('suggested')}`)
+      if (removed > 0) parts.push(`${removed} ${t('removed')}`)
+      return parts.length ? parts.join(', ') : t('complete')
     })()
     return (
       <div className='flex items-center gap-1.5 text-xs text-muted-foreground py-0.5'>
@@ -53,7 +49,11 @@ export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
     )
   }
 
-  const label = TOOL_LABELS[toolCall.name] ?? toolCall.name
+  const toolLabels: Record<string, string> = {
+    read_documents: t('readDocuments'),
+    start_nlp_processing: t('nlpProcessing'),
+  }
+  const label = toolLabels[toolCall.name] ?? toolCall.name
 
   return (
     <div className='flex items-center gap-1.5 text-xs text-muted-foreground py-0.5'>

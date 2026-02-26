@@ -219,4 +219,5 @@ export interface ChatRequest {
   foiJurisdiction?: string
   documentPages?: DocumentPage[]
   currentRedactions?: RedactionSnapshot[]
+  locale?: string
 }

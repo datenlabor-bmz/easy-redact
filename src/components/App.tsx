@@ -1,7 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/lib/navigation'
+import { useTranslations } from 'next-intl'
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -16,6 +18,7 @@ import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, T
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
 
 export default function App() {
+  const t = useTranslations('App')
   const [session, setSession] = useState<Session | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [files, setFiles] = useState<File[]>([])
@@ -151,7 +154,7 @@ export default function App() {
         const res = await fetch('/api/docx', { method: 'POST', body: form })
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
-          setError(data.error ?? 'DOCX-Konvertierung fehlgeschlagen')
+          setError(data.error ?? t('docxError'))
           continue
         }
         const blob = await res.blob()
@@ -180,8 +183,8 @@ export default function App() {
     const names = pdfs.map(f => f.name).join(', ')
     const consent = session?.consent
     pendingChatTrigger.current = consent
-      ? `[System: Neue Dokumente hochgeladen: ${names}. Zugriff bereits erteilt. Lies die Dokumente und mache Schwärzungsvorschläge.]`
-      : `[System: Neue Dokumente hochgeladen: ${names}. Bitte Dokumentenzugriff anfordern und dann analysieren.]`
+      ? `[System: New documents uploaded: ${names}. Access already granted. Read the documents and suggest redactions.]`
+      : `[System: New documents uploaded: ${names}. Please request document access and then analyze.]`
     pendingChatTriggerDocKey.current = lastKey
   }, [files, session, updateSession])
 
@@ -266,7 +269,7 @@ export default function App() {
 
   if (!session) return (
     <div className='flex items-center justify-center h-screen'>
-      <div className='animate-pulse text-muted-foreground text-sm'>Laden…</div>
+      <div className='animate-pulse text-muted-foreground text-sm'>{t('loading')}</div>
     </div>
   )
 
@@ -309,9 +312,10 @@ export default function App() {
             onRedactionModeChange={mode => updateSession({ redactionMode: mode })}
             onFoiJurisdictionChange={id => updateSession({ foiJurisdiction: id })}
             onModelSettingsChange={(key, value) => updateSession({ modelSettings: { ...session.modelSettings, [key]: value } })} />
+          <LocaleSwitcher />
           <Link href='/about'
-            className='text-xs text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap'>
-            Über EasyRedact
+            className='h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors whitespace-nowrap inline-flex items-center'>
+            {t('about')}
           </Link>
         </div>
       </header>
@@ -362,13 +366,13 @@ export default function App() {
                       <TooltipTrigger asChild><span className='inline-flex h-full aspect-square'>
                         <TabsTrigger value='text' className='h-full w-full px-0'><Type className='h-3 w-3' /></TabsTrigger>
                       </span></TooltipTrigger>
-                      <TooltipContent side='bottom'>Textauswahl</TooltipContent>
+                      <TooltipContent side='bottom'>{t('textSelection')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild><span className='inline-flex h-full aspect-square'>
                         <TabsTrigger value='freehand' className='h-full w-full px-0'><BoxSelect className='h-3 w-3' /></TabsTrigger>
                       </span></TooltipTrigger>
-                      <TooltipContent side='bottom'>Freihandauswahl</TooltipContent>
+                      <TooltipContent side='bottom'>{t('freehandSelection')}</TooltipContent>
                     </Tooltip>
                   </TabsList>
                 </Tabs>
@@ -386,7 +390,7 @@ export default function App() {
                       if (e.key === 'Enter') { e.preventDefault(); searchNavigateRef.current?.(e.shiftKey ? -1 : 1) }
                       if (e.key === 'Escape') { setSearchQuery(''); e.currentTarget.blur() }
                     }}
-                    placeholder='Suchen…'
+                    placeholder={t('search')}
                     className='w-28 text-xs bg-transparent focus:outline-none placeholder:text-muted-foreground' />
                   {searchMatchInfo.total > 0 && (
                     <span className='text-[10px] text-muted-foreground tabular-nums shrink-0'>
@@ -398,21 +402,21 @@ export default function App() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button variant='outline' size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(false)}>
-                        <Download className='h-3 w-3' /> Export
+                        <Download className='h-3 w-3' /> {t('export')}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side='bottom' className='max-w-56 text-center'>
-                      PDF mit sichtbaren gelben Markierungen — zum Prüfen und Abstimmen
+                      {t('exportTooltip')}
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button size='sm' className='h-6 gap-1 text-xs px-2' onClick={() => exportRef.current?.(true)}>
-                        <FileLock2 className='h-3 w-3' /> Schwärzen
+                        <FileLock2 className='h-3 w-3' /> {t('redact')}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side='bottom' className='max-w-56 text-center'>
-                      Text unwiderruflich entfernt — bereit zur Veröffentlichung
+                      {t('redactTooltip')}
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -440,7 +444,7 @@ export default function App() {
                 ))}
                 <button onClick={() => fileInputRef.current?.click()}
                   className='flex items-center gap-1 px-2 h-6 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors shrink-0'>
-                  <Upload className='h-3 w-3' /> Hochladen
+                  <Upload className='h-3 w-3' /> {t('upload')}
                 </button>
               </div>
             <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
@@ -466,17 +470,17 @@ export default function App() {
               className={`flex-1 flex flex-col items-center justify-center gap-4 m-4 rounded-2xl border-2 border-dashed transition-colors ${isDragging ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'}`}>
               <Upload className='h-10 w-10 text-muted-foreground/40' />
               <div className='text-center'>
-                <p className='font-medium text-sm'>PDF oder DOCX hochladen</p>
-                <p className='text-xs text-muted-foreground mt-1'>Drag & Drop oder klicken zum Auswählen</p>
+                <p className='font-medium text-sm'>{t('uploadTitle')}</p>
+                <p className='text-xs text-muted-foreground mt-1'>{t('uploadHint')}</p>
               </div>
-              <Button onClick={() => fileInputRef.current?.click()}>Datei auswählen</Button>
+              <Button onClick={() => fileInputRef.current?.click()}>{t('selectFile')}</Button>
             </div>
           )}
           {/* Drop overlay when a document is already open */}
           {activeFile && isDragging && (
             <div className='absolute inset-0 z-50 m-3 rounded-2xl border-2 border-dashed border-primary bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 pointer-events-none'>
               <Upload className='h-10 w-10 text-primary/60' />
-              <p className='font-medium text-sm text-primary'>PDF hier ablegen</p>
+              <p className='font-medium text-sm text-primary'>{t('dropHere')}</p>
             </div>
           )}
         </div>
@@ -492,7 +496,7 @@ export default function App() {
             documentNames={session.documents.map(d => d.name)}
             triggerRef={chatTriggerRef}
             onDeferredTrigger={msg => {
-              pendingChatTrigger.current = `[System: ${msg}]`
+              pendingChatTrigger.current = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
               pendingChatTriggerDocKey.current = session.documents[activeFileIdx]?.idbKey ?? null
             }}
             foiJurisdiction={session.foiJurisdiction}

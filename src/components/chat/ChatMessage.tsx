@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 import { User, Bot, Cloud, Server, ShieldCheck, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ChatToolCall } from './ChatToolCall'
+import { useTranslations } from 'next-intl'
 import type { ChatMessage as Msg, ConsentMode } from '@/types'
 
 export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinking }: {
@@ -13,6 +14,7 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
   onConsentGrant?: (mode: ConsentMode) => void
   isThinking?: boolean
 }) {
+  const t = useTranslations('ChatMessage')
   const isUser = message.role === 'user'
   if (message.hidden) return null
   if (!message.content && !message.toolCalls?.length && !message.question && !isThinking) return null
@@ -34,7 +36,7 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
         {/* Thinking indicator */}
         {isThinking && !message.content && (
           <div className='flex items-center gap-2 px-3.5 py-2.5 bg-muted rounded-2xl rounded-tl-sm text-sm text-muted-foreground'>
-            <Loader2 className='h-3.5 w-3.5 animate-spin shrink-0' /> Denke nach…
+            <Loader2 className='h-3.5 w-3.5 animate-spin shrink-0' /> {t('thinking')}
           </div>
         )}
 
@@ -60,7 +62,7 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
           <div className='mt-2 w-full max-w-[95%] rounded-xl border bg-muted/30 overflow-hidden'>
             <div className='px-3 py-2 border-b bg-muted/50 flex items-center gap-2'>
               <ShieldCheck className='h-3.5 w-3.5 text-amber-500 shrink-0' />
-              <span className='text-xs font-medium'>Dokumentenzugriff erforderlich</span>
+              <span className='text-xs font-medium'>{t('documentAccessRequired')}</span>
             </div>
             <div className='px-3 py-2 text-xs text-muted-foreground border-b'>
               {message.consentRequired}
@@ -70,8 +72,8 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
                 className='flex items-center gap-2.5 px-3 py-2 rounded-lg border hover:border-primary hover:bg-primary/5 transition-all text-left text-xs group'>
                 <Cloud className='h-4 w-4 text-blue-500 shrink-0' />
                 <div>
-                  <p className='font-medium group-hover:text-primary'>Cloud-KI (Azure OpenAI)</p>
-                  <p className='text-muted-foreground mt-0.5'>DSGVO-konform, keine Data Retention</p>
+                  <p className='font-medium group-hover:text-primary'>{t('cloudLabel')}</p>
+                  <p className='text-muted-foreground mt-0.5'>{t('cloudDesc')}</p>
                 </div>
               </button>
               {process.env.NEXT_PUBLIC_LOCAL_LLM_ENABLED === 'true' ? (
@@ -79,16 +81,16 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
                   className='flex items-center gap-2.5 px-3 py-2 rounded-lg border hover:border-primary hover:bg-primary/5 transition-all text-left text-xs group'>
                   <Server className='h-4 w-4 text-green-500 shrink-0' />
                   <div>
-                    <p className='font-medium group-hover:text-primary'>Lokales LLM</p>
-                    <p className='text-muted-foreground mt-0.5'>Nur auf Ihrem Server, keine Cloud-Verbindung</p>
+                    <p className='font-medium group-hover:text-primary'>{t('localLabel')}</p>
+                    <p className='text-muted-foreground mt-0.5'>{t('localDesc')}</p>
                   </div>
                 </button>
               ) : (
                 <div className='flex items-center gap-2.5 px-3 py-2 rounded-lg border border-dashed text-xs text-muted-foreground/50 cursor-not-allowed'>
                   <Server className='h-4 w-4 shrink-0' />
                   <div>
-                    <p className='font-medium'>Lokales LLM</p>
-                    <p className='mt-0.5'>Nicht konfiguriert <span className='text-[10px]'>(coming soon)</span></p>
+                    <p className='font-medium'>{t('localLabel')}</p>
+                    <p className='mt-0.5'>{t('localNotConfigured')} <span className='text-[10px]'>({t('comingSoon')})</span></p>
                   </div>
                 </div>
               )}
@@ -99,7 +101,6 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
         {/* Ask-user structured question */}
         {!isUser && message.question && (
           <>
-            {/* Question text as AI bubble (only if no content bubble already) */}
             {!message.content && (
               <div className='relative group/msg'>
                 <div className='inline-block rounded-2xl rounded-tl-sm px-3.5 py-2.5 max-w-[95%] text-sm bg-muted text-foreground'>
@@ -107,7 +108,6 @@ export function ChatMessage({ message, onOptionSelect, onConsentGrant, isThinkin
                 </div>
               </div>
             )}
-            {/* Options right-aligned, column layout, shrink to content */}
             {!message.question.answered && (
               <div className='self-end flex flex-col items-end gap-1.5 mt-2'>
                 {message.question.options.map(opt => (

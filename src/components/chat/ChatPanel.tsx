@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
+import { useTranslations, useLocale } from 'next-intl'
 import type { ConsentMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction, DocumentMeta, DocumentPage } from '@/types'
 
 interface ChatPanelProps {
@@ -31,9 +32,11 @@ export function ChatPanel({
   consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
   onSuggestionsReceived, onRedactionAction, onMessagesChange, onConsentChange,
 }: ChatPanelProps) {
+  const t = useTranslations('ChatPanel')
+  const locale = useLocale()
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages } =
     useChatStream({
-      consent, redactionMode, foiJurisdiction, documentPages, documents, redactions,
+      consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, locale,
       onSuggestionsReceived,
       onConsentGranted: onConsentChange,
     })
@@ -41,10 +44,8 @@ export function ChatPanel({
   const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)
 
-  // Expose sendMessage for external triggers (e.g. on document upload)
   useEffect(() => { if (triggerRef) triggerRef.current = sendMessage }, [triggerRef, sendMessage])
 
-  // Load persisted messages or trigger welcome on mount
   useEffect(() => {
     if (initialLoaded.current) return
     initialLoaded.current = true
@@ -55,19 +56,17 @@ export function ChatPanel({
       const hasConsent = !!consent
       let msg: string
       if (hasDocs && hasConsent) {
-        // Defer until document pages are extracted — don't trigger immediately or read_documents will fail
-        onDeferredTrigger?.(`Dokumente geladen: ${documentNames!.join(', ')}. Zugriff bereits erteilt. Begrüße den Nutzer kurz, rufe SOFORT read_documents auf und mache dann Schwärzungsvorschläge.`)
+        onDeferredTrigger?.(`Documents loaded: ${documentNames!.join(', ')}. Access already granted. Greet the user briefly, call read_documents IMMEDIATELY, then suggest redactions.`)
         return
       } else if (hasDocs) {
-        msg = `Dokumente geladen: ${documentNames!.join(', ')}. Begrüße den Nutzer kurz, erkläre was du tun kannst, und fordere Dokumentenzugriff an.`
+        msg = `Documents loaded: ${documentNames!.join(', ')}. Greet the user briefly, explain what you can do, and request document access.`
       } else {
-        msg = `Begrüße den Nutzer kurz, erkläre was du tun kannst, und bitte ihn, ein Dokument hochzuladen.`
+        msg = `Greet the user briefly, explain what you can do, and ask them to upload a document.`
       }
       sendMessage(`[System: ${msg}]`)
     }
   }, [initialMessages, setMessages, sendMessage])
 
-  // Persist messages when they change
   useEffect(() => {
     if (messages.length > 0) onMessagesChange?.(messages)
   }, [messages, onMessagesChange])
@@ -83,7 +82,7 @@ export function ChatPanel({
     <div className='flex flex-col h-full bg-card'>
       {/* Panel header */}
       <div className='shrink-0 h-11 flex items-center justify-between gap-1 px-3 border-b bg-muted/50'>
-        <span className='text-xs font-medium text-foreground'>Schwärzungs-Assistent</span>
+        <span className='text-xs font-medium text-foreground'>{t('header')}</span>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant='ghost' size='icon' className='h-6 w-6 text-muted-foreground hover:text-destructive'
@@ -91,7 +90,7 @@ export function ChatPanel({
               <Trash2 className='h-3.5 w-3.5' />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side='bottom'>Gespräch löschen</TooltipContent>
+          <TooltipContent side='bottom'>{t('clearConversation')}</TooltipContent>
         </Tooltip>
       </div>
 
@@ -102,7 +101,7 @@ export function ChatPanel({
             <div className='flex flex-col items-center justify-center h-full text-center py-12 gap-3'>
               <Bot className='h-10 w-10 text-muted-foreground/40' />
               <p className='text-sm text-muted-foreground max-w-xs'>
-                Ich bin Ihr KI-Assistent für die Dokumentenschwärzung. Laden Sie ein Dokument hoch und beginnen Sie das Gespräch.
+                {t('emptyState')}
               </p>
             </div>
           ) : (

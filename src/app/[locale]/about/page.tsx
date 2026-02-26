@@ -1,7 +1,9 @@
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/lib/navigation'
 import { Bot, Download, ArrowRight, Check, X, ChevronDown } from 'lucide-react'
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 
-// ── Mini UI mockups ────────────────────────────────────────────────────────────
+// ── Mini UI mockups (illustrative, intentionally static) ──────────────────────
 
 function MockChat() {
   return (
@@ -198,61 +200,29 @@ function MockExport() {
           <Download className='h-2.5 w-2.5' /> Export
         </div>
         <div className='flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground rounded px-2 py-1.5 text-[10px] font-medium'>
-          Schwärzen & Speichern
+          Schwärzen &amp; Speichern
         </div>
       </div>
     </div>
   )
 }
 
-// ── Feature cards ──────────────────────────────────────────────────────────────
-
-const features = [
-  {
-    title: 'KI-Assistent',
-    description: 'Ein Chat-Agent liest das Dokument, stellt gezielte Rückfragen und schlägt in einem Schritt alle relevanten Schwärzungen vor — mit Konfidenzwert für jeden Vorschlag.',
-    mockup: <MockChat />,
-  },
-  {
-    title: 'Schwärzungsliste',
-    description: 'Alle Schwärzungen in chronologischer Reihenfolge oder nach Person gruppiert. Vorschläge mit einem Klick akzeptieren oder ablehnen — einzeln oder en bloc.',
-    mockup: <MockRedactions />,
-  },
-  {
-    title: 'Informationsfreiheitsmodus',
-    description: 'Im Informationsfreiheitsmodus wird jeder Schwärzung ein konkreter Rechtsgrund zugeordnet — §3–6 Informationsfreiheitsgesetz Bund, EU-Verordnung 1049/2001 und weitere Rechtsordnungen.',
-    mockup: <MockFOI />,
-  },
-  {
-    title: 'Manuelle Schwärzung',
-    description: 'Textstellen per Klick-und-Ziehen oder freihändig direkt im Dokument auswählen. Vorschläge des Assistenten mit einem Klick akzeptieren oder ablehnen.',
-    mockup: <MockManual />,
-  },
-  {
-    title: 'Personen-Gruppenansicht',
-    description: 'Schwärzungen werden in der linken Seitenleiste nach Person und Kategorie gruppiert. Alle Einträge einer Person lassen sich auf einmal akzeptieren oder ablehnen.',
-    mockup: <MockPersons />,
-  },
-  {
-    title: 'Mehrere Dokumente',
-    description: 'PDFs und DOCX-Dateien als Batch hochladen. Der Assistent hat Kontext über alle Dokumente gleichzeitig und kann dokumentübergreifend Vorschläge erstellen.',
-    mockup: <MockMultiDoc />,
-  },
-  {
-    title: 'Datensouveränität',
-    description: 'Wahl zwischen Azure OpenAI (DSGVO-konform, keine Data Retention), einem Ollama-kompatiblen Sprachmodell auf eigenem Server, oder vollständig lokaler Sprachverarbeitung im Browser — ohne jede Cloud-Verbindung.',
-    mockup: <MockPrivacy />,
-  },
-  {
-    title: 'Export',
-    description: 'Vorschau-Export mit sichtbaren Markierungen zum internen Review. Finaler Export mit unwiderruflich entferntem Text — bereit zur Veröffentlichung.',
-    mockup: <MockExport />,
-  },
-]
-
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const t = await getTranslations('About')
+
+  const features = [
+    { title: t('featureAITitle'),       description: t('featureAIDesc'),       mockup: <MockChat /> },
+    { title: t('featureListTitle'),     description: t('featureListDesc'),     mockup: <MockRedactions /> },
+    { title: t('featureFOITitle'),      description: t('featureFOIDesc'),      mockup: <MockFOI /> },
+    { title: t('featureManualTitle'),   description: t('featureManualDesc'),   mockup: <MockManual /> },
+    { title: t('featureGroupTitle'),    description: t('featureGroupDesc'),    mockup: <MockPersons /> },
+    { title: t('featureMultiDocTitle'), description: t('featureMultiDocDesc'), mockup: <MockMultiDoc /> },
+    { title: t('featurePrivacyTitle'),  description: t('featurePrivacyDesc'),  mockup: <MockPrivacy /> },
+    { title: t('featureExportTitle'),   description: t('featureExportDesc'),   mockup: <MockExport /> },
+  ]
+
   return (
     <div className='min-h-screen bg-white text-foreground flex flex-col'>
 
@@ -264,38 +234,38 @@ export default function AboutPage() {
           </div>
           <span className='font-semibold text-sm'>EasyRedact</span>
         </Link>
-        <Link href='/app' className='ml-auto flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors font-medium'>
-          Zur App <ArrowRight className='h-3 w-3' />
-        </Link>
+        <div className='ml-auto flex items-center gap-3'>
+          <LocaleSwitcher />
+          <Link href='/app' className='flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors font-medium'>
+            {t('toApp')} <ArrowRight className='h-3 w-3' />
+          </Link>
+        </div>
       </header>
 
       {/* Hero */}
       <section className='flex flex-col items-center text-center px-6 pt-16 pb-12 gap-5'>
-        <h1 className='text-4xl font-bold tracking-tight max-w-xl'>
-          Sensible Daten.<br />Automatisch geschwärzt.
+        <h1 className='text-4xl font-bold tracking-tight max-w-xl whitespace-pre-line'>
+          {t('heroTitle')}
         </h1>
         <p className='text-lg text-gray-500 leading-relaxed max-w-lg'>
-          EasyRedact kombiniert einen intelligenten KI-Assistenten mit einem PDF-Viewer —
-          für Schwärzungen nach Datenschutz- und Informationsfreiheitsrecht.
+          {t('heroDesc')}
         </p>
         <Link href='/app'
           className='flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors'>
-          App öffnen <ArrowRight className='h-4 w-4' />
+          {t('startNow')} <ArrowRight className='h-4 w-4' />
         </Link>
       </section>
 
       {/* Features */}
       <section id='features' className='px-6 py-10 max-w-5xl mx-auto w-full'>
-        <p className='text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-8'>Features</p>
+        <p className='text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-8'>{t('featuresLabel')}</p>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
           {features.map(f => (
             <div key={f.title} className='rounded-xl border border-gray-200 bg-gray-50/50 overflow-hidden flex flex-col'>
-              {/* Text header */}
               <div className='px-5 pt-5 pb-4'>
                 <h3 className='font-semibold text-sm text-gray-900 mb-1'>{f.title}</h3>
                 <p className='text-xs text-gray-500 leading-relaxed'>{f.description}</p>
               </div>
-              {/* Mockup area */}
               <div className='mx-4 mb-4 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden'>
                 {f.mockup}
               </div>
@@ -308,15 +278,15 @@ export default function AboutPage() {
       <section className='px-6 py-12 border-t bg-gray-50'>
         <div className='max-w-3xl mx-auto flex flex-col gap-8'>
           <div className='text-center flex flex-col gap-2'>
-            <p className='text-xs font-semibold text-gray-400 uppercase tracking-widest'>Workflow</p>
-            <h2 className='text-2xl font-bold'>In drei Schritten zum geschwärzten Dokument</h2>
+            <p className='text-xs font-semibold text-gray-400 uppercase tracking-widest'>{t('workflowLabel')}</p>
+            <h2 className='text-2xl font-bold'>{t('workflowTitle')}</h2>
           </div>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-            {[
-              { n: '1', title: 'Hochladen', desc: 'PDF oder DOCX per Drag & Drop. Mehrere Dokumente gleichzeitig möglich.' },
-              { n: '2', title: 'Mit KI schwärzen', desc: 'Assistent liest das Dokument, schlägt Schwärzungen vor. Vorschläge prüfen und anpassen.' },
-              { n: '3', title: 'Exportieren', desc: 'Vorschau-PDF oder finale Version mit unwiderruflich entferntem Text.' },
-            ].map(step => (
+            {([
+              { n: '1', title: t('step1Title'), desc: t('step1Desc') },
+              { n: '2', title: t('step2Title'), desc: t('step2Desc') },
+              { n: '3', title: t('step3Title'), desc: t('step3Desc') },
+            ]).map(step => (
               <div key={step.n} className='flex flex-col items-center text-center gap-3'>
                 <div className='w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0'>
                   {step.n}
@@ -329,7 +299,7 @@ export default function AboutPage() {
           <div className='flex justify-center'>
             <Link href='/app'
               className='flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors'>
-              Jetzt starten <ArrowRight className='h-4 w-4' />
+              {t('startNow')} <ArrowRight className='h-4 w-4' />
             </Link>
           </div>
         </div>

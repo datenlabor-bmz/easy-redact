@@ -22,7 +22,7 @@ async function* streamCompletion(client: any, model: string, messages: ApiChatMe
 
 export async function POST(req: Request) {
   const body: ChatRequest = await req.json()
-  const { messages, model, consent, redactionMode, foiJurisdiction, documentPages, currentRedactions } = body
+  const { messages, model, consent, redactionMode, foiJurisdiction, documentPages, currentRedactions, locale } = body
 
   console.log('[chat] POST', { consent, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
   console.log('[chat] messages', JSON.stringify(messages.map(m => ({ role: m.role, content: m.content?.slice(0, 80) }))))
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
   const systemPrompt = buildSystemPrompt({
     redactionMode, foiJurisdiction, foiRules,
     hasDocumentAccess: !!consent,
+    locale,
   })
 
   const { client, model: modelName } = getClient(consent === 'local' ? 'local' : 'cloud')
@@ -54,11 +55,11 @@ export async function POST(req: Request) {
 
         if (currentRedactions?.length) {
           const lines = currentRedactions.map(r =>
-            `- ID: ${r.id} | Status: ${r.status} | Dokument: ${r.documentName ?? r.documentKey} | Seite ${r.pageIndex + 1} | "${r.text}"${r.person ? ` | Person: ${r.person}` : ''}${r.personGroup ? ` (${r.personGroup})` : ''}`
+            `- ID: ${r.id} | Status: ${r.status} | Document: ${r.documentName ?? r.documentKey} | Page ${r.pageIndex + 1} | "${r.text}"${r.person ? ` | Person: ${r.person}` : ''}${r.personGroup ? ` (${r.personGroup})` : ''}`
           )
           apiMessages.push({
             role: 'system',
-            content: `Aktueller Schwärzungsstatus (vollständig, ${currentRedactions.length} Einträge):\n${lines.join('\n')}\n\nNur Einträge mit Status "suggested" können über das remove-Array in suggest_redactions entfernt werden.`,
+            content: `Current redaction status (complete, ${currentRedactions.length} entries):\n${lines.join('\n')}\n\nOnly entries with status "suggested" can be removed via the remove array in suggest_redactions.`,
           })
         }
 

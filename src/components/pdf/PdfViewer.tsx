@@ -136,7 +136,7 @@ export function PdfViewer({
       const existing = await loadDocumentAndAnnotations(buf)
       existing.forEach((ann: any) => {
         const parts = ann.quads.map((q: number[]) => quadToPart(q))
-        onRedactionAdd({ id: generateUUID(), documentKey: '', pageIndex: ann.pageIndex, parts, status: 'suggested', confidence: 1, shouldApply: true })
+        onRedactionAdd({ id: generateUUID(), documentKey: '', pageIndex: ann.pageIndex, parts, status: 'suggested', confidence: 'high', shouldApply: true })
       })
 
       const total = await countPages()
