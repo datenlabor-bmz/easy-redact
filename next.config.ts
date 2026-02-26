@@ -3,7 +3,37 @@ import createNextIntlPlugin from 'next-intl/plugin'
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
+const securityHeaders = [
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-DNS-Prefetch-Control', value: 'off' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      // Next.js inline scripts + MuPDF WASM require unsafe-eval
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      // PDF rendering uses blob: and data: URLs
+      "img-src 'self' data: blob:",
+      "font-src 'self'",
+      // Web workers (MuPDF) loaded via blob:
+      "worker-src 'self' blob:",
+      // All external network calls go through Next.js API routes
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '),
+  },
+]
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: '/(.*)', headers: securityHeaders }]
+  },
   webpack(config, { isServer }) {
     if (!isServer) {
       // mupdf WASM has Node.js conditional imports that need to be ignored in browser
