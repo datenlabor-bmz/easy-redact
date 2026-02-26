@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PdfViewer } from '@/components/pdf/PdfViewer'
 import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
+import { NlpPanel } from '@/components/NlpPanel'
 import { SettingsPopover } from '@/components/SettingsPopover'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
@@ -146,6 +147,44 @@ export default function App() {
       return next
     })
   }, [])
+
+  const handleRemoveByReason = useCallback((reason: string) => {
+    setSession(prev => {
+      if (!prev) return prev
+      const next = { ...prev, redactions: prev.redactions.filter(r => r.reason !== reason || r.status !== 'suggested') }
+      saveSession(next)
+      return next
+    })
+  }, [])
+
+  const handleRestoreByReason = useCallback((reason: string) => {
+    setSession(prev => {
+      if (!prev) return prev
+      const changed = prev.redactions.some(r => r.reason === reason && r.status === 'ignored')
+      if (!changed) return prev
+      const next = { ...prev, redactions: prev.redactions.map(r => r.reason === reason && r.status === 'ignored' ? { ...r, status: 'suggested' as const, shouldApply: true } : r) }
+      saveSession(next)
+      return next
+    })
+  }, [])
+
+  const handleSuggestionsReceived = useCallback((suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => {
+    remove.forEach(id => {
+      setSession(prev => {
+        if (!prev || prev.redactions.find(r => r.id === id)?.status !== 'suggested') return prev
+        const next = { ...prev, redactions: prev.redactions.filter(r => r.id !== id) }
+        saveSession(next)
+        return next
+      })
+    })
+    const docKey = session?.documents[activeFileIdx]?.idbKey ?? ''
+    const byDoc: Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }> = {}
+    const ensure = (k: string) => { if (!byDoc[k]) byDoc[k] = { suggestions: [], textRanges: [], pageRanges: [] } }
+    for (const s of suggestions) { const k = s.documentKey || docKey; ensure(k); byDoc[k].suggestions.push(s) }
+    for (const r of textRanges) { const k = r.documentKey || docKey; ensure(k); byDoc[k].textRanges.push(r) }
+    for (const r of pageRanges) { const k = r.documentKey || docKey; ensure(k); byDoc[k].pageRanges.push(r) }
+    setPendingByDoc(byDoc)
+  }, [session?.documents, activeFileIdx])
 
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {
     const arr = Array.from(fileList)
@@ -505,34 +544,31 @@ export default function App() {
         <div onMouseDown={startDrag('right')}
           className='w-px shrink-0 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary/70 transition-colors z-10' />
 
-        {/* Right — Chat */}
+        {/* Right — Chat or NLP panel */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
-          <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
-            documents={session.documents}
-            documentNames={session.documents.map(d => d.name)}
-            triggerRef={chatTriggerRef}
-            onDeferredTrigger={msg => {
-              pendingChatTrigger.current = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
-              pendingChatTriggerDocKey.current = session.documents[activeFileIdx]?.idbKey ?? null
-            }}
-            foiJurisdiction={session.foiJurisdiction}
-            documentPages={documentPages}
-            initialMessages={chatMessages}
-            redactions={session.redactions}
-            onSuggestionsReceived={(suggestions, textRanges, pageRanges, remove) => {
-              remove.forEach(id => {
-                if (session.redactions.find(r => r.id === id)?.status === 'suggested') removeRedaction(id)
-              })
-              // Group by documentKey, defaulting to the currently active doc
-              const byDoc: Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }> = {}
-              const ensure = (k: string) => { if (!byDoc[k]) byDoc[k] = { suggestions: [], textRanges: [], pageRanges: [] } }
-              for (const s of suggestions) { const k = s.documentKey || activeDocKey; ensure(k); byDoc[k].suggestions.push(s) }
-              for (const r of textRanges) { const k = r.documentKey || activeDocKey; ensure(k); byDoc[k].textRanges.push(r) }
-              for (const r of pageRanges) { const k = r.documentKey || activeDocKey; ensure(k); byDoc[k].pageRanges.push(r) }
-              setPendingByDoc(byDoc)
-            }}
-            onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
-            onConsentChange={mode => updateSession({ consent: mode })} />
+          {session.consent === 'spacy' ? (
+            <NlpPanel documentPages={documentPages}
+              redactions={session.redactions}
+              onSuggestionsReceived={handleSuggestionsReceived}
+              onRemoveByReason={handleRemoveByReason}
+              onRestoreByReason={handleRestoreByReason} />
+          ) : (
+            <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
+              documents={session.documents}
+              documentNames={session.documents.map(d => d.name)}
+              triggerRef={chatTriggerRef}
+              onDeferredTrigger={msg => {
+                pendingChatTrigger.current = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
+                pendingChatTriggerDocKey.current = session.documents[activeFileIdx]?.idbKey ?? null
+              }}
+              foiJurisdiction={session.foiJurisdiction}
+              documentPages={documentPages}
+              initialMessages={chatMessages}
+              redactions={session.redactions}
+              onSuggestionsReceived={handleSuggestionsReceived}
+              onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
+              onConsentChange={mode => updateSession({ consent: mode })} />
+          )}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Cloud, Server, Brain, Globe, Lock, ShieldCheck, FileSearch, User } from 'lucide-react'
+import { Cloud, Server, Brain, Globe, Hand, ShieldCheck, FileSearch, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -12,6 +12,7 @@ import { getJurisdictions } from '@/lib/redaction-rules'
 import type { ConsentMode, JurisdictionMeta, RedactionMode, Session } from '@/types'
 
 const localLlmEnabled = process.env.NEXT_PUBLIC_LOCAL_LLM_ENABLED === 'true'
+const spacyEnabled = process.env.NEXT_PUBLIC_SPACY_ENABLED === 'true'
 
 function OptionList<T>({ options, isActive, onSelect }: {
   options: Array<{ value: T; label: string; icon: React.ElementType; desc: string; available?: boolean; comingSoon?: string }>
@@ -43,6 +44,10 @@ function OptionList<T>({ options, isActive, onSelect }: {
   )
 }
 
+const ICON_FOR_MODE: Record<string, React.ElementType> = {
+  cloud: Cloud, local: Server, spacy: Brain, browser: Globe,
+}
+
 // ── Consent popover ────────────────────────────────────────────────────────────
 
 interface ConsentPopoverProps {
@@ -56,38 +61,56 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
   const [open, setOpen] = useState(false)
   const [showModelFields, setShowModelFields] = useState(false)
 
-  const CONSENT_OPTIONS = [
-    { mode: null as ConsentMode,    label: t('notReleased'), icon: Lock,   desc: t('notReleasedDesc'),  available: true },
-    { mode: 'cloud' as ConsentMode, label: t('cloudLabel'),  icon: Cloud,  desc: t('cloudDesc'),        available: true },
-    { mode: 'local' as ConsentMode, label: t('localLabel'),  icon: Server, desc: t('localDesc'),        available: localLlmEnabled },
-    { mode: null as ConsentMode,    label: t('spacyLabel'),  icon: Brain,  desc: t('spacyDesc'),        available: false },
-    { mode: null as ConsentMode,    label: t('browserLabel'),icon: Globe,  desc: t('browserDesc'),      available: false },
+  const CHAT_OPTIONS = [
+    { mode: 'cloud' as ConsentMode, label: t('cloudLabel'),  icon: Cloud,  desc: t('cloudDesc'),   available: true },
+    { mode: 'local' as ConsentMode, label: t('localLabel'),  icon: Server, desc: t('localDesc'),   available: localLlmEnabled },
   ]
 
-  const active = CONSENT_OPTIONS.find(o => o.available && (
-    o.mode === session.consent && (o.mode !== null || o.label === t('notReleased'))
-  )) ?? CONSENT_OPTIONS[0]
-  const ActiveIcon = active.icon
+  const RULE_OPTIONS = [
+    { mode: 'spacy' as ConsentMode,   label: t('spacyLabel'),   icon: Brain, desc: t('spacyDesc'),   available: spacyEnabled },
+    { mode: null as ConsentMode,       label: t('browserLabel'), icon: Globe, desc: t('browserDesc'), available: false },
+  ]
+
+  const activeIcon = session.consent ? ICON_FOR_MODE[session.consent] ?? Hand : Hand
+  const ActiveIcon = activeIcon
+  const activeLabel = session.consent
+    ? [...CHAT_OPTIONS, ...RULE_OPTIONS].find(o => o.mode === session.consent)?.label ?? t('manualOnly')
+    : t('manualOnly')
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant='ghost' size='sm' className='gap-1.5 h-7 px-2 has-[>svg]:px-2 text-xs text-muted-foreground hover:text-foreground'>
           <ActiveIcon className='h-3.5 w-3.5' />
-          <span>{active.label}</span>
+          <span>{activeLabel}</span>
         </Button>
       </PopoverTrigger>
 
       <PopoverContent align='end' className='w-64 p-0' onOpenAutoFocus={e => e.preventDefault()}>
         <TooltipProvider delayDuration={400} disableHoverableContent>
-          <div className='px-3 pt-3 pb-1'>
-            <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2'>{t('dataProcessing')}</p>
+          <div className='px-3 pt-3 pb-0'>
+            <p className='text-[11px] font-semibold text-muted-foreground uppercase tracking-wide'>{t('dataProcessing')}</p>
+          </div>
+          {/* Manual */}
+          <div className='px-3 pt-1.5 pb-1'>
             <OptionList
-              options={CONSENT_OPTIONS.map(o => ({ value: o.mode, label: o.label, icon: o.icon, desc: o.desc, available: o.available, comingSoon: t('comingSoon') }))}
-              isActive={(v, i) => i === 0 ? session.consent === null : v === session.consent && v !== null}
+              options={[{ value: null as ConsentMode, label: t('manualOnly'), icon: Hand, desc: t('manualOnlyDesc') }]}
+              isActive={v => session.consent === null}
               onSelect={onConsentChange} />
           </div>
 
+          <Separator />
+
+          {/* Chat AI section */}
+          <div className='px-3 pb-1'>
+            <p className='text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 mt-2'>{t('chatSection')}</p>
+            <OptionList
+              options={CHAT_OPTIONS.map(o => ({ value: o.mode, label: o.label, icon: o.icon, desc: o.desc, available: o.available, comingSoon: t('comingSoon') }))}
+              isActive={v => v === session.consent}
+              onSelect={onConsentChange} />
+          </div>
+
+          {/* Model settings */}
           {(session.consent === 'cloud' || session.consent === 'local') && (
             <div className='px-3 pb-2'>
               <button tabIndex={-1} onClick={() => setShowModelFields(v => !v)}
@@ -120,6 +143,17 @@ export function ConsentPopover({ session, onConsentChange, onModelSettingsChange
               )}
             </div>
           )}
+
+          <Separator />
+
+          {/* Rule-based section */}
+          <div className='px-3 pt-2 pb-2'>
+            <p className='text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5'>{t('ruleSection')}</p>
+            <OptionList
+              options={RULE_OPTIONS.map(o => ({ value: o.mode, label: o.label, icon: o.icon, desc: o.desc, available: o.available, comingSoon: t('comingSoon') }))}
+              isActive={v => v === session.consent}
+              onSelect={onConsentChange} />
+          </div>
 
           {session.consent === 'cloud' && (
             <>

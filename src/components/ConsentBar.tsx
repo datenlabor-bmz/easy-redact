@@ -1,10 +1,12 @@
 'use client'
 
-import { Cloud, Server, Brain, Globe, Lock } from 'lucide-react'
+import { Cloud, Server, Brain, Globe, Hand } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslations } from 'next-intl'
 import type { ConsentMode } from '@/types'
+
+const spacyEnabled = process.env.NEXT_PUBLIC_SPACY_ENABLED === 'true'
 
 interface ConsentBarProps {
   consent: ConsentMode
@@ -14,14 +16,15 @@ interface ConsentBarProps {
 export function ConsentBar({ consent, onConsentChange }: ConsentBarProps) {
   const t = useTranslations('ConsentBar')
 
-  const OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string; implemented: boolean }> = [
-    { mode: null,    label: t('notReleased'), icon: Lock,   desc: t('notReleasedDesc'), implemented: true },
-    { mode: 'cloud', label: t('cloudLabel'),  icon: Cloud,  desc: t('cloudDesc'),       implemented: true },
-    { mode: 'local', label: t('localLabel'),  icon: Server, desc: t('localDesc'),       implemented: true },
+  const OPTIONS: Array<{ mode: ConsentMode; label: string; icon: React.ElementType; desc: string }> = [
+    { mode: null,    label: t('manualOnly'),  icon: Hand,   desc: t('manualOnlyDesc') },
+    { mode: 'cloud', label: t('cloudLabel'),  icon: Cloud,  desc: t('cloudDesc') },
+    { mode: 'local', label: t('localLabel'),  icon: Server, desc: t('localDesc') },
+    ...(spacyEnabled ? [{ mode: 'spacy' as ConsentMode, label: t('spacyLabel'), icon: Brain, desc: t('spacyDesc') }] : []),
   ]
 
   const STUB_OPTIONS = [
-    { label: t('spacyLabel'),   icon: Brain,  desc: t('spacyDesc') },
+    ...(!spacyEnabled ? [{ label: t('spacyLabel'), icon: Brain, desc: t('spacyDesc') }] : []),
     { label: t('browserLabel'), icon: Globe,  desc: t('browserDesc') },
   ]
 

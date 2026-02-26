@@ -118,7 +118,7 @@ export interface PageRangeSuggestion {
 
 // ── Session ───────────────────────────────────────────────────────────────────
 
-export type ConsentMode = 'cloud' | 'local' | null
+export type ConsentMode = 'cloud' | 'local' | 'spacy' | null
 export type RedactionMode = 'pii' | 'foi'
 
 export interface DocumentMeta {
