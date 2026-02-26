@@ -15,18 +15,18 @@ ENV PATH="/root/.local/bin:$PATH"
 
 WORKDIR /app
 
-# Install Node deps
+# Install Node deps (all, including devDeps needed for build)
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy source
 COPY . .
 
-# Pre-download spaCy model at build time
-RUN uv run python -c "import spacy; spacy.cli.download('de_core_news_lg')" 2>/dev/null || true
-
 # Build Next.js
 RUN npm run build
+
+# Pre-cache uv env + spaCy model by running the script against empty input
+RUN echo '[]' | uv run scripts/spacy_nlp.py
 
 ENV NODE_ENV=production
 ENV LIBREOFFICE_PATH=/usr/bin/libreoffice
@@ -34,4 +34,4 @@ ENV SPACY_ENABLED=true
 ENV PORT=3000
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

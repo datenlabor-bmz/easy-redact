@@ -1,5 +1,8 @@
 # /// script
-# dependencies = ["spacy>=3.7"]
+# dependencies = [
+#   "spacy>=3.8,<3.9",
+#   "de_core_news_lg @ https://github.com/explosion/spacy-models/releases/download/de_core_news_lg-3.8.0/de_core_news_lg-3.8.0-py3-none-any.whl",
+# ]
 # ///
 """
 stdin: JSON array of {pageIndex: number, text: string}
