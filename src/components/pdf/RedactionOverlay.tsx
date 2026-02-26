@@ -121,13 +121,12 @@ export function RedactionOverlay({
           pointerEvents='none' />
       )))}
 
-      {/* Highlight boxes + inline action buttons */}
+      {/* Highlight boxes */}
       {pageRedactions.map(r => (
         <g key={r.id} onClick={(e) => onRedactionClick(r.id, e)} data-highlight='true'
           style={{ cursor: 'pointer' }}
           onMouseEnter={() => setLastHoveredId(r.id)}
           onMouseLeave={() => setLastHoveredId(null)}>
-          {/* transparent hit area covering full bounding box */}
           {(() => { const bb = boundingBox(r); return <rect x={bb.x0} y={bb.y0} width={bb.x1 - bb.x0} height={bb.y1 - bb.y0} fill='transparent' stroke='none' /> })()}
           {r.parts.map((part, i) => (
             <RedactionBox key={i} part={part} status={r.status} confidence={r.confidence} />
@@ -139,10 +138,12 @@ export function RedactionOverlay({
                 fill='none' stroke='#6366f1' strokeWidth={1.5} pointerEvents='none' />
             )
           })()}
-          {(r.id === lastHoveredId || selectedId === r.id) && (
-            <RedactionButtons redaction={r} onAccept={onAccept} onIgnore={onIgnore} />
-          )}
         </g>
+      ))}
+
+      {/* Action buttons rendered above all highlights */}
+      {pageRedactions.filter(r => r.id === lastHoveredId || selectedId === r.id).map(r => (
+        <RedactionButtons key={`btn-${r.id}`} redaction={r} onAccept={onAccept} onIgnore={onIgnore} />
       ))}
       {renderCurrent()}
     </svg>
