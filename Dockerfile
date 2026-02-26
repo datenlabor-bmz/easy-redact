@@ -1,4 +1,4 @@
-FROM node:22-slim AS base
+FROM --platform=linux/amd64 node:22-slim AS base
 
 # Install LibreOffice, uv, and Python
 RUN apt-get update && apt-get install -y --no-install-recommends \
