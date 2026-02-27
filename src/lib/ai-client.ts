@@ -3,9 +3,13 @@ import { AzureOpenAI, OpenAI } from 'openai'
 function getProxyOptions() {
   const proxy = process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY
   if (!proxy) return {}
-  // Lazy-import to avoid bundling https-proxy-agent in client build
-  const { HttpsProxyAgent } = require('https-proxy-agent')
-  return { fetchOptions: { agent: new HttpsProxyAgent(proxy) } }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { ProxyAgent, fetch: undiciFetch } = require('undici')
+  const dispatcher = new ProxyAgent(proxy)
+  return {
+    fetch: (url: string | URL | Request, init?: RequestInit) =>
+      (undiciFetch as typeof globalThis.fetch)(url as string, { ...init, dispatcher } as RequestInit),
+  }
 }
 
 // Mirror env var names from redaction-app/backend/app/api.py exactly

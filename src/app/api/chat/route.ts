@@ -24,9 +24,7 @@ export async function POST(req: Request) {
   const body: ChatRequest = await req.json()
   const { messages, model, consent, redactionMode, foiJurisdiction, documentPages, currentRedactions, locale } = body
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[chat] POST', { consent, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
-  }
+  console.log('[chat] POST', { consent, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
 
   // Load FOI rules if needed
   const foiRules = redactionMode === 'foi' && foiJurisdiction
@@ -175,7 +173,7 @@ export async function POST(req: Request) {
 
         if (iterations >= 20) send(ctrl, { type: 'error', message: 'Maximum iterations reached' })
       } catch (err) {
-        if (process.env.NODE_ENV !== 'production') console.error('[chat] error', err)
+        console.error('[chat] error', err)
         send(ctrl, { type: 'error', message: err instanceof Error ? err.message : 'Unknown error' })
       } finally {
         ctrl.close()

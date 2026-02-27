@@ -34,6 +34,7 @@ const basePath = process.env.BASE_PATH || ''
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  serverExternalPackages: ['undici'],
   ...(basePath ? { basePath, assetPrefix: basePath, trailingSlash: true } : {}),
   async redirects() {
     return basePath ? [{ source: '/', destination: '/en', permanent: false }] : []
