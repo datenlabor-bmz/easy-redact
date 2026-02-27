@@ -95,10 +95,20 @@ DOCX upload and spaCy NLP are only available in the Docker build; they return HT
 To serve the app under a subpath (e.g. `datenlabor.bmz.bund.de/easyredact/`), pass `BASE_PATH` at build time:
 
 ```bash
-docker build --build-arg BASE_PATH=/easyredact -t easy-redact .
+docker build --platform linux/amd64 --build-arg BASE_PATH=/easyredact -t easy-redact .
 ```
 
-This sets the Next.js `basePath`, which rewrites all routes, assets, and API endpoints. The nginx reverse proxy should forward requests to `/easyredact/...` as-is — do not strip the prefix.
+This sets the Next.js `basePath`, which rewrites all routes, assets, and API endpoints. Configure nginx to forward requests without stripping the prefix:
+
+```nginx
+location /easyredact/ {
+    proxy_pass http://127.0.0.1:3001;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
 
 ## Tech Stack
 

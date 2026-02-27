@@ -33,7 +33,11 @@ const securityHeaders = [
 const basePath = process.env.BASE_PATH || ''
 
 const nextConfig: NextConfig = {
-  ...(basePath ? { basePath } : {}),
+  output: 'standalone',
+  ...(basePath ? { basePath, assetPrefix: basePath, trailingSlash: true } : {}),
+  async redirects() {
+    return basePath ? [{ source: '/', destination: '/en', permanent: false }] : []
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
