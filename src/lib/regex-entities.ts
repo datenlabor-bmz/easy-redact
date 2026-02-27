@@ -114,7 +114,7 @@ const PATTERNS: Record<RegexCategory, { pattern: RegExp; personGroup: string }> 
     personGroup: 'Datumsangaben',
   },
   id: {
-    pattern: /\b(?=\S*\d\S*\d\S*\d)[A-Za-z0-9][A-Za-z0-9./-]{6,}[A-Za-z0-9]\b/g,
+    pattern: /\b(?=\S*\d\S*\d\S*\d)(?=\S*[A-Za-z])[A-Za-z0-9][A-Za-z0-9./-]{6,}[A-Za-z0-9]\b/g,
     personGroup: 'Kennungen',
   },
 }

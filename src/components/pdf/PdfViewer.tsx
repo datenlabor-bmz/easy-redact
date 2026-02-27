@@ -170,10 +170,20 @@ export function PdfViewer({
   useEffect(() => {
     if (!pendingSuggestions?.length || !pages.length) return
     ;(async () => {
+      const existingTexts = redactions
+        .filter(r => r.searchText && r.status !== 'ignored')
+        .map(r => ({ page: r.pageIndex, text: r.searchText! }))
+      const processedTexts: Array<{ page: number; text: string }> = []
+
+      const isSubsumed = (page: number, text: string) =>
+        [...existingTexts, ...processedTexts].some(e =>
+          e.page === page && (e.text.includes(text) || text.includes(e.text)))
+
       for (const s of pendingSuggestions) {
+        if (isSubsumed(s.pageIndex, s.text)) continue
+        processedTexts.push({ page: s.pageIndex, text: s.text })
         const quads = await searchPage(s.pageIndex, s.text)
         if (quads.length === 0) continue
-        // quads is Quad[][] - outer array = one entry per occurrence, inner = quads for that match
         for (const matchQuads of quads as number[][][]) {
           const parts = matchQuads.map(q => quadToPart(q as number[]))
           onRedactionAdd({

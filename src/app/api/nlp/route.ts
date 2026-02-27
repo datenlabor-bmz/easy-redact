@@ -43,8 +43,18 @@ export async function POST(req: Request) {
     ? spacySuggestions.filter(s => nerCategories.some(c => s.reason === NER_TO_REASON[c]))
     : spacySuggestions
 
-  const seen = new Set(nerFiltered.map(s => `${s.pageIndex}:${s.text}`))
-  const merged = [...nerFiltered, ...regexSuggestions.filter(s => !seen.has(`${s.pageIndex}:${s.text}`))]
+  // Deduplicate spaCy results (returns one per occurrence, but we only need one per unique text+page)
+  const deduped: RedactionSuggestion[] = []
+  const seen = new Set<string>()
+  for (const s of nerFiltered) {
+    const key = `${s.pageIndex}:${s.text}:${s.reason}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    deduped.push(s)
+  }
+
+  const nerTexts = new Set(deduped.map(s => `${s.pageIndex}:${s.text}`))
+  const merged = [...deduped, ...regexSuggestions.filter(s => !nerTexts.has(`${s.pageIndex}:${s.text}`))]
 
   return Response.json({ suggestions: merged })
 }
