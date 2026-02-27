@@ -183,7 +183,7 @@ export default function App() {
     for (const s of suggestions) { const k = s.documentKey || docKey; ensure(k); byDoc[k].suggestions.push(s) }
     for (const r of textRanges) { const k = r.documentKey || docKey; ensure(k); byDoc[k].textRanges.push(r) }
     for (const r of pageRanges) { const k = r.documentKey || docKey; ensure(k); byDoc[k].pageRanges.push(r) }
-    setPendingByDoc(byDoc)
+    setPendingByDoc(prev => ({ ...prev, ...byDoc }))
   }, [session?.documents, activeFileIdx])
 
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {

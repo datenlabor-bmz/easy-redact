@@ -44,13 +44,13 @@ interface NlpPanelProps {
 export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onRemoveByReason, onRestoreByReason }: NlpPanelProps) {
   const t = useTranslations('NlpPanel')
   const [enabled, setEnabled] = useState<Set<CategoryKey>>(() => {
-    const s = new Set<CategoryKey>(REGEX_OPTIONS.map(o => o.key))
-    if (spacyEnabled) NER_OPTIONS.forEach(o => s.add(o.key))
+    const s = new Set<CategoryKey>(['regex:phone', 'regex:email', 'regex:iban'])
+    if (spacyEnabled) s.add('ner:PER')
     return s
   })
   const [allResults, setAllResults] = useState<RedactionSuggestion[]>([])
   const [loading, setLoading] = useState(false)
-  const analyzedPageCount = useRef(0)
+  const analyzedKeys = useRef(new Set<string>())
 
   const countFor = (key: CategoryKey) => allResults.filter(s => s.reason === reasonForKey(key)).length
 
@@ -73,24 +73,34 @@ export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onR
     })
   }, [enabled, allResults, onRemoveByReason, onRestoreByReason, onSuggestionsReceived])
 
-  // Auto-run when new pages appear
+  // Auto-run when new (unanalyzed) pages appear
   useEffect(() => {
-    const pageCount = documentPages?.length ?? 0
-    if (!pageCount || pageCount <= analyzedPageCount.current || loading) return
-    analyzedPageCount.current = pageCount
+    if (!documentPages?.length || loading) return
+    const newPages = documentPages.filter(p => !analyzedKeys.current.has(`${p.documentKey}:${p.pageIndex}`))
+    if (!newPages.length) return
+    newPages.forEach(p => analyzedKeys.current.add(`${p.documentKey}:${p.pageIndex}`))
     setLoading(true)
+    // Use temporary unique indices to avoid pageIndex collisions across documents
+    const indexMap = newPages.map((p, i) => ({ tempIdx: i, documentKey: p.documentKey, realPageIndex: p.pageIndex }))
+    const apiPages = newPages.map((p, i) => ({ pageIndex: i, text: p.text }))
     fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/nlp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pages: documentPages }),
+      body: JSON.stringify({ pages: apiPages }),
     })
       .then(r => r.json())
-      .then(({ suggestions }) => {
-        setAllResults(suggestions)
-        onSuggestionsReceived(suggestions, [], [], [])
+      .then(({ suggestions }: { suggestions: RedactionSuggestion[] }) => {
+        const tagged = suggestions.map(s => {
+          const entry = indexMap[s.pageIndex]
+          return { ...s, pageIndex: entry.realPageIndex, documentKey: entry.documentKey }
+        })
+        setAllResults(prev => [...prev, ...tagged])
+        const activeReasons = new Set([...enabled].map(reasonForKey))
+        const filtered = tagged.filter(s => activeReasons.has(s.reason!))
+        if (filtered.length) onSuggestionsReceived(filtered, [], [], [])
       })
       .finally(() => setLoading(false))
-  }, [documentPages, loading, onSuggestionsReceived])
+  }, [documentPages, loading, onSuggestionsReceived, enabled])
 
   const activeReasons = new Set([...enabled].map(reasonForKey))
   const totalActive = allResults.filter(s => activeReasons.has(s.reason!)).length
