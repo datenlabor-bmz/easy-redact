@@ -1,9 +1,8 @@
 # EasyRedact – Compliance-Dokumentation
 
-**Stand:** Februar 2026  
-**Gültigkeitsbereich:** On-Premises-Deployment mit Azure OpenAI (Sweden Central)
+**Stand:** Februar 2026
 
-Dieses Verzeichnis enthält die vollständige Compliance-, Datenschutz- und IT-Sicherheitsdokumentation für den Einsatz von EasyRedact im die Behörde (Betreiber). Die Dokumentation wurde nach den Anforderungen des IT-Sicherheitsbeauftragten (ISB) und des Datenschutzbeauftragten (DSB) einer Bundesbehörde erstellt.
+Dieses Verzeichnis enthält die vollständige Compliance-, Datenschutz- und IT-Sicherheitsdokumentation für den Einsatz von EasyRedact beim Betreiber. Die Dokumentation richtet sich an den IT-Sicherheitsbeauftragten (ISB) und den Datenschutzbeauftragten (DSB) der Behörde und dient als Vorlage für die behördeninterne Freigabe.
 
 ---
 
