@@ -139,7 +139,7 @@ flowchart TD
 ```mermaid
 flowchart TB
     subgraph RZ["Rechenzentrum der Behörde (On-Premises)"]
-        subgraph HOST["Container-Host (Docker / Kubernetes)"]
+        subgraph HOST["Container-Host (Docker)"]
             subgraph CONT["Docker Container: easy-redact"]
                 STACK["Node.js 22 + Next.js 15\nLibreOffice 7\nPython 3 + spaCy\nMuPDF WASM"]
             end

@@ -104,7 +104,7 @@ Art. 50 Abs. 1 EU AI Act gilt für KI-Systeme, die mit natürlichen Personen int
 
 **Pflicht:** Nutzer müssen informiert werden, dass sie mit einem KI-System interagieren.
 
-**Status:** ✅ EasyRedact erfüllt diese Pflicht. Die KI-Natur ist durch die Benutzeroberfläche (Chat-Interface mit KI-Persona "EasyRedact", explizite Einwilligungsabfrage für KI-Verarbeitung) transparent und erkennbar. Keine Täuschung über die KI-Natur.
+EasyRedact erfüllt diese Pflicht. Die KI-Natur ist durch die Benutzeroberfläche (Chat-Interface, explizite Einwilligungsabfrage für KI-Verarbeitung) transparent und erkennbar.
 
 ---
 
@@ -114,11 +114,11 @@ Da EasyRedact kein Hochrisiko-KI-System ist, entfällt der Großteil der Betreib
 
 | Pflicht | Quelle | Status / Maßnahme |
 |---------|--------|-------------------|
-| Transparenz über KI-Interaktion | Art. 50 Abs. 1 | ✅ Chat-Interface macht KI-Natur erkennbar |
-| Keine Täuschung über KI-Natur | Art. 50 Abs. 1 | ✅ EasyRedact identifiziert sich als KI-Assistent |
-| Keine verbotenen Praktiken | Art. 5 | ✅ Keine verbotenen Praktiken |
-| Human Oversight (intern) | Best Practice | ✅ Alle Vorschläge erfordern menschliche Bestätigung |
-| GPAI-Modell: DPA mit Microsoft | Art. 28 (DSGVO analog) | ⚠️ Azure OpenAI DPA/AVV muss abgeschlossen sein |
+| Transparenz über KI-Interaktion | Art. 50 Abs. 1 | Chat-Interface macht KI-Natur erkennbar |
+| Keine Täuschung über KI-Natur | Art. 50 Abs. 1 | EasyRedact identifiziert sich als KI-Assistent |
+| Keine verbotenen Praktiken | Art. 5 | Keine verbotenen Praktiken anwendbar |
+| Human Oversight (intern) | Best Practice | Alle Vorschläge erfordern menschliche Bestätigung |
+| GPAI-Modell: DPA mit Microsoft | Art. 28 (DSGVO analog) | Azure OpenAI AVV durch Betreiber abzuschließen |
 
 ---
 

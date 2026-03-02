@@ -139,7 +139,7 @@ Nutzer-Browser
 | `LIBREOFFICE_PATH` | Nein (Docker) | LibreOffice-Pfad | `/usr/bin/libreoffice` |
 | `SPACY_ENABLED` | Nein (Docker) | spaCy-Endpunkt aktivieren | `true` |
 
-**Sicherheitshinweis:** `AZURE_OPENAI_API_KEY` muss als Secret in der Deployment-Umgebung hinterlegt werden (Kubernetes Secret / Docker Secret), niemals im Klartext in Konfigurationsdateien.
+**Sicherheitshinweis:** `AZURE_OPENAI_API_KEY` muss als Secret in der Deployment-Umgebung hinterlegt werden (Docker Secret / Secrets-Vault), niemals im Klartext in Konfigurationsdateien.
 
 ---
 

@@ -112,9 +112,9 @@ server {
     ssl_protocols       TLSv1.3;
     ssl_ciphers         TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256;
 
-    # LDAP-Authentifizierung (via nginx-auth-ldap Modul oder Vorauthentifizierung)
-    auth_ldap "Login erforderlich";
-    auth_ldap_servers ldap_behoerde;
+    # Optional: LDAP/SSO-Authentifizierung, falls gewünscht
+    # auth_ldap "Login erforderlich";
+    # auth_ldap_servers ldap_behoerde;
 
     location / {
         proxy_pass         http://easy-redact-container:3000;
@@ -219,7 +219,7 @@ npm audit --audit-level=high
 
 **Anwendungs-Logs (Produktionsmodus):**
 - Minimales Logging; keine Dokumentinhalte
-- Fehlermeldungen ohne sensitive Daten
+- Fehlermeldungen ohne sensible Daten
 - Format: JSON-Strukturiert (für Log-Aggregation)
 
 **Empfohlene Log-Aggregation:**

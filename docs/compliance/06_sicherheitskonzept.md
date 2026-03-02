@@ -87,7 +87,7 @@ LibreOffice wird verwendet, um DOCX-Dateien in PDF umzuwandeln. Präparierte DOC
 
 EasyRedact implementiert keine eigene Nutzerauthentifizierung. Dies ist eine dokumentierte, bewusste Designentscheidung mit folgender Begründung:
 
-- Potenziell alle Beschäftigten der Behörde können mit FOIA-Anfragen konfrontiert werden und benötigen Zugriff.
+- Potenziell alle Beschäftigten der Behörde können mit IFG-Anfragen konfrontiert werden und benötigen Zugriff.
 - Die Anwendung speichert keine Daten server-seitig; ein unauthentifizierter Intranet-Nutzer erhält keinen Zugriff auf Daten anderer Nutzer.
 - Der einzige schützenswerte Server-seitige Wert ist der Azure OpenAI API-Key, der als Container-Secret verwaltet wird und für Endnutzer nie exponiert ist.
 - Das Risiko eines unbefugten Zugriffs (z.B. durch Gäste im Intranet) wird durch die Netzwerkgrenze (Firewall, Intranet-only) auf akzeptables Maß reduziert.
@@ -97,7 +97,7 @@ Die Zugriffskontrolle erfolgt ausschließlich auf Netzwerkebene (M-NET-01 bis M-
 | ID | Maßnahme | BSI-Baustein | Status |
 |----|---------|-------------|--------|
 | M-AUTH-01 | **Netzwerkbasierte Zugriffskontrolle**: Zugriff nur aus dem Behörden-Intranet via Firewall. Keine nutzerspezifische Authentifizierung erforderlich (siehe Begründung oben). | ORP.4 | ✅ Architekturvorgabe |
-| M-AUTH-02 | **Keine Standardpasswörter**: Azure OpenAI API-Key als Kubernetes/Docker Secret, nicht im Klartext. | ORP.4 | ✅ Betriebsanforderung |
+| M-AUTH-02 | **Keine Standardpasswörter**: Azure OpenAI API-Key als Docker Secret oder Secrets-Vault, nicht im Klartext. | ORP.4 | ✅ Betriebsanforderung |
 
 #### Anwendungssicherheit
 
@@ -124,7 +124,7 @@ Die Zugriffskontrolle erfolgt ausschließlich auf Netzwerkebene (M-NET-01 bis M-
 | M-CON-04 | **Container-Image-Signing**: Images sollten signiert werden (z.B. mit Cosign/Notary). | SYS.1.6 | Empfehlung |
 | M-CON-05 | **Keine persistenten Volumes**: EasyRedact speichert keine persistenten Daten server-seitig. Kein persistentes Volume erforderlich. | SYS.1.6 | ✅ Architekturvorgabe |
 | M-CON-06 | **Regelmäßige Image-Updates**: Container-Image bei CVEs in Abhängigkeiten neu bauen. | SYS.1.6 | ⚠️ Prozess erforderlich |
-| M-CON-07 | **Secret-Management**: Azure OpenAI API-Key über Kubernetes Secret oder HashiCorp Vault, nicht als Umgebungsvariable im Compose-File. | SYS.1.6 | ⚠️ Konfiguration |
+| M-CON-07 | **Secret-Management**: Azure OpenAI API-Key über Docker Secret oder HashiCorp Vault, nicht als Umgebungsvariable im Compose-File. | SYS.1.6 | ⚠️ Konfiguration |
 
 #### Datenschutz und Datensicherheit
 
@@ -140,12 +140,12 @@ Die Zugriffskontrolle erfolgt ausschließlich auf Netzwerkebene (M-NET-01 bis M-
 
 | ID | Maßnahme | BSI-Baustein | Status |
 |----|---------|-------------|--------|
-| M-ORG-01 | **Nutzungsrichtlinie**: Kurze Dienstanweisung, die die Prüfpflicht für KI-Vorschläge und den Umgang mit sensitiven Dokumenten regelt. | ORP.1 | ⚠️ Zu erstellen (siehe `docs/compliance/09_nutzungsrichtlinie.md`) |
+| M-ORG-01 | **Nutzungsrichtlinie**: Kurze Dienstanweisung, die die Prüfpflicht für KI-Vorschläge und den Umgang mit sensiblen Dokumenten regelt. | ORP.1 | ⚠️ Zu erstellen (siehe `docs/compliance/09_nutzungsrichtlinie.md`) |
 | M-ORG-02 | **Onboarding-Dialog (Erstnutzer)**: Beim ersten Aufruf der App wird ein Hinweisdialog angezeigt (Prüfpflicht, Verarbeitungsmodi, VS-Einstufung). Muss mit Checkbox bestätigt werden, bevor die App nutzbar ist. Bestätigung wird in IndexedDB persistiert. Ersetzt eine formale Schulung. | ORP.3 | ✅ Implementiert |
 | M-ORG-07 | **Bestätigungsdialog vor dem Herunterladen**: Beim Klick auf „Schwärzen und herunterladen" erscheint ein Dialog, der den Nutzer auf seine Verantwortung für die Vollständigkeit der Schwärzungen hinweist und eine bewusste Bestätigung erfordert. | APP.3.1 | ✅ Implementiert |
 | M-ORG-03 | **Incident Response**: Prozess für Sicherheitsvorfälle (Datenpanne, Systemkompromittierung). | DER.2 | ⚠️ Bestehende Prozesse der Behörde anwenden |
 | M-ORG-04 | **Patch-Management**: Regelmäßige Updates von Node.js, npm-Abhängigkeiten, LibreOffice, spaCy. | OPS.1.1.3 | ⚠️ Prozess definieren |
-| M-ORG-05 | **Penetrationstest**: Vor Produktionseinführung Pentest der Anwendung und der Deployment-Infrastruktur. | DER.3.3 | Empfehlung |
+
 | M-ORG-06 | **Auditlogging**: Zugriffsprotokollierung am Reverse Proxy (Zeitstempel, Quell-IP, HTTP-Status — kein Dokumentinhalt, keine Nutzer-ID da keine Authentifizierung). | DER.1 | ⚠️ Konfiguration durch IT |
 
 ---
@@ -194,7 +194,7 @@ RPO (Recovery Point Objective): N/A (keine Server-Daten)
 | DSGVO Art. 32 (TOMs) | DSGVO | ✅ Implementiert (mit offenen Punkten) |
 | NIST SP 800-53 (informell) | NIST | Teilweise |
 | BSI TR-03161 (KI-Sicherheit, wenn anwendbar) | BSI | Prüfung empfohlen |
-| OWASP ASVS Level 1 (Anwendungssicherheit) | OWASP | ⚠️ Pentest ausstehend |
+| OWASP ASVS Level 1 (Anwendungssicherheit) | OWASP | Zur Orientierung |
 
 ---
 
@@ -222,7 +222,7 @@ RPO (Recovery Point Objective): N/A (keine Server-Daten)
 
 - Bekannte CVE-Klasse: Macro-Exploits, Parsing-Schwachstellen in DOCX/OLE
 - Mitigationsmaßnahme: `--headless` und Container-Isolation
-- Empfehlung: Regelmäßige Updates; alternativ separater isolierter Konvertierungs-Container
+- Empfehlung: Regelmäßige Updates
 
 ### Node.js 22 (MIT)
 

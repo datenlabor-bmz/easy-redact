@@ -112,7 +112,7 @@ Die KI-Unterstützung ist nicht zwingend erforderlich (manuelle Schwärzung mög
 | R7 | **US Cloud Act**: US-Behörden fordern Daten von Microsoft an | Sehr gering (keine Hinweise auf derartige Anfragen, Microsoft DPA schützt) | Sehr hoch | **Mittel** |
 | R8 | **Verlust der Sitzungsdaten im Browser**: Browserdaten werden ohne Backup gelöscht | Mittel (Browser-Cache-Löschung) | Gering (Arbeitsverlust, kein Datenschutzrisiko) | **Gering** |
 | R9 | **IFG-Regelwerk-Manipulation**: GitHub-CDN-Inhalte werden manipuliert und führen zu falschen Schwärzungsvorschlägen | Sehr gering (HTTPS, keine personenbezogenen Daten betroffen) | Mittel | **Gering** |
-| R10 | **Dokumentinhalt in Server-Logs**: Dokumenttext wird in Server-Logs persistiert | Sehr gering (Produktions-Logs deaktiviert, kein sensitiver Content mehr geloggt) | Hoch | **Gering** |
+| R10 | **Dokumentinhalt in Server-Logs**: Dokumenttext wird in Server-Logs persistiert | Sehr gering (Produktions-Logs deaktiviert, kein sensible Inhalte mehr geloggt) | Hoch | **Gering** |
 
 **Risikoampel:**
 - 🔴 Hoch: R3 (Unvollständige Schwärzung)
@@ -150,12 +150,12 @@ Die KI-Unterstützung ist nicht zwingend erforderlich (manuelle Schwärzung mög
 
 | Nr. | Empfohlene Maßnahme | Priorität | Zuständigkeit |
 |-----|---------------------|-----------|--------------|
-| E1 | **Onboarding-Dialog + Download-Bestätigung**: Beim ersten Aufruf erscheint ein Pflicht-Dialog (Prüfpflicht, Verarbeitungsmodi, VS-NfD-Hinweis), der per Checkbox bestätigt werden muss; Bestätigung wird in IndexedDB persistiert. Vor jedem Download erscheint ein zweiter Dialog, der den Nutzer nochmals auf seine persönliche Verantwortung hinweist. Beide Dialoge ersetzen eine formale Schulung und dokumentieren die Kenntnisnahme technisch. | Hoch | datenlabor-bmz ✅ Implementiert |
-| E2 | **Nutzungsrichtlinie / Dienstanweisung**: Kurze schriftliche Anweisung, die Prüfpflicht und Umgang mit sensitiven Dokumenten regelt. | Hoch | IT-Referat / DSB |
+| E1 | **Onboarding-Dialog + Download-Bestätigung**: Beim ersten Aufruf erscheint ein Pflicht-Dialog (Prüfpflicht, Verarbeitungsmodi, VS-NfD-Hinweis), der per Checkbox bestätigt werden muss; Bestätigung wird in IndexedDB persistiert. Vor jedem Download erscheint ein zweiter Dialog, der den Nutzer nochmals auf seine persönliche Verantwortung hinweist. Beide Dialoge ersetzen eine formale Schulung und dokumentieren die Kenntnisnahme technisch. | Hoch | datenlabor-bmz |
+| E2 | **Nutzungsrichtlinie / Dienstanweisung**: Kurze schriftliche Anweisung, die Prüfpflicht und Umgang mit sensiblen Dokumenten regelt. | Hoch | IT-Referat / DSB |
 | E3 | **Regelmäßiges Qualitätsaudit**: Stichprobenartige Prüfung bereits exportierter Dokumente | Mittel | zuständiger Fachbereich |
 | E4 | **Auditlogging im Proxy**: Zugriffsprotokollierung (Zeitstempel, Quell-IP, HTTP-Status — kein Dokumentinhalt) | Mittel | IT-Infrastruktur |
-| E7 | **IFG-Regelwerk-Lokal-Fallback**: Lokale Kopie des Regelwerks für Air-Gap-Betrieb | Niedrig | datenlabor-bmz |
-| E8 | **Automatisches Sitzungsablauf**: Browserseitige IndexedDB nach definiertem Zeitintervall leeren | Niedrig | datenlabor-bmz (technisch) |
+| E5 | **IFG-Regelwerk-Lokal-Fallback**: Lokale Kopie des Regelwerks für Air-Gap-Betrieb | Niedrig | datenlabor-bmz |
+| E6 | **Automatisches Sitzungsablauf**: Browserseitige IndexedDB nach definiertem Zeitintervall leeren | Niedrig | datenlabor-bmz |
 
 ---
 
@@ -199,11 +199,11 @@ Eine Vorab-Konsultation der BfDI wäre erforderlich, wenn das Restrisiko nach Um
 
 Die Verarbeitungstätigkeit wird unter folgenden Bedingungen als datenschutzrechtlich vertretbar bewertet:
 
-1. ✅ Auftragsverarbeitungsvertrag (AVV) mit Microsoft Azure ist abgeschlossen
-2. ✅ Onboarding-Dialog und Export-Bestätigungsdialog implementiert (E1)
-3. ✅ Nutzungsrichtlinie/Dienstanweisung (E2) ist in Kraft
-4. ✅ Produktions-Logging deaktiviert (implementiert)
-5. ✅ Zugriff auf Behörden-Intranet beschränkt (Firewall, keine nutzerspezifische Authentifizierung – bewusste Architekturentscheidung, s. Sicherheitskonzept)
+1. Auftragsverarbeitungsvertrag (AVV) mit Microsoft Azure ist abgeschlossen
+2. Onboarding-Dialog und Download-Bestätigungsdialog sind in der App implementiert (E1)
+3. Nutzungsrichtlinie/Dienstanweisung (E2) ist in Kraft
+4. Produktions-Logging enthält keine Dokumentinhalte
+5. Zugriff ist auf Behörden-Intranet beschränkt (Firewall, keine nutzerspezifische Authentifizierung – bewusste Architekturentscheidung, s. Sicherheitskonzept)
 
 ### 6.4 Entscheidung
 
@@ -232,15 +232,15 @@ Unterschrift ISB: ________________
 
 | Maßnahme | Kategorie (BSI) | Implementiert |
 |---------|----------------|--------------|
-| HTTPS/TLS 1.3 | Verschlüsselung | ✅ |
-| Einwilligungsmanagement (Consent-Workflow) | Datenschutz-by-Design | ✅ |
-| Kein persistenter Server-Log mit Dokumentinhalt | Datensparsamkeit | ✅ |
-| MuPDF WASM (lokale Verarbeitung) | Datensparsamkeit | ✅ |
-| CSP + Sicherheitsheader | Technische Sicherheit | ✅ |
-| Intranet-only Deployment | Zugriffsbeschränkung | ✅ |
-| Azure OpenAI AVV + EU-Datenhaltung | Auftragsverarbeitung | ⚠️ AVV muss abgeschlossen werden |
-| Nutzungsrichtlinie + Onboarding-Dialog in App | Organisatorisch | ✅ Onboarding-Dialog + Download-Bestätigungsdialog implementiert; Nutzungsrichtlinie zu erstellen |
-| Intranet-Firewall (keine nutzerspezifische Authentifizierung – bewusste Entscheidung) | Zugriffskontrolle | ✅ |
+| HTTPS/TLS 1.3 | Verschlüsselung | In App implementiert |
+| Einwilligungsmanagement (Consent-Workflow) | Datenschutz-by-Design | In App implementiert |
+| Kein persistenter Server-Log mit Dokumentinhalt | Datensparsamkeit | In App implementiert |
+| MuPDF WASM (lokale Verarbeitung) | Datensparsamkeit | In App implementiert |
+| CSP + Sicherheitsheader | Technische Sicherheit | In App implementiert |
+| Intranet-only Deployment | Zugriffsbeschränkung | Durch Betreiber sicherzustellen |
+| Azure OpenAI AVV + EU-Datenhaltung | Auftragsverarbeitung | AVV durch Betreiber abzuschließen |
+| Nutzungsrichtlinie + Onboarding-Dialog in App | Organisatorisch | Onboarding in App; Nutzungsrichtlinie durch Betreiber |
+| Intranet-Firewall (keine nutzerspezifische Authentifizierung) | Zugriffskontrolle | Durch Betreiber sicherzustellen |
 
 ---
 

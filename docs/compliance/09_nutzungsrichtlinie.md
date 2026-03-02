@@ -31,7 +31,7 @@ EasyRedact bietet zwei KI-Modi:
 | Modus | Datenverarbeitung | Empfehlung |
 |-------|------------------|-----------|
 | **Cloud-KI** (Azure OpenAI, EU-Region Schweden) | Dokumenttext wird an Microsoft Azure übermittelt | Geeignet für nicht eingestufte Dokumente; Microsoft verarbeitet Daten DSGVO-konform ohne Speicherung |
-| **Lokal-KI** (Ollama o.ä., on-premises) | Dokumenttext verbleibt vollständig auf Behördeninfrastruktur | Empfohlen für besonders sensitive Inhalte |
+| **Lokal-KI** (Ollama o.ä., on-premises) | Dokumenttext verbleibt vollständig auf Behördeninfrastruktur | Empfohlen für besonders sensible Inhalte |
 
 Für **VS-eingestufte Dokumente** darf ausschließlich der Lokal-KI-Modus oder die manuelle Schwärzung (ohne KI) verwendet werden.
 
@@ -40,7 +40,7 @@ Für **VS-eingestufte Dokumente** darf ausschließlich der Lokal-KI-Modus oder d
 ## 4. Sitzungsdaten
 
 Dokumente und Schwärzungen werden ausschließlich im Browser des Arbeitsplatzes gespeichert (IndexedDB). Nach Abschluss der Bearbeitung sollten die Sitzungsdaten über die Funktion „Sitzung löschen" in der App gelöscht werden, insbesondere:
-- bei besonders sensitiven Dokumenten,
+- bei besonders sensiblen Dokumenten,
 - bei Nutzung eines gemeinsam genutzten Arbeitsplatzes.
 
 ---

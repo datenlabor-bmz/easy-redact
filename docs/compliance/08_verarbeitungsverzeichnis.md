@@ -31,8 +31,8 @@ Das Verzeichnis von Verarbeitungstätigkeiten (VVT) nach Art. 30 DSGVO dokumenti
 ### B. Verantwortlicher (Art. 30 Abs. 1 lit. a DSGVO)
 
 **Name:** die Behörde (Betreiber)  
-**Anschrift:** Stresemannstraße 94, 10963 Berlin  
-**Vertreten durch:** Bundesminister für wirtschaftliche Zusammenarbeit und Entwicklung  
+**Anschrift:** [Anschrift einsetzen]
+**Vertreten durch:** [Vertretungsberechtigte Person einsetzen]
 **Datenschutzbeauftragter:** [Name, Anschrift, Telefon, E-Mail einsetzen]
 
 ---
@@ -133,7 +133,7 @@ Keine Übermittlung in Drittländer außerhalb des EWR, da Azure OpenAI in Regio
 | Kein persistentes Server-Logging von Dokumentinhalten (Produktionsmodus) | Datensparsamkeit |
 | HTTP-Sicherheitsheader (CSP, X-Frame-Options, Permissions-Policy etc.) | Integrität / Vertraulichkeit |
 | Intranet-only Deployment: keine öffentliche Erreichbarkeit | Zugriffsbeschränkung |
-| Containerisierung (Docker / Kubernetes) mit Namespace-Isolation | Integrität |
+| Containerisierung (Docker) | Integrität |
 
 #### Organisatorische Maßnahmen
 

@@ -10,9 +10,8 @@
 
 ## 1. Verantwortlicher
 
-**die Behörde (Betreiber)**  
-Stresemannstraße 94  
-10963 Berlin  
+**[Name der Behörde]**  
+[Anschrift einsetzen]  
 
 Behördlicher Datenschutzbeauftragter: [Name und Kontaktdaten einsetzen]  
 E-Mail: datenschutz@behoerde.intern
@@ -103,7 +102,7 @@ Azure OpenAI verarbeitet Daten in der **Region Sweden Central** (Europäische Un
 | Azure OpenAI (Übermittlungen) | Azure OpenAI Service | **Keine Datenspeicherung** durch Microsoft nach der Verarbeitung (gemäß Azure OpenAI DPA); Eingaben werden nicht für Modelltraining verwendet |
 | Temporäre DOCX-Dateien | Server-Dateisystem (RAM/tmp) | Sofortige Löschung nach Konvertierung |
 
-> **Empfehlung:** Bearbeiter sollten Sitzungsdaten nach Abschluss der Schwärzungsarbeit löschen, insbesondere bei Bearbeitung sensitiver Dokumente.
+> **Empfehlung:** Bearbeiter sollten Sitzungsdaten nach Abschluss der Schwärzungsarbeit löschen, insbesondere bei Bearbeitung sensibler Dokumente.
 
 ---
 
