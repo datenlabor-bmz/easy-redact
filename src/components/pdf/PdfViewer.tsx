@@ -37,6 +37,7 @@ export interface PdfViewerProps {
   onSearchInfoChange?: (info: { current: number, total: number }) => void
   searchNavigateRef?: React.MutableRefObject<((dir: 1|-1) => void) | null>
   selectMode?: 'text' | 'freehand'
+  overlayEnabled?: boolean
 }
 
 export function PdfViewer({
@@ -46,7 +47,7 @@ export function PdfViewer({
   onPageTextExtracted, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
   onSuggestionsApplied, exportRef,
   onAccept, onIgnore, foiRules, redactionMode,
-  searchQuery, onSearchInfoChange, searchNavigateRef, selectMode = 'text',
+  searchQuery, onSearchInfoChange, searchNavigateRef, selectMode = 'text', overlayEnabled = false,
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
     getPageContent, getPageBounds, getPageWords, getMetadata, getRedactedDocument, searchPage } = useMupdf()
@@ -320,7 +321,7 @@ export function PdfViewer({
   )
 
   const selectedRedaction = selectedId ? redactions.find(r => r.id === selectedId) : null
-  const showRuleOverlay = redactionMode === 'foi' && foiRules?.length && selectedRedaction
+  const showRuleOverlay = overlayEnabled && redactionMode === 'foi' && foiRules?.length && selectedRedaction
 
   return (
     <div className='flex flex-col flex-1 min-h-0'>

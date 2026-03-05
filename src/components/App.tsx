@@ -28,6 +28,7 @@ export default function App() {
   const [activeFileIdx, setActiveFileIdx] = useState(0)
   const [zoom, setZoom] = useState(100)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedFromPdf, setSelectedFromPdf] = useState(false)
   const [pages, setPages] = useState<PageData[]>([])
   const [documentPages, setDocumentPages] = useState<DocumentPage[]>([])
   // Per-document pending suggestions: docKey → {suggestions, textRanges, pageRanges}
@@ -373,6 +374,7 @@ export default function App() {
           <LeftSidebar pages={pages} redactions={activeRedactions} selectedId={selectedId}
             onSelectRedaction={id => {
               setSelectedId(id)
+              setSelectedFromPdf(false)
               const r = activeRedactions.find(x => x.id === id)
               if (r != null) handleNavigatePage(r.pageIndex)
             }}
@@ -496,7 +498,8 @@ export default function App() {
             <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
               documentKey={activeDocKey} documentName={session.documents[activeFileIdx]?.name}
               onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
-              onSelectionChange={setSelectedId} onZoomChange={setZoom} onExport={handleExport}
+              onSelectionChange={id => { setSelectedId(id); setSelectedFromPdf(id !== null) }} onZoomChange={setZoom} onExport={handleExport}
+              overlayEnabled={selectedFromPdf}
               onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
               pendingSuggestions={pendingByDoc[activeDocKey]?.suggestions}
               pendingTextRanges={pendingByDoc[activeDocKey]?.textRanges}
