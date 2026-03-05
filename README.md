@@ -1,3 +1,5 @@
+[[Gitlab repo](https://gitlab.opencode.de/datenlabor-bmz/easy-redact) | [Github mirror](https://github.com/datenlabor-bmz)]
+
 # EasyRedact
 
 AI-assisted PDF redaction tool for German federal ministries (BMZ). Upload a PDF or DOCX, have the AI suggest redactions via an interactive chat, review and adjust them, then export a fully redacted document — everything runs in the browser, documents never leave the machine unless you choose Cloud AI mode.
