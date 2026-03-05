@@ -1,6 +1,8 @@
 mirror-to-github:
   stage: .post
   image: alpine/git:latest
+  tags:
+    - generic
   variables:
     GIT_STRATEGY: clone
     GIT_CHECKOUT: "false"
