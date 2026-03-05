@@ -3,14 +3,7 @@
     "placeholder": "Posez une question à l'assistant…"
   },
   "ChatMessage": {
-    "thinking": "Réflexion en cours…",
-    "documentAccessRequired": "Accès au document requis",
-    "cloudLabel": "IA Cloud (Azure OpenAI)",
-    "cloudDesc": "Conforme RGPD, sans conservation des données",
-    "localLabel": "LLM local",
-    "localDesc": "Sur votre serveur uniquement, sans connexion cloud",
-    "localNotConfigured": "Non configuré",
-    "comingSoon": "bientôt"
+    "thinking": "Réflexion en cours…"
   },
   "ChatToolCall": {
     "readDocuments": "Documents lus",
@@ -26,63 +19,19 @@
     "clearConversation": "Effacer la conversation",
     "emptyState": "Je suis votre assistant IA pour le caviardage de documents. Téléversez un document pour commencer."
   },
-  "ConsentBar": {
-    "dataProcessing": "Traitement des données :",
-    "manualOnly": "Manuel uniquement",
-    "manualOnlyDesc": "Aucun contenu de document n'est partagé",
+  "ModeSelector": {
     "cloudLabel": "IA Cloud",
-    "cloudDesc": "Azure OpenAI (conforme RGPD, sans conservation)",
-    "localLabel": "LLM local",
-    "localDesc": "Ollama sur votre serveur GPU",
-    "spacyLabel": "NLP local",
-    "spacyDesc": "Traitement NLP local sans modèle IA",
-    "browserLabel": "NLP navigateur",
-    "browserDesc": "Transformeur dans le navigateur (en développement)",
-    "soon": "bientôt"
+    "cloudDesc": "Conforme RGPD, pas de conservation des données, pas d'entraînement de modèle.",
+    "localLabel": "IA locale",
+    "localBrowserDesc": "Fonctionne entièrement dans votre navigateur. Aucune donnée ne quitte votre appareil.",
+    "localLlmDesc": "Fonctionne sur l'infrastructure de votre organisation. Aucune donnée ne quitte votre réseau.",
+    "localSpacyDesc": "Détection basée sur des règles sur l'infrastructure de votre organisation. Aucune donnée ne quitte votre réseau.",
+    "comingSoon": "bientôt"
   },
-  "ConsentModal": {
-    "title": "Confirmer l'accès au document",
-    "description": "L'assistant IA souhaite lire le contenu de vos documents pour proposer des caviardages.",
-    "reasoning": "Raisonnement de l'assistant :",
-    "choose": "Choisissez comment traiter le contenu du document :",
-    "cloudLabel": "IA Cloud (Azure OpenAI / gpt-5.2)",
-    "cloudDesc": "Rapide et puissant. Azure OpenAI est conforme RGPD et certifié ISO 27001/27017/27018.",
-    "cloudDescStrong": "Sans conservation des données",
-    "cloudDescSuffix": "— les données ne sont pas stockées. Le Cloud Act américain n'a jamais été appliqué aux clients gouvernementaux de l'UE.",
-    "localLabel": "LLM local (sur votre serveur)",
-    "localDesc": "Traitement uniquement sur votre propre serveur GPU. Pas de connexion cloud pour le contenu des documents. Nécessite une instance LLM locale configurée (ex. Ollama).",
-    "privacyStrong": "jamais stockés définitivement",
-    "privacyNote": "Vos documents ne sont {strong} — ni sur nos serveurs ni chez OpenAI. Le contenu ne quitte votre appareil que pour l'appel API concerné.",
-    "reject": "Refuser"
-  },
-  "SettingsPopover": {
-    "dataProcessing": "Traitement des données",
-    "manualOnly": "Manuel uniquement",
-    "manualOnlyDesc": "Aucun contenu de document n'est transmis à des services externes",
-    "chatSection": "Assistant IA",
-    "cloudLabel": "IA Cloud",
-    "cloudDesc": "Azure OpenAI — conforme RGPD, sans conservation, sans entraînement sur vos données",
-    "localLabel": "LLM local",
-    "localDesc": "Point de terminaison compatible Ollama sur votre serveur GPU — aucun transfert de données externe",
-    "ruleSection": "Basé sur des règles",
-    "spacyLabel": "NLP local",
-    "spacyDesc": "Analyse NLP locale sans modèle IA",
-    "browserLabel": "NLP navigateur",
-    "browserDesc": "Transformeur dans le navigateur — entièrement hors ligne (en développement)",
-    "piiLabel": "Données personnelles",
-    "piiDesc": "Caviarде les noms, adresses, coordonnées et autres données personnelles",
-    "foiLabel": "Liberté d'information",
-    "foiDesc": "Caviarде selon les exceptions de la loi sur la liberté d'information applicable",
-    "redactionMode": "Mode de caviardage",
-    "jurisdiction": "Base juridique",
-    "chooseJurisdiction": "Choisir la loi…",
-    "loading": "Chargement…",
-    "comingSoon": "bientôt",
-    "modelSettings": "Paramètres du modèle",
-    "azureDeployment": "Déploiement Azure",
-    "apiBaseUrl": "URL de base de l'API",
-    "model": "Modèle",
-    "gdprNote": "Azure OpenAI est certifié conforme au RGPD. Aucun stockage de données, aucun entraînement avec vos données."
+  "FoiSelector": {
+    "label": "Mode transparence",
+    "noFoi": "Sans annotations spécifiques",
+    "loading": "Chargement…"
   },
   "LeftSidebar": {
     "redactions": "Caviardages",
@@ -122,7 +71,11 @@
     "loading": "Chargement…",
     "about": "À propos d'EasyRedact",
     "docxError": "Échec de la conversion DOCX",
-    "converting": "Conversion DOCX en PDF…"
+    "converting": "Conversion DOCX en PDF…",
+    "modeSwitchTitle": "Changer de mode ?",
+    "modeSwitchDesc": "Les suggestions en attente seront supprimées. Les caviardages acceptés et manuels seront conservés.",
+    "modeSwitchConfirm": "Changer",
+    "modeSwitchCancel": "Annuler"
   },
   "About": {
     "toApp": "Ouvrir l'app",
@@ -161,13 +114,15 @@
     "subtitle": "Prenez un moment pour lire ces informations avant d'utiliser EasyRedact.",
     "reviewTitle": "Vérifiez toujours les suggestions de l'IA",
     "reviewDesc": "L'IA peut manquer certains passages ou en signaler d'incorrects. Vous êtes personnellement responsable de la vérification de chaque suggestion avant tout export.",
-    "modesTitle": "Traitement de vos documents",
+    "modesTitle": "Choisissez votre mode de traitement",
     "cloudLabel": "IA cloud (Azure OpenAI)",
     "cloudDesc": "Le texte est transmis à Microsoft Azure (UE, Suède) après votre accord explicite. Conforme au RGPD — aucune conservation des données, aucun entraînement de modèle.",
     "localLabel": "IA locale (sur votre serveur)",
     "localDesc": "Le texte ne quitte jamais l'infrastructure de votre organisation. Recommandé pour les documents particulièrement sensibles.",
     "classifiedTitle": "Documents sensibles ou confidentiels",
     "classifiedDesc": "Pour les documents confidentiels ou à diffusion restreinte, n'utilisez pas l'IA cloud. Privilégiez l'IA locale ou le caviardage manuel.",
+    "changeLater": "Vous pouvez modifier ce paramètre à tout moment à l'aide du sélecteur de mode en haut à droite du panneau d'analyse.",
+    "comingSoon": "bientôt",
     "acknowledgement": "J'ai lu et compris ces informations et j'accepte la responsabilité personnelle de vérifier l'ensemble des suggestions de caviardage.",
     "proceed": "Commencer"
   },
@@ -176,7 +131,7 @@
     "detail": "Dans le PDF téléchargé, tous les passages marqués seront caviardés de manière sécurisée — les textes et images sous-jacents seront définitivement supprimés.",
     "description": "Vous êtes responsable de l'exhaustivité et de l'exactitude des caviardages. Ne vous fiez pas aveuglément à l'IA — vérifiez chaque suggestion avant de télécharger.",
     "cancel": "Continuer à éditer",
-    "confirm": "Télécharger le PDF caviarder"
+    "confirm": "Télécharger le PDF caviardé"
   },
   "NlpPanel": {
     "header": "Analyse basée sur des règles",

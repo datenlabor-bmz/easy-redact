@@ -1,20 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { Shield, Cloud, Server, AlertTriangle } from 'lucide-react'
+import { Shield, Cloud, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
+import { cloudAiEnabled, localBackend } from '@/lib/config'
+import type { ConsentMode } from '@/types'
 
 interface OnboardingModalProps {
   open: boolean
-  onAccept: () => void
+  onAccept: (consent: ConsentMode) => void
 }
 
 export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
   const t = useTranslations('Onboarding')
   const [checked, setChecked] = useState(false)
+  const [selectedMode, setSelectedMode] = useState<ConsentMode>(cloudAiEnabled ? 'cloud' : 'local')
+  const isBrowserComingSoon = localBackend === 'browser'
 
   return (
     <Dialog open={open}>
@@ -40,43 +44,66 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
             </div>
           </div>
 
-          {/* Point 2: Processing modes */}
-          <div className='rounded-lg border p-3 flex flex-col gap-2'>
+          {/* Point 2: Mode explanation + selection */}
+          <div className='rounded-lg border p-3 flex flex-col gap-2.5'>
             <p className='font-semibold'>{t('modesTitle')}</p>
-            <div className='flex items-start gap-2'>
-              <Cloud className='h-4 w-4 text-blue-500 shrink-0 mt-0.5' />
-              <p className='text-muted-foreground leading-relaxed'><span className='font-medium text-foreground'>{t('cloudLabel')}: </span>{t('cloudDesc')}</p>
-            </div>
-            <div className='flex items-start gap-2'>
-              <Server className='h-4 w-4 text-green-600 shrink-0 mt-0.5' />
-              <p className='text-muted-foreground leading-relaxed'><span className='font-medium text-foreground'>{t('localLabel')}: </span>{t('localDesc')}</p>
-            </div>
+
+            {cloudAiEnabled && (
+              <button onClick={() => setSelectedMode('cloud')}
+                className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-colors ${
+                  selectedMode === 'cloud' ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-muted/50'
+                }`}>
+                <Cloud className='h-4 w-4 text-blue-500 shrink-0 mt-0.5' />
+                <div>
+                  <p className='font-medium text-foreground'>{t('cloudLabel')}</p>
+                  <p className='text-muted-foreground text-xs mt-0.5 leading-relaxed'>{t('cloudDesc')}</p>
+                </div>
+              </button>
+            )}
+
+            <button onClick={() => !isBrowserComingSoon && setSelectedMode('local')}
+              disabled={isBrowserComingSoon}
+              className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-colors ${
+                isBrowserComingSoon ? 'opacity-50 cursor-not-allowed' :
+                selectedMode === 'local' ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20' : 'hover:bg-muted/50'
+              }`}>
+              <Shield className='h-4 w-4 text-green-600 shrink-0 mt-0.5' />
+              <div>
+                <p className='font-medium text-foreground'>
+                  {t('localLabel')}
+                  {isBrowserComingSoon && <span className='ml-2 text-[10px] text-muted-foreground font-normal'>{t('comingSoon')}</span>}
+                </p>
+                <p className='text-muted-foreground text-xs mt-0.5 leading-relaxed'>{t('localDesc')}</p>
+              </div>
+            </button>
+
+            {/* Illustration hint */}
+            <p className='text-[11px] text-muted-foreground leading-relaxed mt-1'>
+              {t('changeLater')}
+            </p>
           </div>
 
-          {/* Point 3: Classified documents */}
-          <div className='flex gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'>
-            <Shield className='h-4 w-4 text-red-600 shrink-0 mt-0.5' />
-            <div>
-              <p className='font-semibold text-red-900 dark:text-red-200'>{t('classifiedTitle')}</p>
-              <p className='text-muted-foreground mt-0.5 leading-relaxed'>{t('classifiedDesc')}</p>
+          {/* Point 3: Classified documents warning */}
+          {cloudAiEnabled && (
+            <div className='flex gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'>
+              <Shield className='h-4 w-4 text-red-600 shrink-0 mt-0.5' />
+              <div>
+                <p className='font-semibold text-red-900 dark:text-red-200'>{t('classifiedTitle')}</p>
+                <p className='text-muted-foreground mt-0.5 leading-relaxed'>{t('classifiedDesc')}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Checkbox acknowledgement */}
         <label className='flex items-start gap-3 cursor-pointer select-none mt-1 group'>
-          <input
-            type='checkbox'
-            checked={checked}
-            onChange={e => setChecked(e.target.checked)}
-            className='mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0'
-          />
+          <input type='checkbox' checked={checked} onChange={e => setChecked(e.target.checked)}
+            className='mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0' />
           <span className='text-sm leading-relaxed text-muted-foreground group-hover:text-foreground transition-colors'>
             {t('acknowledgement')}
           </span>
         </label>
 
-        <Button onClick={onAccept} disabled={!checked} className='w-full'>
+        <Button onClick={() => onAccept(selectedMode)} disabled={!checked} className='w-full'>
           {t('proceed')}
         </Button>
       </DialogContent>

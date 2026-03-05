@@ -23,23 +23,18 @@ interface ChatPanelProps {
   triggerRef?: React.MutableRefObject<((msg: string) => void) | null>
   onDeferredTrigger?: (msg: string) => void
   onSuggestionsReceived: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
-  onRedactionAction?: (redactionId: string, action: 'accepted' | 'ignored') => void
   onMessagesChange?: (messages: Msg[]) => void
-  onConsentChange: (mode: ConsentMode) => void
+  modeSelector?: React.ReactNode
 }
 
 export function ChatPanel({
   consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
-  onSuggestionsReceived, onRedactionAction, onMessagesChange, onConsentChange,
+  onSuggestionsReceived, onMessagesChange, modeSelector,
 }: ChatPanelProps) {
   const t = useTranslations('ChatPanel')
   const locale = useLocale()
-  const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages } =
-    useChatStream({
-      consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, locale,
-      onSuggestionsReceived,
-      onConsentGranted: onConsentChange,
-    })
+  const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages } =
+    useChatStream({ consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, locale, onSuggestionsReceived })
 
   const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)
@@ -51,19 +46,10 @@ export function ChatPanel({
     initialLoaded.current = true
     if (initialMessages && initialMessages.length > 0) {
       setMessages(initialMessages)
+    } else if (documentNames?.length) {
+      onDeferredTrigger?.(`Documents loaded: ${documentNames.join(', ')}. Access already granted. Greet the user briefly, call read_documents IMMEDIATELY, then suggest redactions.`)
     } else {
-      const hasDocs = !!documentNames?.length
-      const hasConsent = !!consent
-      let msg: string
-      if (hasDocs && hasConsent) {
-        onDeferredTrigger?.(`Documents loaded: ${documentNames!.join(', ')}. Access already granted. Greet the user briefly, call read_documents IMMEDIATELY, then suggest redactions.`)
-        return
-      } else if (hasDocs) {
-        msg = `Documents loaded: ${documentNames!.join(', ')}. Greet the user briefly, explain what you can do, and request document access.`
-      } else {
-        msg = `Greet the user briefly, explain what you can do, and ask them to upload a document.`
-      }
-      sendMessage(`[System: ${msg}]`)
+      sendMessage(`[System: Greet the user briefly, explain what you can do, and ask them to upload a document.]`)
     }
   }, [initialMessages, setMessages, sendMessage])
 
@@ -80,9 +66,10 @@ export function ChatPanel({
 
   return (
     <div className='flex flex-col h-full bg-card'>
-      {/* Panel header */}
       <div className='shrink-0 h-11 flex items-center justify-between gap-1 px-3 border-b bg-muted/50'>
         <span className='text-xs font-medium text-foreground'>{t('header')}</span>
+        <div className='flex items-center gap-1'>
+          {modeSelector}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant='ghost' size='icon' className='h-6 w-6 text-muted-foreground hover:text-destructive'
@@ -92,6 +79,7 @@ export function ChatPanel({
           </TooltipTrigger>
           <TooltipContent side='bottom'>{t('clearConversation')}</TooltipContent>
         </Tooltip>
+        </div>
       </div>
 
       {/* Messages */}
@@ -107,7 +95,7 @@ export function ChatPanel({
           ) : (
             messages.map((m, i) => {
               const thinking = isStreaming && i === messages.length - 1 && m.role === 'assistant' && !m.content
-              return <ChatMessage key={m.id} message={m} onOptionSelect={handleOptionSelect} onConsentGrant={grantConsent} isThinking={thinking} />
+              return <ChatMessage key={m.id} message={m} onOptionSelect={handleOptionSelect} isThinking={thinking} />
             })
           )}
 

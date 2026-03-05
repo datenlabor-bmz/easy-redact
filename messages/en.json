@@ -3,14 +3,7 @@
     "placeholder": "Ask the assistant…"
   },
   "ChatMessage": {
-    "thinking": "Thinking…",
-    "documentAccessRequired": "Document access required",
-    "cloudLabel": "Cloud AI (Azure OpenAI)",
-    "cloudDesc": "GDPR-compliant, no data retention",
-    "localLabel": "Local LLM",
-    "localDesc": "On your server only, no cloud connection",
-    "localNotConfigured": "Not configured",
-    "comingSoon": "coming soon"
+    "thinking": "Thinking…"
   },
   "ChatToolCall": {
     "readDocuments": "Documents read",
@@ -26,63 +19,19 @@
     "clearConversation": "Clear conversation",
     "emptyState": "I am your AI assistant for document redaction. Upload a document to start the conversation."
   },
-  "ConsentBar": {
-    "dataProcessing": "Data processing:",
-    "manualOnly": "Manual only",
-    "manualOnlyDesc": "No document content is shared",
+  "ModeSelector": {
     "cloudLabel": "Cloud AI",
-    "cloudDesc": "Azure OpenAI (GDPR-compliant, no data retention)",
-    "localLabel": "Local LLM",
-    "localDesc": "Ollama on your GPU server",
-    "spacyLabel": "Local NLP",
-    "spacyDesc": "Local NLP processing without AI model",
-    "browserLabel": "Browser NLP",
-    "browserDesc": "In-browser transformer (in development)",
-    "soon": "soon"
+    "cloudDesc": "GDPR-compliant, no data retention, no model training.",
+    "localLabel": "Local AI",
+    "localBrowserDesc": "Runs entirely in your browser. No data leaves your device.",
+    "localLlmDesc": "Runs on your organisation's infrastructure. No data leaves your network.",
+    "localSpacyDesc": "Rule-based detection on your organisation's infrastructure. No data leaves your network.",
+    "comingSoon": "coming soon"
   },
-  "ConsentModal": {
-    "title": "Confirm Document Access",
-    "description": "The AI assistant wants to read the content of your documents to make redaction suggestions.",
-    "reasoning": "Assistant's reasoning:",
-    "choose": "Choose how the document content should be processed:",
-    "cloudLabel": "Cloud AI (Azure OpenAI / gpt-5.2)",
-    "cloudDesc": "Fast and powerful. Azure OpenAI is GDPR-compliant and ISO 27001/27017/27018 certified.",
-    "cloudDescStrong": "No data retention",
-    "cloudDescSuffix": "— data is not stored. The US Cloud Act has never been applied to EU government customers.",
-    "localLabel": "Local LLM (on your server)",
-    "localDesc": "Processing on your own GPU server only. No cloud connection for document content. Requires a configured local LLM instance (e.g. Ollama).",
-    "privacyStrong": "never permanently stored",
-    "privacyNote": "Your documents are {strong} — neither on our servers nor at OpenAI. Document content only leaves your device for the respective API call.",
-    "reject": "Reject"
-  },
-  "SettingsPopover": {
-    "dataProcessing": "Data processing",
-    "manualOnly": "Manual only",
-    "manualOnlyDesc": "No document content is transmitted to external services",
-    "chatSection": "AI Assistant",
-    "cloudLabel": "Cloud AI",
-    "cloudDesc": "Azure OpenAI — GDPR-compliant, no data retention, no training on your data",
-    "localLabel": "Local LLM",
-    "localDesc": "Ollama-compatible endpoint on your own GPU server — no external data transfer",
-    "ruleSection": "Rule-based",
-    "spacyLabel": "Local NLP",
-    "spacyDesc": "Local NLP analysis without AI model",
-    "browserLabel": "Browser NLP",
-    "browserDesc": "In-browser transformer — fully offline (in development)",
-    "piiLabel": "Personal data",
-    "piiDesc": "Redacts names, addresses, contact details and other personal data",
-    "foiLabel": "Freedom of information",
-    "foiDesc": "Redacts according to the exemptions of the applicable freedom of information law",
-    "redactionMode": "Redaction mode",
-    "jurisdiction": "Legal basis",
-    "chooseJurisdiction": "Choose law…",
-    "loading": "Loading…",
-    "comingSoon": "coming soon",
-    "modelSettings": "Model settings",
-    "azureDeployment": "Azure Deployment",
-    "apiBaseUrl": "API Base URL",
-    "model": "Model",
-    "gdprNote": "Azure OpenAI is GDPR certified. No data storage, no model training with your data."
+  "FoiSelector": {
+    "label": "FOI mode",
+    "noFoi": "No FOI-specific annotations",
+    "loading": "Loading…"
   },
   "LeftSidebar": {
     "redactions": "Redactions",
@@ -122,7 +71,11 @@
     "loading": "Loading…",
     "about": "About EasyRedact",
     "docxError": "DOCX conversion failed",
-    "converting": "Converting DOCX to PDF…"
+    "converting": "Converting DOCX to PDF…",
+    "modeSwitchTitle": "Switch mode?",
+    "modeSwitchDesc": "Pending suggestions will be removed. Accepted and manual redactions are kept.",
+    "modeSwitchConfirm": "Switch",
+    "modeSwitchCancel": "Cancel"
   },
   "About": {
     "toApp": "Open app",
@@ -152,7 +105,7 @@
     "featureMultiDocTitle": "Multiple documents",
     "featureMultiDocDesc": "Upload PDFs and DOCX files as a batch. The assistant has context over all documents simultaneously and can make cross-document suggestions.",
     "featurePrivacyTitle": "Data sovereignty",
-    "featurePrivacyDesc": "Choose between Azure OpenAI (GDPR-compliant, no data retention), an Ollama-compatible language model on your own server, or fully local language processing in the browser — without any cloud connection.",
+    "featurePrivacyDesc": "Choose between Cloud AI (GDPR-compliant, no data retention) or Local AI on your own infrastructure — without any cloud connection.",
     "featureExportTitle": "Export",
     "featureExportDesc": "Preview export with visible highlights for internal review. Final export with irreversibly removed text — ready for publication."
   },
@@ -161,13 +114,15 @@
     "subtitle": "Please take a moment to read these notices before using EasyRedact.",
     "reviewTitle": "Always review AI suggestions yourself",
     "reviewDesc": "The AI can miss redactions or flag incorrect passages. You are personally responsible for checking every suggestion before exporting.",
-    "modesTitle": "How your documents are processed",
-    "cloudLabel": "Cloud AI (Azure OpenAI)",
-    "cloudDesc": "Document text is sent to Microsoft Azure (EU, Sweden) after your explicit consent. GDPR-compliant — no data retention, no model training.",
-    "localLabel": "Local AI (on your server)",
-    "localDesc": "Document text never leaves your organisation's infrastructure. Recommended for particularly sensitive material.",
+    "modesTitle": "Choose your processing mode",
+    "cloudLabel": "Cloud AI",
+    "cloudDesc": "Document text is sent to Microsoft Azure (EU, Sweden). GDPR-compliant — no data retention, no model training.",
+    "localLabel": "Local AI",
+    "localDesc": "Document text never leaves your device or organisation's infrastructure. Recommended for classified or particularly sensitive material.",
     "classifiedTitle": "Classified documents",
-    "classifiedDesc": "For classified or otherwise sensitive documents, do not use Cloud AI. Use Local AI or redact manually.",
+    "classifiedDesc": "For classified or otherwise sensitive documents, do not use Cloud AI. Switch to Local AI using the toggle in the right panel.",
+    "changeLater": "You can change this at any time using the mode toggle in the top-right of the analysis panel.",
+    "comingSoon": "coming soon",
     "acknowledgement": "I have read and understood these notices and accept personal responsibility for reviewing all redaction suggestions.",
     "proceed": "Get started"
   },

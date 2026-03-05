@@ -14,23 +14,9 @@ export function buildSystemPrompt(opts: {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   foiRules?: RedactionRule[]
-  hasDocumentAccess: boolean
   locale?: string
 }): string {
-  const { redactionMode, foiJurisdiction, foiRules, hasDocumentAccess, locale } = opts
-
-  const accessSection = hasDocumentAccess
-    ? 'You have **access to the document content**. The user has consented to data processing.'
-    : [
-        'You do **NOT YET have access to the document content**.',
-        '',
-        'When you are ready to analyze the document, use `request_document_access`. The user will then choose the processing option directly in the chat.',
-        '',
-        '**Security notes for the user if they ask about Cloud AI:**',
-        '- Azure OpenAI is GDPR-compliant, ISO 27001/27017/27018 certified',
-        '- No data retention — data is not stored or used for training',
-        '- The US Cloud Act has never been applied to EU government customers',
-      ].join('\n')
+  const { redactionMode, foiJurisdiction, foiRules, locale } = opts
 
   const foiSection = redactionMode === 'foi'
     ? [
@@ -50,18 +36,17 @@ export function buildSystemPrompt(opts: {
     '## Workflow',
     '',
     '1. **Greeting**: Greet the user briefly and explain what you can do. Ask them to upload a document.',
-    '2. **Request document access**: Once a document is present and the user wants to start, request access with `request_document_access`. Do NOT ask about redaction categories BEFORE you have seen the document.',
-    '3. **Read the document**: After access is granted, read the document with `read_documents`.',
-    '4. **Ask if suggestions are wanted**: After reading, briefly ask if the user wants redaction suggestions. Use `ask_user` with a single option: "Yes, create suggestions". The user can also redact manually without AI suggestions.',
-    '5. **Targeted follow-up questions**: Only ask questions that arise from the actual document content — about persons or cases that are genuinely unclear. Ask concretely, not abstractly.',
-    '6. **Make suggestions**: Use `suggest_redactions` with specific text locations.',
+    '2. **Read the document**: Once a document is present, read it with `read_documents`.',
+    '3. **Ask if suggestions are wanted**: After reading, briefly ask if the user wants redaction suggestions. Use `ask_user` with a single option: "Yes, create suggestions". The user can also redact manually without AI suggestions.',
+    '4. **Targeted follow-up questions**: Only ask questions that arise from the actual document content — about persons or cases that are genuinely unclear. Ask concretely, not abstractly.',
+    '5. **Make suggestions**: Use `suggest_redactions` with specific text locations.',
     '',
     '## Default mode',
     '',
     'By default you work in PII mode: redact personal data (names, addresses, emails, phone numbers, bank details, dates of birth).',
     'Do NOT ask about the mode — the user can change it in the menu.',
     '',
-    accessSection,
+    'You have **access to the document content**.',
     '',
     foiSection,
     '',
@@ -102,8 +87,7 @@ export function buildSystemPrompt(opts: {
     '',
     '- Execute **only one tool call** per response.',
     '- `ask_user`: For structured questions with answer options — only when you need to clarify concrete ambiguities from the document.',
-    '- `request_document_access`: Call once when you are ready to analyze the document.',
-    '- `read_documents`: After access is granted, to read document content.',
+    '- `read_documents`: To read document content.',
     '- `suggest_redactions`: When you want to add suggestions or remove existing ones. You receive a current snapshot of all redactions with each request. Use the `remove` array with IDs from the snapshot to remove existing suggestions (status "suggested") — e.g. if the user excludes a category. `suggestions`, `textRanges`, `pageRanges` and `remove` can be used simultaneously.',
     '- `start_nlp_processing`: For local NLP processing without LLM access.',
     '',

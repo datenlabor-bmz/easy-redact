@@ -1,7 +1,7 @@
 import { getClient } from '@/lib/ai-client'
 import {
   tools, readDocumentsTool, SpecialToolResult,
-  executeAskUser, executeRequestDocumentAccess, executeSuggestRedactions,
+  executeAskUser, executeSuggestRedactions,
   executeReadDocuments, executeStartNlpProcessing,
 } from '@/lib/chat-tools'
 import { buildSystemPrompt } from '@/lib/system-prompt'
@@ -31,17 +31,9 @@ export async function POST(req: Request) {
     ? await getRulesForJurisdiction(foiJurisdiction).catch(() => undefined)
     : undefined
 
-  const systemPrompt = buildSystemPrompt({
-    redactionMode, foiJurisdiction, foiRules,
-    hasDocumentAccess: !!consent,
-    locale,
-  })
-
+  const systemPrompt = buildSystemPrompt({ redactionMode, foiJurisdiction, foiRules, locale })
   const { client, model: modelName } = getClient(consent === 'local' ? 'local' : 'cloud')
-  // Once consent is granted: remove request_document_access (no need to ask again) and add read_documents
-  const activeTools = consent
-    ? [...tools.filter(t => t.function.name !== 'request_document_access'), readDocumentsTool]
-    : tools
+  const activeTools = [...tools, readDocumentsTool]
 
   const stream = new ReadableStream({
     async start(ctrl) {
@@ -125,12 +117,6 @@ export async function POST(req: Request) {
                 result = r.toolResult
                 break
               }
-              case 'request_document_access': {
-                const r = executeRequestDocumentAccess(args)
-                special = r.special
-                result = r.toolResult
-                break
-              }
               case 'suggest_redactions': {
                 const r = executeSuggestRedactions(args)
                 special = r.special
@@ -149,9 +135,7 @@ export async function POST(req: Request) {
 
             // Send special SSE events before the tool_result
             if (special) {
-              if (special.type === 'consent_required') {
-                send(ctrl, { type: 'consent_required', reason: special.reason })
-              } else if (special.type === 'ask_user') {
+              if (special.type === 'ask_user') {
                 send(ctrl, { type: 'ask_user', question: special.question })
               } else if (special.type === 'suggest_redactions') {
                 send(ctrl, { type: 'suggest_redactions', suggestions: special.suggestions, textRanges: special.textRanges, pageRanges: special.pageRanges, remove: special.remove })
@@ -164,7 +148,7 @@ export async function POST(req: Request) {
               content: JSON.stringify(result.success ? result.data : { error: result.error }),
             })
 
-            if (special?.type === 'consent_required' || special?.type === 'ask_user') {
+            if (special?.type === 'ask_user') {
               send(ctrl, { type: 'done' })
               return
             }

@@ -118,7 +118,7 @@ export interface PageRangeSuggestion {
 
 // ── Session ───────────────────────────────────────────────────────────────────
 
-export type ConsentMode = 'cloud' | 'local' | 'spacy' | null
+export type ConsentMode = 'cloud' | 'local'
 export type RedactionMode = 'pii' | 'foi'
 
 export interface DocumentMeta {
@@ -135,11 +135,6 @@ export interface Session {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   onboardingAccepted?: boolean
-  modelSettings: {
-    cloudDeployment: string
-    localBase: string
-    localModel: string
-  }
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
@@ -161,7 +156,6 @@ export interface ChatMessage {
   timestamp: string  // ISO string for serialization
   hidden?: boolean   // silent context messages not rendered in UI
   question?: AskUserQuestion
-  consentRequired?: string  // reason string when AI requested document access
 }
 
 export interface AskUserOption {
@@ -182,7 +176,6 @@ export type SSEEvent =
   | { type: 'tool_start'; id: string; name: string; args: Record<string, unknown> }
   | { type: 'tool_result'; name: string; result: unknown; success: boolean }
   | { type: 'text_delta'; content: string }
-  | { type: 'consent_required'; reason: string }
   | { type: 'ask_user'; question: AskUserQuestion }
   | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[]; remove: string[] }
   | { type: 'done' }

@@ -14,7 +14,6 @@ interface UseChatStreamOptions {
   redactions?: Redaction[]
   locale?: string
   onSuggestionsReceived?: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
-  onConsentGranted?: (mode: ConsentMode) => void
 }
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -27,7 +26,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
   const optsRef = useRef(opts)
   optsRef.current = opts
 
-  const sendMessage = useCallback(async (content: string, overrideConsent?: ConsentMode) => {
+  const sendMessage = useCallback(async (content: string) => {
     if (abortRef.current) {
       console.warn('[chat] sendMessage called while already streaming — ignoring')
       return
@@ -70,7 +69,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
     }
 
     const { redactionMode, foiJurisdiction, documentPages, documents, redactions, locale } = optsRef.current
-    const effectiveConsent = overrideConsent ?? optsRef.current.consent
+    const effectiveConsent = optsRef.current.consent
 
     const docNameMap = Object.fromEntries((documents ?? []).map(d => [d.idbKey, d.name]))
     const currentRedactions: RedactionSnapshot[] | undefined = redactions?.length
@@ -98,7 +97,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           messages: apiMessages,
           model: effectiveConsent === 'local' ? 'local' : 'cloud',
           consent: effectiveConsent, redactionMode, foiJurisdiction,
-          documentPages: effectiveConsent ? documentPages : undefined,
+          documentPages,
           currentRedactions,
           locale,
         }),
@@ -138,10 +137,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
                   ? { ...m, toolCalls: m.toolCalls?.map((tc, i) => i === toolIdx ? { ...tc, result: event.result, success: event.success, status: event.success ? 'complete' : 'error' } : tc) }
                   : m))
                 break
-              case 'consent_required':
-                // Attach consent request to the current assistant message for inline rendering
-                setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, consentRequired: event.reason } : m))
-                break
               case 'ask_user':
                 setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, question: event.question } : m))
                 break
@@ -164,14 +159,6 @@ export function useChatStream(opts: UseChatStreamOptions) {
     }
   }, [])
 
-  // Called when user grants consent from inline box — updates session and resumes with a silent message
-  const grantConsent = useCallback((mode: ConsentMode) => {
-    console.log('[chat] grantConsent', mode, 'documentPages:', optsRef.current.documentPages?.length)
-    optsRef.current.onConsentGranted?.(mode)
-    setMessages(prev => prev.map(m => m.consentRequired ? { ...m, consentRequired: undefined } : m))
-    sendMessage(`[System: Document access granted (${mode}). Now call read_documents and then suggest redactions.]`, mode)
-  }, [sendMessage])
-
   const addSilentContext = useCallback((content: string) => {
     setMessages(prev => [...prev, {
       id: generateId(), role: 'user', content, timestamp: new Date().toISOString(), hidden: true,
@@ -181,5 +168,5 @@ export function useChatStream(opts: UseChatStreamOptions) {
   const stopStreaming = useCallback(() => { abortRef.current?.abort() }, [])
   const setMessagesDirectly = useCallback((msgs: ChatMessage[]) => { setMessages(msgs) }, [])
 
-  return { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, grantConsent, setMessages: setMessagesDirectly }
+  return { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages: setMessagesDirectly }
 }

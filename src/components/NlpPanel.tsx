@@ -31,7 +31,8 @@ const REGEX_OPTIONS: Array<{ key: CategoryKey; icon: React.ElementType; labelKey
   { key: 'regex:id', icon: Hash, labelKey: 'id' },
 ]
 
-const spacyEnabled = process.env.NEXT_PUBLIC_SPACY_ENABLED === 'true'
+import { localBackend } from '@/lib/config'
+const spacyEnabled = localBackend === 'spacy'
 
 interface NlpPanelProps {
   documentPages?: DocumentPage[]
@@ -39,9 +40,10 @@ interface NlpPanelProps {
   onSuggestionsReceived: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
   onRemoveByReason: (reason: string) => void
   onRestoreByReason: (reason: string) => void
+  modeSelector?: React.ReactNode
 }
 
-export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onRemoveByReason, onRestoreByReason }: NlpPanelProps) {
+export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onRemoveByReason, onRestoreByReason, modeSelector }: NlpPanelProps) {
   const t = useTranslations('NlpPanel')
   const [enabled, setEnabled] = useState<Set<CategoryKey>>(() => {
     const s = new Set<CategoryKey>(['regex:phone', 'regex:email', 'regex:iban'])
@@ -127,15 +129,20 @@ export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onR
 
   return (
     <div className='flex flex-col h-full bg-card'>
-      <div className='shrink-0 h-11 flex items-center gap-1.5 px-3 border-b bg-muted/50'>
-        <Brain className='h-3.5 w-3.5 text-muted-foreground' />
-        <span className='text-xs font-medium text-foreground'>{t('header')}</span>
-        {loading && <Loader2 className='h-3 w-3 animate-spin text-muted-foreground ml-auto' />}
-        {!loading && allResults.length > 0 && (
-          <span className='ml-auto text-[10px] text-muted-foreground tabular-nums'>
-            {t('result', { count: totalActive })}
-          </span>
-        )}
+      <div className='shrink-0 h-11 flex items-center justify-between gap-1.5 px-3 border-b bg-muted/50'>
+        <div className='flex items-center gap-1.5'>
+          <Brain className='h-3.5 w-3.5 text-muted-foreground' />
+          <span className='text-xs font-medium text-foreground'>{t('header')}</span>
+        </div>
+        <div className='flex items-center gap-1.5'>
+          {modeSelector}
+          {loading && <Loader2 className='h-3 w-3 animate-spin text-muted-foreground' />}
+          {!loading && allResults.length > 0 && (
+            <span className='text-[10px] text-muted-foreground tabular-nums'>
+              {t('result', { count: totalActive })}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className='flex-1 overflow-y-auto p-3 space-y-4'>

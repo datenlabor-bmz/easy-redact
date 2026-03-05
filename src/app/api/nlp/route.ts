@@ -13,7 +13,7 @@ interface NlpRequest {
 }
 
 async function runSpacy(pages: NlpRequest['pages']): Promise<RedactionSuggestion[]> {
-  if (process.env.SPACY_ENABLED !== 'true') return []
+  if ((process.env.LOCAL_BACKEND ?? process.env.NEXT_PUBLIC_LOCAL_BACKEND) !== 'spacy') return []
   const scriptPath = join(process.cwd(), 'scripts', 'spacy_nlp.py')
   return new Promise((resolve, reject) => {
     const proc = spawn('uv', ['run', scriptPath])

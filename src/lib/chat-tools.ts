@@ -32,20 +32,6 @@ export const tools = [
   {
     type: 'function' as const,
     function: {
-      name: 'request_document_access',
-      description: 'Request permission to read the uploaded documents. This triggers a consent dialog outside the chat that the user must explicitly confirm. You CANNOT bypass this - do not call read_documents without going through this first.',
-      parameters: {
-        type: 'object',
-        properties: {
-          reason: { type: 'string', description: 'Why you need access to the documents (shown to user in the consent dialog)' },
-        },
-        required: ['reason'],
-      },
-    },
-  },
-  {
-    type: 'function' as const,
-    function: {
       name: 'suggest_redactions',
       description: 'Suggest redactions for the documents. Only call this after you fully understand the user\'s requirements (redaction mode, categories, exceptions). Each suggestion must include the exact text string to search for.',
       parameters: {
@@ -165,7 +151,6 @@ export type ToolResult = { success: true; data: unknown } | { success: false; er
 
 // Special marker for tools that need to send custom SSE events
 export type SpecialToolResult =
-  | { type: 'consent_required'; reason: string }
   | { type: 'ask_user'; question: AskUserQuestion }
   | { type: 'suggest_redactions'; suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[]; remove: string[] }
 
@@ -178,13 +163,6 @@ export function executeAskUser(args: Record<string, unknown>): { special: Specia
   return {
     special: { type: 'ask_user', question },
     toolResult: { success: true, data: 'Question displayed to user. Waiting for response.' },
-  }
-}
-
-export function executeRequestDocumentAccess(args: Record<string, unknown>): { special: SpecialToolResult; toolResult: ToolResult } {
-  return {
-    special: { type: 'consent_required', reason: args.reason as string },
-    toolResult: { success: true, data: 'Consent dialog shown to user. Awaiting decision outside the chat.' },
   }
 }
 
@@ -249,9 +227,9 @@ export function executeReadDocuments(documentPages: DocumentPage[] | undefined):
 
 export function executeStartNlpProcessing(args: Record<string, unknown>): ToolResult {
   const model = args.model as string
-  const available = process.env.SPACY_ENABLED === 'true'
-  if (!available && model !== 'browser') {
-    return { success: false, error: `NLP model '${model}' is only available in Docker deployment. Browser-based NLP is not yet implemented.` }
+  const backend = process.env.LOCAL_BACKEND ?? process.env.NEXT_PUBLIC_LOCAL_BACKEND ?? 'browser'
+  if (backend !== 'spacy' && model !== 'browser') {
+    return { success: false, error: `NLP model '${model}' is not available in this deployment.` }
   }
-  return { success: true, data: { model, status: 'started', message: `NLP-Verarbeitung mit ${model} gestartet. Ergebnisse werden im Dokument angezeigt.` } }
+  return { success: true, data: { model, status: 'started', message: `NLP processing with ${model} started.` } }
 }

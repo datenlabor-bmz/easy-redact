@@ -53,13 +53,8 @@ const DEFAULT_SESSION: Session = {
   id: SESSION_ID,
   documents: [],
   redactions: [],
-  consent: null,
+  consent: 'local',
   redactionMode: 'pii',
-  modelSettings: {
-    cloudDeployment: 'gpt-5.2',
-    localBase: '',
-    localModel: 'llama3.3:latest',
-  },
 }
 
 export async function loadSession(): Promise<Session> {

@@ -12,13 +12,16 @@ import { PdfViewer } from '@/components/pdf/PdfViewer'
 import { LeftSidebar } from '@/components/sidebar/LeftSidebar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { NlpPanel } from '@/components/NlpPanel'
-import { SettingsPopover } from '@/components/SettingsPopover'
+import { FoiSelector } from '@/components/SettingsPopover'
+import { ModeSelector } from '@/components/ModeSelector'
+import { localBackend } from '@/lib/config'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
 import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
 import { OnboardingModal } from '@/components/OnboardingModal'
 import { RedactConfirmDialog } from '@/components/RedactConfirmDialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 export default function App() {
   const t = useTranslations('App')
@@ -40,6 +43,7 @@ export default function App() {
   const [converting, setConverting] = useState(false)
   const [selectMode, setSelectMode] = useState<'text' | 'freehand'>('text')
   const [redactConfirmOpen, setRedactConfirmOpen] = useState(false)
+  const [pendingModeSwitch, setPendingModeSwitch] = useState<'cloud' | 'local' | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMatchInfo, setSearchMatchInfo] = useState({ current: 0, total: 0 })
   const searchNavigateRef = useRef<((dir: 1|-1) => void) | null>(null)
@@ -115,6 +119,27 @@ export default function App() {
       return next
     })
   }, [])
+
+  const handleModeChange = useCallback((mode: 'cloud' | 'local') => {
+    if (mode === session?.consent) return
+    const hasSuggested = session?.redactions.some(r => r.status === 'suggested')
+    if (hasSuggested) { setPendingModeSwitch(mode); return }
+    updateSession({ consent: mode })
+    setChatMessages([])
+    saveChat([])
+  }, [session, updateSession])
+
+  const confirmModeSwitch = useCallback(() => {
+    if (!pendingModeSwitch) return
+    setSession(prev => {
+      const next = { ...prev!, consent: pendingModeSwitch, redactions: prev!.redactions.filter(r => r.status !== 'suggested') }
+      saveSession(next)
+      return next
+    })
+    setChatMessages([])
+    saveChat([])
+    setPendingModeSwitch(null)
+  }, [pendingModeSwitch])
 
   const addRedaction = useCallback((r: Redaction) => {
     setSession(prev => {
@@ -228,10 +253,7 @@ export default function App() {
     }
 
     const names = pdfs.map(f => f.name).join(', ')
-    const consent = session?.consent
-    pendingChatTrigger.current = consent
-      ? `[System: New documents uploaded: ${names}. Access already granted. Read the documents and suggest redactions.]`
-      : `[System: New documents uploaded: ${names}. Please request document access and then analyze.]`
+    pendingChatTrigger.current = `[System: New documents uploaded: ${names}. Access already granted. Read the documents and suggest redactions.]`
     pendingChatTriggerDocKey.current = lastKey
   }, [files, session, updateSession])
 
@@ -354,11 +376,12 @@ export default function App() {
           </div>
           <span className='font-semibold text-sm'>EasyRedact</span>
         </div>
-        <div className='ml-auto flex items-center gap-1'>
-          <SettingsPopover session={session} onConsentChange={mode => updateSession({ consent: mode })}
+        <div className='ml-auto flex items-center gap-1.5'>
+          <FoiSelector redactionMode={session.redactionMode}
+            foiJurisdiction={session.foiJurisdiction}
             onRedactionModeChange={mode => updateSession({ redactionMode: mode })}
-            onFoiJurisdictionChange={id => updateSession({ foiJurisdiction: id })}
-            onModelSettingsChange={(key, value) => updateSession({ modelSettings: { ...session.modelSettings, [key]: value } })} />
+            onFoiJurisdictionChange={id => updateSession({ foiJurisdiction: id })} />
+          <div className='w-px h-4 bg-border shrink-0' />
           <LocaleSwitcher />
           <Link href='/about'
             className='h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors whitespace-nowrap inline-flex items-center'>
@@ -549,12 +572,13 @@ export default function App() {
 
         {/* Right — Chat or NLP panel */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
-          {session.consent === 'spacy' ? (
+          {session.consent === 'local' && localBackend === 'spacy' ? (
             <NlpPanel documentPages={documentPages}
               redactions={session.redactions}
               onSuggestionsReceived={handleSuggestionsReceived}
               onRemoveByReason={handleRemoveByReason}
-              onRestoreByReason={handleRestoreByReason} />
+              onRestoreByReason={handleRestoreByReason}
+              modeSelector={<ModeSelector consent={session.consent} onConsentChange={handleModeChange} />} />
           ) : (
             <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
               documents={session.documents}
@@ -570,7 +594,7 @@ export default function App() {
               redactions={session.redactions}
               onSuggestionsReceived={handleSuggestionsReceived}
               onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
-              onConsentChange={mode => updateSession({ consent: mode })} />
+              modeSelector={<ModeSelector consent={session.consent} onConsentChange={handleModeChange} />} />
           )}
         </div>
       </div>
@@ -580,7 +604,7 @@ export default function App() {
 
       <OnboardingModal
         open={!session.onboardingAccepted}
-        onAccept={() => updateSession({ onboardingAccepted: true })}
+        onAccept={consent => updateSession({ onboardingAccepted: true, consent })}
       />
 
       <RedactConfirmDialog
@@ -588,6 +612,19 @@ export default function App() {
         onConfirm={() => { setRedactConfirmOpen(false); exportRef.current?.(true) }}
         onCancel={() => setRedactConfirmOpen(false)}
       />
+
+      <Dialog open={!!pendingModeSwitch} onOpenChange={open => !open && setPendingModeSwitch(null)}>
+        <DialogContent className='sm:max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>{t('modeSwitchTitle')}</DialogTitle>
+            <DialogDescription>{t('modeSwitchDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className='flex gap-2 justify-end'>
+            <Button variant='outline' size='sm' onClick={() => setPendingModeSwitch(null)}>{t('modeSwitchCancel')}</Button>
+            <Button size='sm' onClick={confirmModeSwitch}>{t('modeSwitchConfirm')}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

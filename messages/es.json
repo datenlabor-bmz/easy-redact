@@ -3,14 +3,7 @@
     "placeholder": "Haga una pregunta al asistente…"
   },
   "ChatMessage": {
-    "thinking": "Pensando…",
-    "documentAccessRequired": "Se requiere acceso al documento",
-    "cloudLabel": "IA en la nube (Azure OpenAI)",
-    "cloudDesc": "Conforme con el RGPD, sin retención de datos",
-    "localLabel": "LLM local",
-    "localDesc": "Solo en su servidor, sin conexión a la nube",
-    "localNotConfigured": "No configurado",
-    "comingSoon": "próximamente"
+    "thinking": "Pensando…"
   },
   "ChatToolCall": {
     "readDocuments": "Documentos leídos",
@@ -26,63 +19,19 @@
     "clearConversation": "Borrar conversación",
     "emptyState": "Soy su asistente de IA para la supresión de datos en documentos. Suba un documento para comenzar."
   },
-  "ConsentBar": {
-    "dataProcessing": "Tratamiento de datos:",
-    "manualOnly": "Solo manual",
-    "manualOnlyDesc": "No se comparte contenido del documento",
+  "ModeSelector": {
     "cloudLabel": "IA en la nube",
-    "cloudDesc": "Azure OpenAI (conforme RGPD, sin retención)",
-    "localLabel": "LLM local",
-    "localDesc": "Ollama en su servidor GPU",
-    "spacyLabel": "NLP local",
-    "spacyDesc": "Procesamiento NLP local sin modelo de IA",
-    "browserLabel": "NLP en navegador",
-    "browserDesc": "Transformador en el navegador (en desarrollo)",
-    "soon": "próximamente"
+    "cloudDesc": "Conforme con el RGPD, sin retención de datos, sin entrenamiento de modelos.",
+    "localLabel": "IA local",
+    "localBrowserDesc": "Funciona íntegramente en su navegador. Ningún dato sale de su dispositivo.",
+    "localLlmDesc": "Funciona en la infraestructura de su organización. Ningún dato sale de su red.",
+    "localSpacyDesc": "Detección basada en reglas en la infraestructura de su organización. Ningún dato sale de su red.",
+    "comingSoon": "próximamente"
   },
-  "ConsentModal": {
-    "title": "Confirmar acceso al documento",
-    "description": "El asistente de IA desea leer el contenido de sus documentos para sugerir supresiones.",
-    "reasoning": "Razonamiento del asistente:",
-    "choose": "Elija cómo procesar el contenido del documento:",
-    "cloudLabel": "IA en la nube (Azure OpenAI / gpt-5.2)",
-    "cloudDesc": "Rápido y potente. Azure OpenAI cumple el RGPD y está certificado ISO 27001/27017/27018.",
-    "cloudDescStrong": "Sin retención de datos",
-    "cloudDescSuffix": "— los datos no se almacenan. La Ley CLOUD de EE.UU. nunca se ha aplicado a clientes gubernamentales de la UE.",
-    "localLabel": "LLM local (en su servidor)",
-    "localDesc": "Procesamiento exclusivamente en su propio servidor GPU. Sin conexión a la nube para el contenido de los documentos. Requiere una instancia LLM local configurada (p.ej. Ollama).",
-    "privacyStrong": "nunca se almacenan de forma permanente",
-    "privacyNote": "Sus documentos {strong} — ni en nuestros servidores ni en OpenAI. El contenido solo sale de su dispositivo para la llamada a la API correspondiente.",
-    "reject": "Rechazar"
-  },
-  "SettingsPopover": {
-    "dataProcessing": "Tratamiento de datos",
-    "manualOnly": "Solo manual",
-    "manualOnlyDesc": "No se transmite contenido del documento a servicios externos",
-    "chatSection": "Asistente IA",
-    "cloudLabel": "IA en la nube",
-    "cloudDesc": "Azure OpenAI — conforme RGPD, sin retención de datos, sin entrenamiento con sus datos",
-    "localLabel": "LLM local",
-    "localDesc": "Endpoint compatible con Ollama en su servidor GPU — sin transferencia de datos externa",
-    "ruleSection": "Basado en reglas",
-    "spacyLabel": "NLP local",
-    "spacyDesc": "Análisis NLP local sin modelo de IA",
-    "browserLabel": "NLP en navegador",
-    "browserDesc": "Transformador en el navegador — completamente sin conexión (en desarrollo)",
-    "piiLabel": "Datos personales",
-    "piiDesc": "Suprime nombres, direcciones, datos de contacto y otros datos personales",
-    "foiLabel": "Libertad de información",
-    "foiDesc": "Suprime según las excepciones de la ley de acceso a la información aplicable",
-    "redactionMode": "Modo de supresión",
-    "jurisdiction": "Base legal",
-    "chooseJurisdiction": "Elegir ley…",
-    "loading": "Cargando…",
-    "comingSoon": "próximamente",
-    "modelSettings": "Configuración del modelo",
-    "azureDeployment": "Implementación de Azure",
-    "apiBaseUrl": "URL base de la API",
-    "model": "Modelo",
-    "gdprNote": "Azure OpenAI está certificado conforme al RGPD. Sin almacenamiento de datos ni entrenamiento de modelos con sus datos."
+  "FoiSelector": {
+    "label": "Modo transparencia",
+    "noFoi": "Sin anotaciones específicas",
+    "loading": "Cargando…"
   },
   "LeftSidebar": {
     "redactions": "Supresiones",
@@ -122,7 +71,11 @@
     "loading": "Cargando…",
     "about": "Acerca de EasyRedact",
     "docxError": "Error al convertir DOCX",
-    "converting": "Convirtiendo DOCX a PDF…"
+    "converting": "Convirtiendo DOCX a PDF…",
+    "modeSwitchTitle": "¿Cambiar de modo?",
+    "modeSwitchDesc": "Las sugerencias pendientes se eliminarán. Las supresiones aceptadas y manuales se conservarán.",
+    "modeSwitchConfirm": "Cambiar",
+    "modeSwitchCancel": "Cancelar"
   },
   "About": {
     "toApp": "Abrir app",
@@ -161,13 +114,15 @@
     "subtitle": "Lea estas indicaciones antes de usar EasyRedact.",
     "reviewTitle": "Revise siempre las sugerencias de la IA",
     "reviewDesc": "La IA puede pasar por alto fragmentos o señalar otros de forma incorrecta. Usted es el responsable de revisar cada propuesta antes de exportar el documento.",
-    "modesTitle": "Cómo se procesan sus documentos",
+    "modesTitle": "Elija su modo de procesamiento",
     "cloudLabel": "IA en la nube (Azure OpenAI)",
     "cloudDesc": "El texto se envía a Microsoft Azure (UE, Suecia) con su consentimiento expreso. Cumple el RGPD: sin retención de datos ni entrenamiento de modelos.",
     "localLabel": "IA local (en su servidor)",
     "localDesc": "El texto nunca sale de la infraestructura de su organización. Recomendado para documentos especialmente sensibles.",
     "classifiedTitle": "Documentos confidenciales o clasificados",
     "classifiedDesc": "Para documentos confidenciales o con restricciones de difusión, no use la IA en la nube. Opte por la IA local o realice las redacciones manualmente.",
+    "changeLater": "Puede cambiar esto en cualquier momento usando el selector de modo en la esquina superior derecha del panel de análisis.",
+    "comingSoon": "próximamente",
     "acknowledgement": "He leído y entendido estas indicaciones y asumo la responsabilidad personal de revisar todas las propuestas de redacción.",
     "proceed": "Empezar"
   },

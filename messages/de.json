@@ -3,14 +3,7 @@
     "placeholder": "Fragen Sie den Assistenten…"
   },
   "ChatMessage": {
-    "thinking": "Denke nach…",
-    "documentAccessRequired": "Dokumentenzugriff erforderlich",
-    "cloudLabel": "Cloud-KI (Azure OpenAI)",
-    "cloudDesc": "DSGVO-konform, keine Datenspeicherung",
-    "localLabel": "Lokales LLM",
-    "localDesc": "Nur auf Ihrem Server, keine Cloud-Verbindung",
-    "localNotConfigured": "Nicht konfiguriert",
-    "comingSoon": "coming soon"
+    "thinking": "Denke nach…"
   },
   "ChatToolCall": {
     "readDocuments": "Dokumente gelesen",
@@ -26,63 +19,19 @@
     "clearConversation": "Gespräch löschen",
     "emptyState": "Ich bin Ihr KI-Assistent für die Dokumentenschwärzung. Laden Sie ein Dokument hoch und beginnen Sie das Gespräch."
   },
-  "ConsentBar": {
-    "dataProcessing": "Datenverarbeitung:",
-    "manualOnly": "Nur manuell",
-    "manualOnlyDesc": "Keine Dokumenteninhalte werden geteilt",
+  "ModeSelector": {
     "cloudLabel": "Cloud-KI",
-    "cloudDesc": "Azure OpenAI (DSGVO-konform, keine Datenspeicherung)",
-    "localLabel": "Lokales LLM",
-    "localDesc": "Ollama auf Ihrem GPU-Server",
-    "spacyLabel": "Lokale NLP",
-    "spacyDesc": "Lokale NLP-Verarbeitung ohne KI-Modell",
-    "browserLabel": "Browser-NLP",
-    "browserDesc": "In-Browser-Transformer (in Entwicklung)",
-    "soon": "bald"
+    "cloudDesc": "DSGVO-konform, keine Datenspeicherung, kein Modelltraining.",
+    "localLabel": "Lokale KI",
+    "localBrowserDesc": "Läuft vollständig in Ihrem Browser. Keine Daten verlassen Ihr Gerät.",
+    "localLlmDesc": "Läuft auf der Infrastruktur Ihrer Organisation. Keine Daten verlassen Ihr Netzwerk.",
+    "localSpacyDesc": "Regelbasierte Erkennung auf der Infrastruktur Ihrer Organisation. Keine Daten verlassen Ihr Netzwerk.",
+    "comingSoon": "bald verfügbar"
   },
-  "ConsentModal": {
-    "title": "Dokumentenzugriff bestätigen",
-    "description": "Der KI-Assistent möchte den Inhalt Ihrer Dokumente lesen, um Schwärzungsvorschläge zu erstellen.",
-    "reasoning": "Begründung des Assistenten:",
-    "choose": "Wählen Sie, wie der Dokumentinhalt verarbeitet werden soll:",
-    "cloudLabel": "Cloud-KI (Azure OpenAI / gpt-5.2)",
-    "cloudDesc": "Schnell und leistungsstark. Azure OpenAI ist DSGVO-konform und ISO 27001/27017/27018 zertifiziert.",
-    "cloudDescStrong": "Keine Datenspeicherung",
-    "cloudDescSuffix": "— Ihre Daten werden nicht gespeichert. Der US CLOUD Act wurde bislang nie auf EU-Regierungskunden angewendet.",
-    "localLabel": "Lokales LLM (auf Ihrem Server)",
-    "localDesc": "Verarbeitung ausschließlich auf Ihrem eigenen GPU-Server. Keine Cloud-Verbindung für Dokumentinhalte. Erfordert eine konfigurierte lokale LLM-Instanz (z.B. Ollama).",
-    "privacyStrong": "nie dauerhaft gespeichert",
-    "privacyNote": "Ihre Dokumente werden {strong} — weder auf unseren Servern noch bei OpenAI. Der Dokumentinhalt verlässt Ihr Gerät nur für den jeweiligen API-Aufruf.",
-    "reject": "Ablehnen"
-  },
-  "SettingsPopover": {
-    "dataProcessing": "Datenverarbeitung",
-    "manualOnly": "Nur manuell",
-    "manualOnlyDesc": "Keine Dokumenteninhalte werden an externe Dienste übermittelt",
-    "chatSection": "KI-Assistent",
-    "cloudLabel": "Cloud-KI",
-    "cloudDesc": "Azure OpenAI — DSGVO-konform, keine Datenspeicherung, kein Training auf Ihren Daten",
-    "localLabel": "Lokales LLM",
-    "localDesc": "Ollama-kompatibler Endpunkt auf Ihrem GPU-Server — keine externe Datenübertragung",
-    "ruleSection": "Regelbasiert",
-    "spacyLabel": "Lokale NLP",
-    "spacyDesc": "Lokale NLP-Analyse ohne KI-Modell",
-    "browserLabel": "Browser-NLP",
-    "browserDesc": "In-Browser-Transformer — vollständig offline (in Entwicklung)",
-    "piiLabel": "Personendaten",
-    "piiDesc": "Schwärzt Namen, Adressen, Kontaktdaten und andere personenbezogene Daten",
-    "foiLabel": "Informationsfreiheit",
-    "foiDesc": "Schwärzt nach den Ausnahmetatbeständen des jeweiligen Informationsfreiheitsgesetzes",
-    "redactionMode": "Schwärzungsmodus",
-    "jurisdiction": "Rechtsgrundlage",
-    "chooseJurisdiction": "Gesetz wählen…",
-    "loading": "Lädt…",
-    "comingSoon": "coming soon",
-    "modelSettings": "Modelleinstellungen",
-    "azureDeployment": "Azure Deployment",
-    "apiBaseUrl": "API Base URL",
-    "model": "Modell",
-    "gdprNote": "Azure OpenAI ist DSGVO-zertifiziert. Keine Datenspeicherung, kein Modelltraining mit Ihren Daten."
+  "FoiSelector": {
+    "label": "IFG-Modus",
+    "noFoi": "Ohne IFG-Bezug",
+    "loading": "Lädt…"
   },
   "LeftSidebar": {
     "redactions": "Schwärzungen",
@@ -122,7 +71,11 @@
     "loading": "Laden…",
     "about": "Über EasyRedact",
     "docxError": "DOCX-Konvertierung fehlgeschlagen",
-    "converting": "DOCX wird konvertiert…"
+    "converting": "DOCX wird konvertiert…",
+    "modeSwitchTitle": "Modus wechseln?",
+    "modeSwitchDesc": "Offene Vorschläge werden entfernt. Akzeptierte und manuelle Schwärzungen bleiben erhalten.",
+    "modeSwitchConfirm": "Wechseln",
+    "modeSwitchCancel": "Abbrechen"
   },
   "About": {
     "toApp": "Zur App",
@@ -152,7 +105,7 @@
     "featureMultiDocTitle": "Mehrere Dokumente",
     "featureMultiDocDesc": "PDFs und DOCX-Dateien als Batch hochladen. Der Assistent hat Kontext über alle Dokumente gleichzeitig und kann dokumentübergreifend Vorschläge erstellen.",
     "featurePrivacyTitle": "Datensouveränität",
-    "featurePrivacyDesc": "Wahl zwischen Azure OpenAI (DSGVO-konform, keine Datenspeicherung), einem Ollama-kompatiblen Sprachmodell auf eigenem Server oder vollständig lokaler Verarbeitung im Browser — ohne jede Cloud-Verbindung.",
+    "featurePrivacyDesc": "Wahl zwischen Cloud-KI (DSGVO-konform, keine Datenspeicherung) oder lokaler KI auf eigener Infrastruktur — ohne jede Cloud-Verbindung.",
     "featureExportTitle": "Export",
     "featureExportDesc": "Vorschau-Export mit sichtbaren Markierungen zur internen Prüfung. Finaler Export mit unwiderruflich entferntem Text — bereit zur Veröffentlichung."
   },
@@ -161,13 +114,15 @@
     "subtitle": "Bitte lesen Sie diese Hinweise, bevor Sie EasyRedact verwenden.",
     "reviewTitle": "KI-Vorschläge stets selbst prüfen",
     "reviewDesc": "Die KI kann Schwärzungen übersehen oder falsche Vorschläge machen. Sie tragen die persönliche Verantwortung für die Prüfung aller Vorschläge vor dem Export.",
-    "modesTitle": "So werden Ihre Dokumente verarbeitet",
-    "cloudLabel": "Cloud-KI (Azure OpenAI)",
-    "cloudDesc": "Der Dokumenttext wird nach Ihrer ausdrücklichen Einwilligung an Microsoft Azure (EU, Schweden) übermittelt. DSGVO-konform – keine Datenspeicherung, kein Modelltraining.",
-    "localLabel": "Lokale KI (auf Ihrem Server)",
-    "localDesc": "Der Dokumenttext verlässt die Infrastruktur Ihrer Organisation nicht. Empfohlen für besonders schutzbedürftige Dokumente.",
+    "modesTitle": "Wählen Sie Ihren Verarbeitungsmodus",
+    "cloudLabel": "Cloud-KI",
+    "cloudDesc": "Der Dokumenttext wird an Microsoft Azure (EU, Schweden) übermittelt. DSGVO-konform — keine Datenspeicherung, kein Modelltraining.",
+    "localLabel": "Lokale KI",
+    "localDesc": "Der Dokumenttext verlässt weder Ihr Gerät noch die Infrastruktur Ihrer Organisation. Empfohlen für eingestufte oder besonders schutzbedürftige Dokumente.",
     "classifiedTitle": "Eingestufte Dokumente (VS-NfD und höher)",
-    "classifiedDesc": "Für als VS-NfD oder höher eingestufte Dokumente darf die Cloud-KI nicht verwendet werden. Nutzen Sie die lokale KI oder nehmen Sie Schwärzungen manuell vor.",
+    "classifiedDesc": "Für als VS-NfD oder höher eingestufte Dokumente darf die Cloud-KI nicht verwendet werden. Wechseln Sie zur lokalen KI über den Umschalter im rechten Panel.",
+    "changeLater": "Sie können den Modus jederzeit über den Umschalter oben rechts im Analyse-Panel ändern.",
+    "comingSoon": "bald verfügbar",
     "acknowledgement": "Ich habe die Hinweise zur Kenntnis genommen und übernehme die persönliche Verantwortung für die Prüfung aller Schwärzungsvorschläge.",
     "proceed": "Loslegen"
   },
