@@ -85,6 +85,21 @@ LOCAL_LLM_MODEL=llama3.3:latest
 
 ## Docker
 
+### Pre-built images
+
+Pre-built images are published to GitHub Container Registry on every release:
+
+```bash
+# Standard image (serves at /)
+docker pull ghcr.io/datenlabor-bmz/easy-redact:latest
+docker run -p 3000:3000 --env-file .env.local ghcr.io/datenlabor-bmz/easy-redact:latest
+
+# Image with BASE_PATH=/easyredact (serves at /easyredact/)
+docker pull ghcr.io/datenlabor-bmz/easy-redact:latest-with-base-path
+```
+
+### Building from source
+
 The Dockerfile bundles LibreOffice (DOCX conversion), Python + uv, and the German spaCy model (`de_core_news_lg`). By default it sets `LOCAL_BACKEND=spacy`:
 
 ```bash
