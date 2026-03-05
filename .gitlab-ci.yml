@@ -3,7 +3,7 @@ stages:
 
 mirror-to-github:
   stage: sync
-  image: ${CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX}/alpine:latest
+  image: alpine:latest
   tags:
     - generic
   variables:
