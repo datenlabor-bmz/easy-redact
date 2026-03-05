@@ -95,7 +95,7 @@ docker pull ghcr.io/datenlabor-bmz/easy-redact:latest
 docker run -p 3000:3000 --env-file .env.local ghcr.io/datenlabor-bmz/easy-redact:latest
 
 # Image with BASE_PATH=/easyredact (serves at /easyredact/)
-docker pull ghcr.io/datenlabor-bmz/easy-redact:latest-with-base-path
+docker pull ghcr.io/datenlabor-bmz/easy-redact-with-base-path:latest
 ```
 
 ### Building from source
