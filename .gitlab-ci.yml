@@ -3,12 +3,14 @@ stages:
 
 mirror-to-github:
   stage: sync
-  image: ${CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX}/alpine/git:latest
+  image: ${CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX}/alpine:latest
   tags:
     - generic
   variables:
     GIT_STRATEGY: clone
     GIT_CHECKOUT: "false"
+  before_script:
+    - apk add --no-cache git
   script:
     - git remote add github https://x-access-token:${GITHUB_PAT}@github.com/datenlabor-bmz/easy-redact.git
     - git push github --all --force
