@@ -1,13 +1,14 @@
+stages:
+  - sync
+
 mirror-to-github:
-  stage: .post
-  image: alpine/git:latest
+  stage: sync
+  image: ${CI_DEPENDENCY_PROXY_DIRECT_GROUP_IMAGE_PREFIX}/alpine/git:latest
   tags:
     - generic
   variables:
     GIT_STRATEGY: clone
     GIT_CHECKOUT: "false"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
   script:
     - git remote add github https://x-access-token:${GITHUB_PAT}@github.com/datenlabor-bmz/easy-redact.git
     - git push github --all --force
