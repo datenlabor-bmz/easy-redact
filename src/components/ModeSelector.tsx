@@ -17,8 +17,6 @@ export function ModeSelector({ consent, onConsentChange }: ModeSelectorProps) {
   const localDesc = localBackend === 'browser' ? t('localBrowserDesc')
     : localBackend === 'llm' ? t('localLlmDesc')
     : t('localSpacyDesc')
-  const isBrowserComingSoon = localBackend === 'browser'
-  const localTooltip = isBrowserComingSoon ? `${localDesc} (${t('comingSoon')})` : localDesc
 
   if (!cloudAiEnabled) {
     return (
@@ -39,32 +37,30 @@ export function ModeSelector({ consent, onConsentChange }: ModeSelectorProps) {
       <Tooltip>
         <TooltipTrigger asChild>
           <button onClick={() => onConsentChange('cloud')}
-            className={`flex items-center gap-1.5 px-2.5 rounded text-xs transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 rounded text-xs whitespace-nowrap transition-colors ${
               consent === 'cloud'
                 ? 'bg-background shadow-sm text-foreground font-medium'
                 : 'text-muted-foreground hover:text-foreground'
             }`}>
-            <Cloud className='h-3 w-3 text-blue-500' />
-            {t('cloudLabel')}
+            <Cloud className='h-3 w-3 shrink-0 text-blue-500' />
+            <span className='hidden @[20rem]:inline'>{t('cloudLabel')}</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side='bottom' className='max-w-52 text-center'>{t('cloudDesc')}</TooltipContent>
+        <TooltipContent side='bottom' className='max-w-52 text-center'><strong>{t('cloudLabel')}</strong> — {t('cloudDesc')}</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button onClick={() => !isBrowserComingSoon && onConsentChange('local')}
-            disabled={isBrowserComingSoon}
-            className={`flex items-center gap-1.5 px-2.5 rounded text-xs transition-colors ${
-              isBrowserComingSoon ? 'text-muted-foreground/40 cursor-not-allowed' :
+          <button onClick={() => onConsentChange('local')}
+            className={`flex items-center gap-1.5 px-2.5 rounded text-xs whitespace-nowrap transition-colors ${
               consent === 'local'
                 ? 'bg-background shadow-sm text-foreground font-medium'
                 : 'text-muted-foreground hover:text-foreground'
             }`}>
-            <Shield className='h-3 w-3 text-green-600' />
-            {t('localLabel')}
+            <Shield className='h-3 w-3 shrink-0 text-green-600' />
+            <span className='hidden @[20rem]:inline'>{t('localLabel')}</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side='bottom' className='max-w-52 text-center'>{localTooltip}</TooltipContent>
+        <TooltipContent side='bottom' className='max-w-52 text-center'><strong>{t('localLabel')}</strong> — {localDesc}</TooltipContent>
       </Tooltip>
     </div>
   )

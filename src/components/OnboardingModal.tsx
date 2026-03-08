@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
-import { cloudAiEnabled, localBackend } from '@/lib/config'
+import { cloudAiEnabled } from '@/lib/config'
 import type { ConsentMode } from '@/types'
 
 interface OnboardingModalProps {
@@ -18,11 +18,9 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
   const t = useTranslations('Onboarding')
   const [checked, setChecked] = useState(false)
   const [selectedMode, setSelectedMode] = useState<ConsentMode>(cloudAiEnabled ? 'cloud' : 'local')
-  const isBrowserComingSoon = localBackend === 'browser'
-
   return (
     <Dialog open={open}>
-      <DialogContent className='sm:max-w-lg' showCloseButton={false} onInteractOutside={e => e.preventDefault()}>
+      <DialogContent className='sm:max-w-xl' showCloseButton={false} onInteractOutside={e => e.preventDefault()}>
         <DialogHeader>
           <div className='flex items-center justify-between'>
             <DialogTitle className='flex items-center gap-2'>
@@ -36,7 +34,7 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
 
         <div className='flex flex-col gap-3 text-sm'>
           {/* Point 1: AI review responsibility */}
-          <div className='flex gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800'>
+          <div className='flex gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30'>
             <AlertTriangle className='h-4 w-4 text-amber-600 shrink-0 mt-0.5' />
             <div>
               <p className='font-semibold text-amber-900 dark:text-amber-200'>{t('reviewTitle')}</p>
@@ -45,13 +43,13 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
           </div>
 
           {/* Point 2: Mode explanation + selection */}
-          <div className='rounded-lg border p-3 flex flex-col gap-2.5'>
+          <div className='rounded-lg bg-muted/40 p-3 flex flex-col gap-2.5'>
             <p className='font-semibold'>{t('modesTitle')}</p>
 
             {cloudAiEnabled && (
               <button onClick={() => setSelectedMode('cloud')}
-                className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-colors ${
-                  selectedMode === 'cloud' ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-muted/50'
+                className={`flex items-start gap-2.5 p-2.5 rounded-lg text-left transition-colors ${
+                  selectedMode === 'cloud' ? 'bg-blue-50/80 dark:bg-blue-950/30' : 'hover:bg-muted/50'
                 }`}>
                 <Cloud className='h-4 w-4 text-blue-500 shrink-0 mt-0.5' />
                 <div>
@@ -61,17 +59,14 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
               </button>
             )}
 
-            <button onClick={() => !isBrowserComingSoon && setSelectedMode('local')}
-              disabled={isBrowserComingSoon}
-              className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-colors ${
-                isBrowserComingSoon ? 'opacity-50 cursor-not-allowed' :
-                selectedMode === 'local' ? 'border-green-400 bg-green-50/50 dark:bg-green-950/20' : 'hover:bg-muted/50'
+            <button onClick={() => setSelectedMode('local')}
+              className={`flex items-start gap-2.5 p-2.5 rounded-lg text-left transition-colors ${
+                selectedMode === 'local' ? 'bg-green-50/80 dark:bg-green-950/30' : 'hover:bg-muted/50'
               }`}>
               <Shield className='h-4 w-4 text-green-600 shrink-0 mt-0.5' />
               <div>
                 <p className='font-medium text-foreground'>
                   {t('localLabel')}
-                  {isBrowserComingSoon && <span className='ml-2 text-[10px] text-muted-foreground font-normal'>{t('comingSoon')}</span>}
                 </p>
                 <p className='text-muted-foreground text-xs mt-0.5 leading-relaxed'>{t('localDesc')}</p>
               </div>
@@ -85,7 +80,7 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
 
           {/* Point 3: Classified documents warning */}
           {cloudAiEnabled && (
-            <div className='flex gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800'>
+            <div className='flex gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/30'>
               <Shield className='h-4 w-4 text-red-600 shrink-0 mt-0.5' />
               <div>
                 <p className='font-semibold text-red-900 dark:text-red-200'>{t('classifiedTitle')}</p>

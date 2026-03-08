@@ -1,10 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Brain, Loader2, User, Building2, MapPin, Phone, Mail, Landmark, CalendarDays, Hash, Check } from 'lucide-react'
+import { Brain, Loader2, User, Building2, MapPin, Phone, Mail, Landmark, CalendarDays, Hash, Check, AlertCircle, RotateCcw, Download } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { DocumentPage, Redaction, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion } from '@/types'
 import type { RegexCategory } from '@/lib/regex-entities'
+import { extractRegexEntities } from '@/lib/regex-entities'
+import { localBackend } from '@/lib/config'
+import type { ModelStatus, ProgressEvent } from '@/lib/browser-nlp'
 
 type NerCategory = 'PER' | 'ORG' | 'LOC'
 type CategoryKey = `ner:${NerCategory}` | `regex:${RegexCategory}`
@@ -31,8 +34,8 @@ const REGEX_OPTIONS: Array<{ key: CategoryKey; icon: React.ElementType; labelKey
   { key: 'regex:id', icon: Hash, labelKey: 'id' },
 ]
 
-import { localBackend } from '@/lib/config'
-const spacyEnabled = localBackend === 'spacy'
+const nerEnabled = localBackend === 'spacy' || localBackend === 'browser'
+const isBrowser = localBackend === 'browser'
 
 interface NlpPanelProps {
   documentPages?: DocumentPage[]
@@ -47,12 +50,16 @@ export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onR
   const t = useTranslations('NlpPanel')
   const [enabled, setEnabled] = useState<Set<CategoryKey>>(() => {
     const s = new Set<CategoryKey>(['regex:phone', 'regex:email', 'regex:iban'])
-    if (spacyEnabled) s.add('ner:PER')
+    if (nerEnabled) s.add('ner:PER')
     return s
   })
   const [allResults, setAllResults] = useState<RedactionSuggestion[]>([])
   const [loading, setLoading] = useState(false)
+  const [modelStatus, setModelStatus] = useState<ModelStatus>(isBrowser ? 'idle' : 'ready')
+  const [downloadProgress, setDownloadProgress] = useState(0)
+  const [inferenceProgress, setInferenceProgress] = useState<{ current: number; total: number } | null>(null)
   const analyzedKeys = useRef(new Set<string>())
+  const pendingPages = useRef<DocumentPage[]>([])
 
   const countFor = (key: CategoryKey) => allResults.filter(s => s.reason === reasonForKey(key)).length
 
@@ -75,37 +82,98 @@ export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onR
     })
   }, [enabled, allResults, onRemoveByReason, onRestoreByReason, onSuggestionsReceived])
 
+  // Load browser NLP model eagerly
+  useEffect(() => {
+    if (!isBrowser || modelStatus !== 'idle') return
+    setModelStatus('loading')
+    let hasProgress = false
+    import('@/lib/browser-nlp').then(({ loadBrowserNlpModel }) =>
+      loadBrowserNlpModel((e: ProgressEvent) => {
+        if (e.status === 'progress') {
+          if (!hasProgress) { setModelStatus('downloading'); hasProgress = true }
+          setDownloadProgress(Math.round((e as { progress: number }).progress))
+        } else if (e.status === 'ready') {
+          setModelStatus('ready')
+        }
+      })
+    ).catch(() => setModelStatus('error'))
+  }, [modelStatus])
+
+  const retryModelLoad = useCallback(() => setModelStatus('idle'), [])
+
+  // Run analysis when new pages appear
+  const runAnalysis = useCallback(async (newPages: DocumentPage[], enabledSet: Set<CategoryKey>) => {
+    const indexMap = newPages.map((p, i) => ({ tempIdx: i, documentKey: p.documentKey, realPageIndex: p.pageIndex }))
+    const apiPages = newPages.map((p, i) => ({ pageIndex: i, text: p.text }))
+
+    let nerSuggestions: RedactionSuggestion[] = []
+    let regexSuggestions: RedactionSuggestion[] = []
+
+    if (isBrowser) {
+      const { analyzePagesInBrowser } = await import('@/lib/browser-nlp')
+      setInferenceProgress({ current: 0, total: apiPages.length })
+      nerSuggestions = await analyzePagesInBrowser(apiPages, (pageIndex) => {
+        setInferenceProgress(prev => prev ? { ...prev, current: pageIndex + 1 } : null)
+      })
+      regexSuggestions = extractRegexEntities(apiPages)
+      setInferenceProgress(null)
+
+      // Deduplicate: prefer NER over regex for same text on same page
+      const nerTexts = new Set(nerSuggestions.map(s => `${s.pageIndex}:${s.text}`))
+      const merged = [...nerSuggestions, ...regexSuggestions.filter(s => !nerTexts.has(`${s.pageIndex}:${s.text}`))]
+
+      const tagged = merged.map(s => {
+        const entry = indexMap[s.pageIndex]
+        return { ...s, pageIndex: entry.realPageIndex, documentKey: entry.documentKey }
+      })
+      setAllResults(prev => [...prev, ...tagged])
+      const activeReasons = new Set([...enabledSet].map(reasonForKey))
+      const filtered = tagged.filter(s => activeReasons.has(s.reason!))
+      if (filtered.length) onSuggestionsReceived(filtered, [], [], [])
+    } else {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/nlp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pages: apiPages }),
+      })
+      const { suggestions }: { suggestions: RedactionSuggestion[] } = await res.json()
+      const tagged = suggestions.map(s => {
+        const entry = indexMap[s.pageIndex]
+        return { ...s, pageIndex: entry.realPageIndex, documentKey: entry.documentKey }
+      })
+      setAllResults(prev => [...prev, ...tagged])
+      const activeReasons = new Set([...enabledSet].map(reasonForKey))
+      const filtered = tagged.filter(s => activeReasons.has(s.reason!))
+      if (filtered.length) onSuggestionsReceived(filtered, [], [], [])
+    }
+  }, [onSuggestionsReceived])
+
   // Auto-run when new (unanalyzed) pages appear
   useEffect(() => {
     if (!documentPages?.length || loading) return
+    if (isBrowser && modelStatus !== 'ready') {
+      // Stash pages to process once model is ready
+      const newPages = documentPages.filter(p => !analyzedKeys.current.has(`${p.documentKey}:${p.pageIndex}`))
+      if (newPages.length) pendingPages.current = [...pendingPages.current, ...newPages]
+      return
+    }
     const newPages = documentPages.filter(p => !analyzedKeys.current.has(`${p.documentKey}:${p.pageIndex}`))
     if (!newPages.length) return
     newPages.forEach(p => analyzedKeys.current.add(`${p.documentKey}:${p.pageIndex}`))
     setLoading(true)
-    // Use temporary unique indices to avoid pageIndex collisions across documents
-    const indexMap = newPages.map((p, i) => ({ tempIdx: i, documentKey: p.documentKey, realPageIndex: p.pageIndex }))
-    const apiPages = newPages.map((p, i) => ({ pageIndex: i, text: p.text }))
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/nlp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pages: apiPages }),
-    })
-      .then(r => r.json())
-      .then(({ suggestions }: { suggestions: RedactionSuggestion[] }) => {
-        const tagged = suggestions.map(s => {
-          const entry = indexMap[s.pageIndex]
-          return { ...s, pageIndex: entry.realPageIndex, documentKey: entry.documentKey }
-        })
-        setAllResults(prev => [...prev, ...tagged])
-        const activeReasons = new Set([...enabled].map(reasonForKey))
-        const filtered = tagged.filter(s => activeReasons.has(s.reason!))
-        if (filtered.length) onSuggestionsReceived(filtered, [], [], [])
-      })
-      .finally(() => setLoading(false))
-  }, [documentPages, loading, onSuggestionsReceived, enabled])
+    runAnalysis(newPages, enabled).finally(() => setLoading(false))
+  }, [documentPages, loading, modelStatus, runAnalysis, enabled])
 
-  const activeReasons = new Set([...enabled].map(reasonForKey))
-  const totalActive = allResults.filter(s => activeReasons.has(s.reason!)).length
+  // Process stashed pages once model becomes ready
+  useEffect(() => {
+    if (!isBrowser || modelStatus !== 'ready' || loading || !pendingPages.current.length) return
+    const pages = pendingPages.current.filter(p => !analyzedKeys.current.has(`${p.documentKey}:${p.pageIndex}`))
+    pendingPages.current = []
+    if (!pages.length) return
+    pages.forEach(p => analyzedKeys.current.add(`${p.documentKey}:${p.pageIndex}`))
+    setLoading(true)
+    runAnalysis(pages, enabled).finally(() => setLoading(false))
+  }, [modelStatus, loading, runAnalysis, enabled])
 
   const renderOption = ({ key, icon: Icon, labelKey }: { key: CategoryKey; icon: React.ElementType; labelKey: string }) => {
     const active = enabled.has(key)
@@ -127,26 +195,58 @@ export function NlpPanel({ documentPages, redactions, onSuggestionsReceived, onR
     )
   }
 
+  const statusText = loading && inferenceProgress
+    ? t('analyzingPage', { current: inferenceProgress.current, total: inferenceProgress.total })
+    : loading ? t('running') : null
+
   return (
     <div className='flex flex-col h-full bg-card'>
-      <div className='shrink-0 h-11 flex items-center justify-between gap-1.5 px-3 border-b bg-muted/50'>
-        <div className='flex items-center gap-1.5'>
-          <Brain className='h-3.5 w-3.5 text-muted-foreground' />
-          <span className='text-xs font-medium text-foreground'>{t('header')}</span>
-        </div>
-        <div className='flex items-center gap-1.5'>
+      <div className='@container shrink-0 h-11 flex items-center gap-1.5 px-3 border-b bg-muted/50'>
+        <Brain className='h-3.5 w-3.5 text-muted-foreground shrink-0' />
+        <span className='text-xs font-medium text-foreground hidden @[14rem]:inline'>{t('header')}</span>
+        <div className='flex items-center gap-1.5 ml-auto shrink-0'>
           {modeSelector}
           {loading && <Loader2 className='h-3 w-3 animate-spin text-muted-foreground' />}
-          {!loading && allResults.length > 0 && (
-            <span className='text-[10px] text-muted-foreground tabular-nums'>
-              {t('result', { count: totalActive })}
-            </span>
-          )}
         </div>
       </div>
 
       <div className='flex-1 overflow-y-auto p-3 space-y-4'>
-        {spacyEnabled && (
+        {/* Model loading status for browser NLP */}
+        {isBrowser && modelStatus !== 'ready' && (
+          <div className='rounded-md border bg-muted/30 p-3 space-y-2'>
+            {modelStatus === 'error' ? (
+              <div className='flex items-center gap-2'>
+                <AlertCircle className='h-3.5 w-3.5 text-destructive shrink-0' />
+                <span className='text-xs text-destructive flex-1'>{t('modelError')}</span>
+                <button onClick={retryModelLoad} className='text-xs text-primary hover:underline flex items-center gap-1'>
+                  <RotateCcw className='h-3 w-3' /> {t('retry')}
+                </button>
+              </div>
+            ) : modelStatus === 'downloading' ? (
+              <>
+                <div className='flex items-center gap-2'>
+                  <Download className='h-3.5 w-3.5 text-muted-foreground animate-pulse shrink-0' />
+                  <span className='text-xs text-muted-foreground'>{t('modelDownloading', { progress: downloadProgress })}</span>
+                </div>
+                <div className='h-1.5 rounded-full bg-muted overflow-hidden'>
+                  <div className='h-full bg-primary rounded-full transition-all duration-300' style={{ width: `${downloadProgress}%` }} />
+                </div>
+              </>
+            ) : (
+              <div className='flex items-center gap-2'>
+                <Loader2 className='h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0' />
+                <span className='text-xs text-muted-foreground'>{t('modelLoading')}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Inference progress */}
+        {statusText && (
+          <p className='text-[10px] text-muted-foreground text-center'>{statusText}</p>
+        )}
+
+        {nerEnabled && (
           <section>
             <p className='text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 px-1'>{t('nerSection')}</p>
             <div className='flex flex-col'>{NER_OPTIONS.map(renderOption)}</div>

@@ -13,16 +13,16 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      // Next.js inline scripts + MuPDF WASM require unsafe-eval
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      // Next.js inline scripts + MuPDF/ONNX WASM require unsafe-eval; jsdelivr hosts ONNX Runtime WASM workers
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
       "style-src 'self' 'unsafe-inline'",
       // PDF rendering uses blob: and data: URLs
       "img-src 'self' data: blob:",
       "font-src 'self'",
       // Web workers (MuPDF) loaded via blob:
       "worker-src 'self' blob:",
-      // All external network calls go through Next.js API routes
-      "connect-src 'self'",
+      // API routes + HuggingFace model downloads + ONNX Runtime WASM for browser NLP
+      "connect-src 'self' https://huggingface.co https://cdn-lfs.hf.co https://*.hf.co https://*.xethub.hf.co https://cdn.jsdelivr.net",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -36,9 +36,6 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['undici'],
   ...(basePath ? { basePath, assetPrefix: basePath, trailingSlash: true } : {}),
-  async redirects() {
-    return basePath ? [{ source: '/', destination: '/en', permanent: false }] : []
-  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
@@ -50,6 +47,11 @@ const nextConfig: NextConfig = {
         fs: false,
         path: false,
         module: false,
+      }
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'sharp$': false,
+        'onnxruntime-node$': false,
       }
       // Handle node: protocol imports (e.g. node:fs, node:path)
       config.plugins = config.plugins ?? []

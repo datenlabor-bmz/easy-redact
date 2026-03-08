@@ -191,6 +191,11 @@
     "id": "Identifiants / codes",
     "analyze": "Analyser le document",
     "running": "Analyse en cours…",
+    "analyzingPage": "Analyse de la page {current} sur {total}…",
+    "modelDownloading": "Téléchargement du modèle IA… {progress}%",
+    "modelLoading": "Chargement du modèle IA…",
+    "modelError": "Échec du chargement du modèle IA. Vérifiez votre connexion.",
+    "retry": "Réessayer",
     "result": "{count, plural, =0 {Aucune correspondance trouvée} one {# correspondance trouvée} other {# correspondances trouvées}}",
     "noDocument": "Chargez d'abord un document"
   },

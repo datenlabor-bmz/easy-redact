@@ -419,8 +419,7 @@ export default function App() {
 
         {/* Center — toolbar header + PDF viewer or upload prompt */}
         <div className='flex-1 min-w-0 flex flex-col overflow-hidden relative'>
-          {/* Header: zoom left, export right — compact, no wrapping */}
-          <div className='shrink-0 flex items-center gap-1 px-2 border-b bg-muted/50 h-11'>
+          <div className='shrink-0 flex items-center flex-wrap gap-1 px-2 py-1 border-b bg-muted/50 min-h-11'>
             {activeFile && (
               <>
                 <Button variant='ghost' size='icon' className='h-7 w-7' onClick={() => setZoom(Math.max(25, zoom - 25))}>
@@ -572,7 +571,7 @@ export default function App() {
 
         {/* Right — Chat or NLP panel */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
-          {session.consent === 'local' && localBackend === 'spacy' ? (
+          {session.consent === 'local' && (localBackend === 'spacy' || localBackend === 'browser') ? (
             <NlpPanel documentPages={documentPages}
               redactions={session.redactions}
               onSuggestionsReceived={handleSuggestionsReceived}

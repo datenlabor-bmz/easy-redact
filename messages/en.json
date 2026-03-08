@@ -191,6 +191,11 @@
     "id": "IDs / codes",
     "analyze": "Analyze document",
     "running": "Analyzing…",
+    "analyzingPage": "Analyzing page {current} of {total}…",
+    "modelDownloading": "Downloading AI model… {progress}%",
+    "modelLoading": "Loading AI model…",
+    "modelError": "Failed to load AI model. Check your connection.",
+    "retry": "Retry",
     "result": "{count, plural, =0 {No matches found} one {# match found} other {# matches found}}",
     "noDocument": "Upload a document first"
   },

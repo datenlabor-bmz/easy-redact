@@ -191,6 +191,11 @@
     "id": "标识符 / 代码",
     "analyze": "分析文档",
     "running": "分析中…",
+    "analyzingPage": "正在分析第 {current} 页，共 {total} 页…",
+    "modelDownloading": "正在下载 AI 模型… {progress}%",
+    "modelLoading": "正在加载 AI 模型…",
+    "modelError": "AI 模型加载失败，请检查网络连接。",
+    "retry": "重试",
     "result": "{count, plural, =0 {未找到匹配} other {找到 # 个匹配}}",
     "noDocument": "请先上传文档"
   },

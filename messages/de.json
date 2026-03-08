@@ -191,6 +191,11 @@
     "id": "Kennungen / Codes",
     "analyze": "Dokument analysieren",
     "running": "Analyse läuft…",
+    "analyzingPage": "Seite {current} von {total} wird analysiert…",
+    "modelDownloading": "KI-Modell wird heruntergeladen… {progress}%",
+    "modelLoading": "KI-Modell wird geladen…",
+    "modelError": "KI-Modell konnte nicht geladen werden. Prüfen Sie Ihre Verbindung.",
+    "retry": "Erneut versuchen",
     "result": "{count, plural, =0 {Keine Treffer gefunden} one {# Treffer gefunden} other {# Treffer gefunden}}",
     "noDocument": "Laden Sie zuerst ein Dokument hoch"
   },
