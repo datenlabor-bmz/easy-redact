@@ -36,6 +36,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   serverExternalPackages: ['undici'],
   ...(basePath ? { basePath, assetPrefix: basePath, trailingSlash: true } : {}),
+  async redirects() {
+    return [{ source: '/', destination: '/en', permanent: false }]
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },
