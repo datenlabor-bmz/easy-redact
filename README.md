@@ -45,7 +45,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Copy `.env.example` to `.env.local` and fill in at minimum the Azure OpenAI credentials.
+Open [http://localhost:3000](http://localhost:3000). Copy `.env.example` to `.env` and fill in at minimum the Azure OpenAI credentials.
 
 ## Environment Variables
 
@@ -92,11 +92,11 @@ Pre-built images are published to GitHub Container Registry on every release:
 ```bash
 # Standard image (serves at /)
 docker pull ghcr.io/datenlabor-bmz/easy-redact:latest
-docker run -p 3000:3000 --env-file .env.local ghcr.io/datenlabor-bmz/easy-redact:latest
+docker run -p 3000:3000 --env-file .env ghcr.io/datenlabor-bmz/easy-redact:latest
 
 # Image with BASE_PATH=/easyredact (serves at /easyredact/)
 docker pull ghcr.io/datenlabor-bmz/easy-redact-with-base-path:latest
-docker run -p 3000:3000 --env-file .env.local ghcr.io/datenlabor-bmz/easy-redact-with-base-path:latest
+docker run -p 3000:3000 --env-file .env ghcr.io/datenlabor-bmz/easy-redact-with-base-path:latest
 ```
 
 ### Building from source
@@ -105,7 +105,7 @@ The Dockerfile bundles LibreOffice (DOCX conversion), Python + uv, and the Germa
 
 ```bash
 docker build -t easy-redact .
-docker run -p 3000:3000 --env-file .env.local easy-redact
+docker run -p 3000:3000 --env-file .env easy-redact
 ```
 
 For production deployment on `linux/amd64` (e.g. when building on Apple Silicon):
@@ -117,7 +117,7 @@ docker buildx build --platform linux/amd64 -t easy-redact .
 To use a local LLM instead of spaCy, override `LOCAL_BACKEND` at runtime:
 
 ```bash
-docker run -p 3000:3000 -e LOCAL_BACKEND=llm --env-file .env.local easy-redact
+docker run -p 3000:3000 -e LOCAL_BACKEND=llm --env-file .env easy-redact
 ```
 
 DOCX upload and spaCy NLP are only available in the Docker build; they return HTTP 501 otherwise.
@@ -134,7 +134,7 @@ This sets the Next.js `basePath`, which rewrites all routes, assets, and API end
 
 ```nginx
 location /easyredact/ {
-    proxy_pass http://127.0.0.1:3001;
+    proxy_pass http://127.0.0.1:3000;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
