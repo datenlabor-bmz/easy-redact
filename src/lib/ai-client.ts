@@ -12,15 +12,15 @@ function getProxyOptions() {
   }
 }
 
-function makeClient(baseURL: string, apiKey: string) {
-  return new OpenAI({ baseURL, apiKey, ...getProxyOptions() })
+function makeClient(baseURL: string, apiKey: string, useProxy = true) {
+  return new OpenAI({ baseURL, apiKey, ...(useProxy ? getProxyOptions() : {}) })
 }
 
-export const modelCloud = () => process.env.CLOUD_LLM_MODEL ?? 'gpt-5.2'
+export const modelCloud = () => process.env.CLOUD_LLM_MODEL ?? 'gpt-5.1'
 export const modelLocal = () => process.env.LOCAL_LLM_MODEL ?? 'llama3.3:latest'
 
 export function getClient(mode: 'cloud' | 'local') {
   return mode === 'local'
-    ? { client: makeClient(process.env.LOCAL_LLM_API_BASE ?? 'http://localhost:11434/v1', process.env.LOCAL_LLM_API_KEY ?? 'ollama'), model: modelLocal() }
+    ? { client: makeClient(process.env.LOCAL_LLM_API_BASE ?? 'http://localhost:11434/v1', process.env.LOCAL_LLM_API_KEY ?? 'ollama', false), model: modelLocal() }
     : { client: makeClient(process.env.CLOUD_LLM_API_BASE!, process.env.CLOUD_LLM_API_KEY!), model: modelCloud() }
 }
