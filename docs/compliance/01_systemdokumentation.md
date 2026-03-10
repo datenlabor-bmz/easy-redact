@@ -127,7 +127,7 @@ Nutzer-Browser
 |----------|---------|-------------|-------------|
 || `CLOUD_LLM_API_BASE` | Ja (Cloud) | OpenAI-kompatibler Cloud-LLM-Endpunkt | `https://behoerde-oai.openai.azure.com/openai/v1` |
 || `CLOUD_LLM_API_KEY` | Ja (Cloud) | API-Schlüssel für Cloud-LLM | `abc123...` |
-|| `CLOUD_LLM_MODEL` | Nein | Cloud-Modellname | `gpt-5.2` |
+|| `CLOUD_LLM_MODEL` | Nein | Cloud-Modellname | `gpt-5.1` |
 || `LOCAL_LLM_API_BASE` | Nein (Lokal-LLM) | Lokaler LLM-Endpunkt | `http://localhost:11434/v1` |
 || `LOCAL_LLM_API_KEY` | Nein (Lokal-LLM) | Lokaler LLM-Key | `ollama` |
 || `LOCAL_LLM_MODEL` | Nein | Lokales Modell | `llama3.3:latest` |

@@ -19,7 +19,7 @@ flowchart LR
         APP["KI-gestützte\nPDF-Schwärzungsanwendung"]
     end
 
-    AZ["☁️ **Azure OpenAI**\nSweden Central\nGPT-5.2"]
+    AZ["☁️ **Azure OpenAI**\nSweden Central\ngpt-5.1"]
     LLM["🖥️ **Lokales LLM**\nOllama – optional\nOn-Premises"]
     GH["📦 **GitHub CDN**\nIFG-Regelwerk\n(keine pers. Daten)"]
     DMS["🗄️ **DMS**\nVorgangsbearbeitung\n(außerhalb Scope)"]
@@ -171,7 +171,7 @@ sequenceDiagram
     N-->>B: SSE: consent_required
     B->>B: Nutzer erteilt Einwilligung (Cloud-KI)
     B->>N: POST /api/chat (mit Dokumenttext)
-    N->>A: Chat Completion (GPT-5.2)
+    N->>A: Chat Completion (gpt-5.1)
     A-->>N: Streaming-Antwort
     N-->>B: SSE: suggest_redactions
     B->>B: Vorschläge prüfen · akzeptieren / ablehnen

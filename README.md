@@ -55,7 +55,7 @@ See `.env.example` for the full list. Key variables:
 # Cloud LLM (any OpenAI-compatible API — Azure AI Foundry, OpenAI, etc.)
 CLOUD_LLM_API_BASE=https://YOUR-RESOURCE.openai.azure.com/openai/v1
 CLOUD_LLM_API_KEY=
-CLOUD_LLM_MODEL=gpt-5.2
+CLOUD_LLM_MODEL=gpt-5.1
 
 # Local LLM (Ollama, vLLM, llama.cpp, or other OpenAI-compatible API — used when LOCAL_AI=llm)
 LOCAL_LLM_API_BASE=http://localhost:11434/v1
@@ -76,7 +76,7 @@ To use Azure OpenAI as the Cloud LLM, create an Azure AI Foundry resource and se
 ```env
 CLOUD_LLM_API_BASE=https://YOUR-RESOURCE.openai.azure.com/openai/v1
 CLOUD_LLM_API_KEY=your-azure-api-key
-CLOUD_LLM_MODEL=gpt-5.2
+CLOUD_LLM_MODEL=gpt-5.1
 ```
 
 The `/openai/v1` path exposes an OpenAI-compatible API. No Azure-specific SDK configuration is needed.

@@ -74,7 +74,7 @@ cp .env.example .env
 # .env bearbeiten:
 # CLOUD_LLM_API_BASE=https://<ressource>.openai.azure.com/openai/v1
 # CLOUD_LLM_API_KEY=<Secret aus dem Secrets-Vault>
-# CLOUD_LLM_MODEL=gpt-5.2
+# CLOUD_LLM_MODEL=gpt-5.1
 # HTTPS_PROXY=http://proxy.behoerde.intern:8080
 # HTTP_PROXY=http://proxy.behoerde.intern:8080
 # NO_PROXY=localhost,127.0.0.1,*.intern
@@ -154,7 +154,7 @@ server {
 | `NODE_ENV` | `production` | Ja (automatisch gesetzt) |
 || `CLOUD_LLM_API_KEY` | Aus Secrets-Vault | Ja (Cloud-KI) |
 || `CLOUD_LLM_API_BASE` | `https://behoerde-oai.openai.azure.com/openai/v1` | Ja (Cloud-KI) |
-|| `CLOUD_LLM_MODEL` | `gpt-5.2` | Ja (Cloud-KI) |
+|| `CLOUD_LLM_MODEL` | `gpt-5.1` | Ja (Cloud-KI) |
 | `HTTPS_PROXY` | Unternehmens-Proxy-URL | Ja (für ausgehende Verbindungen) |
 | `NO_PROXY` | `localhost,127.0.0.1` | Ja |
 || `LOCAL_AI` | `llm` oder `ner` | Ja |
@@ -164,7 +164,7 @@ server {
 EasyRedact unterstützt jeden OpenAI-kompatiblen LLM-Endpunkt. Für Azure AI Foundry:
 
 1. **Azure OpenAI-Ressource** in Region **Sweden Central** erstellen
-2. **Modell-Deployment** anlegen: z.B. `gpt-5.2`
+2. **Modell-Deployment** anlegen: z.B. `gpt-5.1`
 3. **API-Key** aus dem Azure-Portal in den Secrets-Vault speichern
 4. **`CLOUD_LLM_API_BASE`** auf `https://<ressource>.openai.azure.com/openai/v1` setzen — der `/openai/v1`-Pfad stellt eine OpenAI-kompatible API bereit
 5. **Netzwerkzugriff**: Private Endpoint oder IP-Restriktionen auf Unternehmens-Proxy-IPs konfigurieren

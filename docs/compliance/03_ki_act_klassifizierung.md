@@ -11,7 +11,7 @@
 
 EasyRedact ist als **KI-System mit geringem Risiko** (Artikel 50 EU AI Act: Transparenzpflichten) einzustufen. Es handelt sich **nicht** um ein Hochrisiko-KI-System im Sinne des Annex III der Verordnung. Als KI-System, das mit Beschäftigten einer Bundesbehörde interagiert und die KI-Natur erkennbar darstellt, unterliegt EasyRedact ausschließlich den Transparenzpflichten des Art. 50 EU AI Act.
 
-Darüber hinaus ist der Einsatz von Azure OpenAI GPT-5.2 als **KI-Modell mit allgemeinem Verwendungszweck (GPAI-Modell)** zu beachten. Die Pflichten für GPAI-Modelle treffen den **Anbieter** (Microsoft/OpenAI), nicht den Einsatzbetrieb (Betreiber).
+Darüber hinaus ist der Einsatz von Azure OpenAI gpt-5.1 als **KI-Modell mit allgemeinem Verwendungszweck (GPAI-Modell)** zu beachten. Die Pflichten für GPAI-Modelle treffen den **Anbieter** (Microsoft/OpenAI), nicht den Einsatzbetrieb (Betreiber).
 
 ---
 
@@ -31,7 +31,7 @@ EasyRedact erfüllt diese Definition: Es nimmt Dokumenttexte als Eingabe und erz
 
 ### 2.3 Ist Microsoft/Azure OpenAI „Anbieter" des zugrunde liegenden KI-Systems?
 
-**Ja**, für das GPAI-Modell (GPT-5.2). Microsoft/OpenAI ist Anbieter des Modells. Das datenlabor-bmz ist Entwickler/Anbieter der **Anwendung** EasyRedact, die das GPAI-Modell integriert.
+**Ja**, für das GPAI-Modell (gpt-5.1). Microsoft/OpenAI ist Anbieter des Modells. Das datenlabor-bmz ist Entwickler/Anbieter der **Anwendung** EasyRedact, die das GPAI-Modell integriert.
 
 ---
 
@@ -124,7 +124,7 @@ Da EasyRedact kein Hochrisiko-KI-System ist, entfällt der Großteil der Betreib
 
 ## 5. Einordnung des GPAI-Modells (Azure OpenAI)
 
-GPT-5.2 ist ein **KI-Modell mit allgemeinem Verwendungszweck (GPAI-Modell)** im Sinne des Art. 51 EU AI Act. Für GPAI-Modelle mit systemischen Risiken (> 10^25 FLOPs Rechenaufwand) gelten besondere Pflichten – diese treffen **Microsoft als Anbieter**, nicht die Behörde als Betreiber.
+gpt-5.1 ist ein **KI-Modell mit allgemeinem Verwendungszweck (GPAI-Modell)** im Sinne des Art. 51 EU AI Act. Für GPAI-Modelle mit systemischen Risiken (> 10^25 FLOPs Rechenaufwand) gelten besondere Pflichten – diese treffen **Microsoft als Anbieter**, nicht die Behörde als Betreiber.
 
 Microsoft/OpenAI veröffentlicht Transparenzberichte und Model Cards für Azure OpenAI-Modelle und erfüllt die GPAI-Pflichten nach dem EU AI Act. Der Betreiber muss die Einhaltung dieser Pflichten vertraglich absichern (DPA mit Microsoft Azure).
 
@@ -157,7 +157,7 @@ Empfehlung: EasyRedact sollte dennoch in einem internen KI-Inventar der Behörde
 | Verbotene KI-Praxis (Art. 5) | **Nein** |
 | Hochrisiko-KI-System (Annex III) | **Nein** |
 | Transparenzpflichtig (Art. 50) | **Ja – bereits erfüllt** |
-| GPAI-Modell im Einsatz | **Ja (Azure OpenAI GPT-5.2) – Pflichten treffen Microsoft** |
+| GPAI-Modell im Einsatz | **Ja (Azure OpenAI gpt-5.1) – Pflichten treffen Microsoft** |
 | Betreiberpflichten nach Art. 26 | **Minimale Pflichten, erfüllt** |
 | Eintragungspflicht EU-Datenbank | **Nein** |
 
