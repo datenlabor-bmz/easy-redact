@@ -118,7 +118,7 @@ export interface PageRangeSuggestion {
 
 // ── Session ───────────────────────────────────────────────────────────────────
 
-export type ConsentMode = 'cloud' | 'local'
+export type AiMode = 'cloud' | 'local'
 export type RedactionMode = 'pii' | 'foi'
 
 export interface DocumentMeta {
@@ -131,7 +131,7 @@ export interface Session {
   id: string
   documents: DocumentMeta[]
   redactions: Redaction[]
-  consent: ConsentMode
+  aiMode: AiMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
   onboardingAccepted?: boolean
@@ -208,7 +208,7 @@ export interface RedactionSnapshot {
 export interface ChatRequest {
   messages: ApiChatMessage[]
   model: 'cloud' | 'local'
-  consent: ConsentMode
+  aiMode: AiMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: DocumentPage[]

@@ -32,7 +32,7 @@ Dieses Betriebskonzept beschreibt die Installation, Konfiguration, den laufenden
 |-----------|-----------|------|---------|-------|
 | Nutzer-Browser → Reverse Proxy | HTTPS/TLS | 443 | Eingehend | Web-Zugriff |
 | Reverse Proxy → Container | HTTP | 3000 | Intern | Proxy-Forward |
-| Container → Unternehmens-Proxy → Azure OpenAI | HTTPS/TLS | 443 | Ausgehend | Cloud-KI (optional) |
+| Container → Unternehmens-Proxy → Cloud-LLM | HTTPS/TLS | 443 | Ausgehend | Cloud-KI (optional) |
 | Container → github.com CDN | HTTPS/TLS | 443 | Ausgehend | IFG-Regelwerk (optional; nur FOI-Modus) |
 | Container → Lokaler LLM-Endpunkt | HTTP | konfigurierbar | Intern | Lokal-KI (optional) |
 
@@ -72,9 +72,9 @@ cd easy-redact
 ```bash
 cp .env.example .env
 # .env bearbeiten:
-# AZURE_OPENAI_API_KEY=<Secret aus dem Secrets-Vault>
-# AZURE_OPENAI_API_BASE=https://<tenant>.openai.azure.com
-# AZURE_OPENAI_DEPLOYMENT=gpt-5.2
+# CLOUD_LLM_API_BASE=https://<ressource>.openai.azure.com/openai/v1
+# CLOUD_LLM_API_KEY=<Secret aus dem Secrets-Vault>
+# CLOUD_LLM_MODEL=gpt-5.2
 # HTTPS_PROXY=http://proxy.behoerde.intern:8080
 # HTTP_PROXY=http://proxy.behoerde.intern:8080
 # NO_PROXY=localhost,127.0.0.1,*.intern
@@ -152,22 +152,23 @@ server {
 | Variable | Produktionswert | Pflicht |
 |----------|----------------|---------|
 | `NODE_ENV` | `production` | Ja (automatisch gesetzt) |
-| `AZURE_OPENAI_API_KEY` | Aus Secrets-Vault | Ja (Cloud-KI) |
-| `AZURE_OPENAI_API_BASE` | Azure-Endpunkt der Behörde | Ja (Cloud-KI) |
-| `AZURE_OPENAI_DEPLOYMENT` | `gpt-5.2` oder spezifisches Deployment | Ja (Cloud-KI) |
+|| `CLOUD_LLM_API_KEY` | Aus Secrets-Vault | Ja (Cloud-KI) |
+|| `CLOUD_LLM_API_BASE` | `https://behoerde-oai.openai.azure.com/openai/v1` | Ja (Cloud-KI) |
+|| `CLOUD_LLM_MODEL` | `gpt-5.2` | Ja (Cloud-KI) |
 | `HTTPS_PROXY` | Unternehmens-Proxy-URL | Ja (für ausgehende Verbindungen) |
 | `NO_PROXY` | `localhost,127.0.0.1` | Ja |
-| `NEXT_PUBLIC_LOCAL_LLM_ENABLED` | `false` (Standard) oder `true` wenn Ollama verfügbar | Nein |
+|| `LOCAL_AI` | `llm` oder `ner` | Ja |
 
-### 4.2 Azure OpenAI Deployment einrichten
+### 4.2 Cloud-LLM einrichten (Beispiel: Azure AI Foundry)
 
-Im Azure-Portal für die Azure-Subscription der Behörde:
+EasyRedact unterstützt jeden OpenAI-kompatiblen LLM-Endpunkt. Für Azure AI Foundry:
 
 1. **Azure OpenAI-Ressource** in Region **Sweden Central** erstellen
-2. **Deployment** anlegen: Modell `gpt-5.2`, Deployment-Name nach Konvention der Behörde
+2. **Modell-Deployment** anlegen: z.B. `gpt-5.2`
 3. **API-Key** aus dem Azure-Portal in den Secrets-Vault speichern
-4. **Netzwerkzugriff**: Private Endpoint oder IP-Restriktionen auf Unternehmens-Proxy-IPs konfigurieren
-5. **Content Filter**: Ggf. anpassen (Standard-Filter können für Behördendokumente zu restriktiv sein)
+4. **`CLOUD_LLM_API_BASE`** auf `https://<ressource>.openai.azure.com/openai/v1` setzen — der `/openai/v1`-Pfad stellt eine OpenAI-kompatible API bereit
+5. **Netzwerkzugriff**: Private Endpoint oder IP-Restriktionen auf Unternehmens-Proxy-IPs konfigurieren
+6. **Content Filter**: Ggf. anpassen (Standard-Filter können für Behördendokumente zu restriktiv sein)
 
 ---
 
@@ -189,7 +190,7 @@ Im Azure-Portal für die Azure-Subscription der Behörde:
 |---------|--------------|---------|
 | Kritische CVE in Node.js/npm-Abhängigkeiten | < 48h | Notfall-Patch-Prozess |
 | Kritische CVE in MuPDF oder LibreOffice | < 48h | Notfall-Patch-Prozess |
-| Sicherheitsrelevante Änderung der Azure OpenAI API | < 1 Woche | Regulärer Update-Prozess |
+| Sicherheitsrelevante Änderung der Cloud-LLM-API | < 1 Woche | Regulärer Update-Prozess |
 | Feature-Update | Nach Freigabe | Regulärer Release-Zyklus |
 
 ### 5.3 Dependency-Scan (automatisiert)
@@ -236,7 +237,7 @@ curl -f https://easy-redact.intern.behoerde/de/about  # Hostname anpassen
 # Chat-API-Check (ohne Dokumentinhalt)
 curl -X POST https://easy-redact.intern.behoerde/api/chat \
   -H "Content-Type: application/json" \
-  -d '{"messages":[],"model":"test","consent":null,"redactionMode":"pii","locale":"de"}'
+  -d '{"messages":[],"model":"test","aiMode":null,"redactionMode":"pii","locale":"de"}'
 ```
 
 ---
@@ -272,7 +273,7 @@ Gesamte RTO: < 30 Minuten
 | Anwendungsentwicklung | datenlabor-bmz, [E-Mail] | Bugs, Sicherheitslücken in der Anwendung |
 | IT-Sicherheitsbeauftragter (ISB) | [Kontakt], [E-Mail] | Sicherheitsvorfälle, Datenpannen |
 | Datenschutzbeauftragter (DSB) | datenschutz@behoerde.intern | Datenschutzverletzungen, DSFA-Fragen |
-| Microsoft Azure Support | Azure-Portal (P1-Ticket) | Azure OpenAI-Ausfälle oder Datenpannen |
+| Cloud-LLM-Anbieter (z.B. Microsoft Azure) | Anbieter-Portal (P1-Ticket) | Cloud-LLM-Ausfälle oder Datenpannen |
 
 ---
 

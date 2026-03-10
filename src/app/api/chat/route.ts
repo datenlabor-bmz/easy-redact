@@ -2,7 +2,7 @@ import { getClient } from '@/lib/ai-client'
 import {
   tools, readDocumentsTool, SpecialToolResult,
   executeAskUser, executeSuggestRedactions,
-  executeReadDocuments, executeStartNlpProcessing,
+  executeReadDocuments,
 } from '@/lib/chat-tools'
 import { buildSystemPrompt } from '@/lib/system-prompt'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
@@ -22,9 +22,9 @@ async function* streamCompletion(client: any, model: string, messages: ApiChatMe
 
 export async function POST(req: Request) {
   const body: ChatRequest = await req.json()
-  const { messages, model, consent, redactionMode, foiJurisdiction, documentPages, currentRedactions, locale } = body
+  const { messages, model, aiMode, redactionMode, foiJurisdiction, documentPages, currentRedactions, locale } = body
 
-  console.log('[chat] POST', { consent, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
+  console.log('[chat] POST', { aiMode, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
 
   // Load FOI rules if needed
   const foiRules = redactionMode === 'foi' && foiJurisdiction
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     : undefined
 
   const systemPrompt = buildSystemPrompt({ redactionMode, foiJurisdiction, foiRules, locale })
-  const { client, model: modelName } = getClient(consent === 'local' ? 'local' : 'cloud')
+  const { client, model: modelName } = getClient(aiMode === 'local' ? 'local' : 'cloud')
   const activeTools = [...tools, readDocumentsTool]
 
   const stream = new ReadableStream({
@@ -125,9 +125,6 @@ export async function POST(req: Request) {
               }
               case 'read_documents':
                 result = executeReadDocuments(documentPages)
-                break
-              case 'start_nlp_processing':
-                result = executeStartNlpProcessing(args)
                 break
               default:
                 result = { success: false, error: `Unknown tool: ${name}` }

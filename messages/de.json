@@ -25,8 +25,7 @@
     "localLabel": "Lokale KI",
     "localBrowserDesc": "Läuft vollständig in Ihrem Browser. Keine Daten verlassen Ihr Gerät.",
     "localLlmDesc": "Läuft auf der Infrastruktur Ihrer Organisation. Keine Daten verlassen Ihr Netzwerk.",
-    "localSpacyDesc": "Regelbasierte Erkennung auf der Infrastruktur Ihrer Organisation. Keine Daten verlassen Ihr Netzwerk.",
-    "comingSoon": "bald verfügbar"
+    "localSpacyDesc": "Regelbasierte Erkennung auf der Infrastruktur Ihrer Organisation. Keine Daten verlassen Ihr Netzwerk."
   },
   "FoiSelector": {
     "label": "IFG-Modus",
@@ -105,7 +104,7 @@
     "featureMultiDocTitle": "Mehrere Dokumente",
     "featureMultiDocDesc": "PDFs und DOCX-Dateien als Batch hochladen. Der Assistent hat Kontext über alle Dokumente gleichzeitig und kann dokumentübergreifend Vorschläge erstellen.",
     "featurePrivacyTitle": "Datensouveränität",
-    "featurePrivacyDesc": "Wahl zwischen Cloud-KI (DSGVO-konform, keine Datenspeicherung) oder lokaler KI auf eigener Infrastruktur — ohne jede Cloud-Verbindung.",
+    "featurePrivacyDesc": "Wählen Sie zwischen einem DSGVO-konformen Cloud-LLM (keine Datenspeicherung), einem Ollama-kompatiblen Modell auf Ihrem eigenen Server oder vollständig lokaler Verarbeitung im Browser — ohne Cloud-Verbindung.",
     "featureMetadataTitle": "Metadaten entfernen",
     "featureMetadataDesc": "PDF-Metadaten wie Autor, Titel, Erstellungsdatum und Software einsehen und gezielt vor dem Export entfernen. Keine versteckten Informationslecks.",
     "featureDocxTitle": "DOCX-Unterstützung",
@@ -121,12 +120,12 @@
     "onlineTitle": "Online-Version",
     "onlineBadge": "easyredact.io",
     "onlineDesc": "EasyRedact direkt im Browser nutzen — ohne Installation, ohne Setup.",
-    "onlineStandard": "Cloud-KI über Azure OpenAI (DSGVO-konform, EU-Rechenzentrum)",
-    "onlineClassified": "In-Browser-NLP für eingestufte Dokumente (demnächst)",
+    "onlineStandard": "Cloud-KI (DSGVO-konform, EU-Rechenzentrum)",
+    "onlineClassified": "In-Browser-NLP für sensible Dokumente",
     "premiseTitle": "On-Premise-Version",
     "premiseBadge": "Docker",
     "premiseDesc": "Betrieb auf eigener Infrastruktur mit voller Kontrolle über Datenflüsse und Compliance.",
-    "premiseStandard": "Cloud-KI über Azure OpenAI (eigener Schlüssel)",
+    "premiseStandard": "Cloud-KI über einen beliebigen OpenAI-kompatiblen Endpunkt (eigener Schlüssel)",
     "premiseClassifiedLlm": "Lokale LLMs (Ollama, vLLM, etc.) für GPU-Server",
     "premiseClassifiedNer": "Lokale NER über spaCy für Standardhardware",
     "premiseDocker": "Deployment als einzelner Docker-Container",
@@ -166,7 +165,6 @@
     "classifiedTitle": "Eingestufte Dokumente (VS-NfD und höher)",
     "classifiedDesc": "Für als VS-NfD oder höher eingestufte Dokumente darf die Cloud-KI nicht verwendet werden. Wechseln Sie zur lokalen KI über den Umschalter im rechten Panel.",
     "changeLater": "Sie können den Modus jederzeit über den Umschalter oben rechts im Analyse-Panel ändern.",
-    "comingSoon": "bald verfügbar",
     "acknowledgement": "Ich habe die Hinweise zur Kenntnis genommen und übernehme die persönliche Verantwortung für die Prüfung aller Schwärzungsvorschläge.",
     "proceed": "Loslegen"
   },

@@ -1,4 +1,10 @@
-export type LocalBackend = 'browser' | 'llm' | 'spacy'
+export type LocalAi = 'ner-browser' | 'llm' | 'ner'
 
-export const cloudAiEnabled = process.env.NEXT_PUBLIC_CLOUD_AI_ENABLED !== 'false'
-export const localBackend = (process.env.NEXT_PUBLIC_LOCAL_BACKEND ?? 'browser') as LocalBackend
+declare global {
+  interface Window { __ER_CFG__?: { cloudAi: boolean; localAi: LocalAi } }
+}
+
+const fromWindow = () => typeof window !== 'undefined' ? window.__ER_CFG__ : undefined
+
+export const cloudAiEnabled = fromWindow()?.cloudAi ?? (process.env.CLOUD_AI !== 'false')
+export const localAi: LocalAi = fromWindow()?.localAi ?? (process.env.LOCAL_AI as LocalAi) ?? 'ner-browser'

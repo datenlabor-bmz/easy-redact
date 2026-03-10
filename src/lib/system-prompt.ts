@@ -89,7 +89,6 @@ export function buildSystemPrompt(opts: {
     '- `ask_user`: For structured questions with answer options — only when you need to clarify concrete ambiguities from the document.',
     '- `read_documents`: To read document content.',
     '- `suggest_redactions`: When you want to add suggestions or remove existing ones. You receive a current snapshot of all redactions with each request. Use the `remove` array with IDs from the snapshot to remove existing suggestions (status "suggested") — e.g. if the user excludes a category. `suggestions`, `textRanges`, `pageRanges` and `remove` can be used simultaneously.',
-    '- `start_nlp_processing`: For local NLP processing without LLM access.',
     '',
     '## Redaction snapshot',
     '',

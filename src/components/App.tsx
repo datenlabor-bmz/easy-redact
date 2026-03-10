@@ -14,7 +14,7 @@ import { ChatPanel } from '@/components/chat/ChatPanel'
 import { NlpPanel } from '@/components/NlpPanel'
 import { FoiSelector } from '@/components/SettingsPopover'
 import { ModeSelector } from '@/components/ModeSelector'
-import { localBackend } from '@/lib/config'
+import { localAi } from '@/lib/config'
 import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
 import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
@@ -43,7 +43,7 @@ export default function App() {
   const [converting, setConverting] = useState(false)
   const [selectMode, setSelectMode] = useState<'text' | 'freehand'>('text')
   const [redactConfirmOpen, setRedactConfirmOpen] = useState(false)
-  const [pendingModeSwitch, setPendingModeSwitch] = useState<'cloud' | 'local' | null>(null)
+  const [pendingAiModeSwitch, setPendingAiModeSwitch] = useState<'cloud' | 'local' | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchMatchInfo, setSearchMatchInfo] = useState({ current: 0, total: 0 })
   const searchNavigateRef = useRef<((dir: 1|-1) => void) | null>(null)
@@ -120,26 +120,34 @@ export default function App() {
     })
   }, [])
 
+  // Whether both old and new mode use the ChatPanel (preservable chat)
+  const usesChatPanel = (mode: 'cloud' | 'local') => mode === 'cloud' || localAi === 'llm'
+
   const handleModeChange = useCallback((mode: 'cloud' | 'local') => {
-    if (mode === session?.consent) return
+    if (mode === session?.aiMode) return
     const hasSuggested = session?.redactions.some(r => r.status === 'suggested')
-    if (hasSuggested) { setPendingModeSwitch(mode); return }
-    updateSession({ consent: mode })
-    setChatMessages([])
-    saveChat([])
+    if (hasSuggested) { setPendingAiModeSwitch(mode); return }
+    updateSession({ aiMode: mode })
+    // Only clear chat when switching between incompatible panels
+    if (!usesChatPanel(mode) || !usesChatPanel(session!.aiMode)) {
+      setChatMessages([])
+      saveChat([])
+    }
   }, [session, updateSession])
 
   const confirmModeSwitch = useCallback(() => {
-    if (!pendingModeSwitch) return
+    if (!pendingAiModeSwitch) return
     setSession(prev => {
-      const next = { ...prev!, consent: pendingModeSwitch, redactions: prev!.redactions.filter(r => r.status !== 'suggested') }
+      const next = { ...prev!, aiMode: pendingAiModeSwitch, redactions: prev!.redactions.filter(r => r.status !== 'suggested') }
       saveSession(next)
       return next
     })
-    setChatMessages([])
-    saveChat([])
-    setPendingModeSwitch(null)
-  }, [pendingModeSwitch])
+    if (!usesChatPanel(pendingAiModeSwitch) || !usesChatPanel(session!.aiMode)) {
+      setChatMessages([])
+      saveChat([])
+    }
+    setPendingAiModeSwitch(null)
+  }, [pendingAiModeSwitch, session])
 
   const addRedaction = useCallback((r: Redaction) => {
     setSession(prev => {
@@ -571,15 +579,15 @@ export default function App() {
 
         {/* Right — Chat or NLP panel */}
         <div style={{ width: rightWidth }} className='shrink-0 flex flex-col min-w-0 border-l'>
-          {session.consent === 'local' && (localBackend === 'spacy' || localBackend === 'browser') ? (
+          {session.aiMode === 'local' && (localAi === 'ner' || localAi === 'ner-browser') ? (
             <NlpPanel documentPages={documentPages}
               redactions={session.redactions}
               onSuggestionsReceived={handleSuggestionsReceived}
               onRemoveByReason={handleRemoveByReason}
               onRestoreByReason={handleRestoreByReason}
-              modeSelector={<ModeSelector consent={session.consent} onConsentChange={handleModeChange} />} />
+              modeSelector={<ModeSelector aiMode={session.aiMode} onAiModeChange={handleModeChange} />} />
           ) : (
-            <ChatPanel consent={session.consent} redactionMode={session.redactionMode}
+            <ChatPanel aiMode={session.aiMode} redactionMode={session.redactionMode}
               documents={session.documents}
               documentNames={session.documents.map(d => d.name)}
               triggerRef={chatTriggerRef}
@@ -593,7 +601,7 @@ export default function App() {
               redactions={session.redactions}
               onSuggestionsReceived={handleSuggestionsReceived}
               onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
-              modeSelector={<ModeSelector consent={session.consent} onConsentChange={handleModeChange} />} />
+              modeSelector={<ModeSelector aiMode={session.aiMode} onAiModeChange={handleModeChange} />} />
           )}
         </div>
       </div>
@@ -603,7 +611,7 @@ export default function App() {
 
       <OnboardingModal
         open={!session.onboardingAccepted}
-        onAccept={consent => updateSession({ onboardingAccepted: true, consent })}
+        onAccept={aiMode => updateSession({ onboardingAccepted: true, aiMode })}
       />
 
       <RedactConfirmDialog
@@ -612,14 +620,14 @@ export default function App() {
         onCancel={() => setRedactConfirmOpen(false)}
       />
 
-      <Dialog open={!!pendingModeSwitch} onOpenChange={open => !open && setPendingModeSwitch(null)}>
+      <Dialog open={!!pendingAiModeSwitch} onOpenChange={open => !open && setPendingAiModeSwitch(null)}>
         <DialogContent className='sm:max-w-sm'>
           <DialogHeader>
             <DialogTitle>{t('modeSwitchTitle')}</DialogTitle>
             <DialogDescription>{t('modeSwitchDesc')}</DialogDescription>
           </DialogHeader>
           <div className='flex gap-2 justify-end'>
-            <Button variant='outline' size='sm' onClick={() => setPendingModeSwitch(null)}>{t('modeSwitchCancel')}</Button>
+            <Button variant='outline' size='sm' onClick={() => setPendingAiModeSwitch(null)}>{t('modeSwitchCancel')}</Button>
             <Button size='sm' onClick={confirmModeSwitch}>{t('modeSwitchConfirm')}</Button>
           </div>
         </DialogContent>

@@ -156,7 +156,7 @@ function MockPrivacy() {
         </div>
       </div>
       <div className='text-[10px] text-muted-foreground text-center leading-relaxed max-w-[200px]'>
-        Jederzeit umschaltbar. Cloud-KI ist DSGVO-konform (Azure, EU). Local AI verlässt nie Ihre Infrastruktur.
+        Jederzeit umschaltbar. Cloud-KI ist DSGVO-konform (EU-Rechenzentrum). Local AI verlässt nie Ihre Infrastruktur.
       </div>
     </div>
   )
@@ -429,7 +429,7 @@ export default async function AboutPage() {
                 </div>
                 <div className='flex items-start gap-2'>
                   <Shield className='h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0' />
-                  <span className='text-gray-400'>{d('onlineClassified')}</span>
+                  <span>{d('onlineClassified')}</span>
                 </div>
               </div>
               <div className='mt-auto pt-2 border-t border-gray-200 flex flex-col gap-1.5 text-xs text-gray-500'>

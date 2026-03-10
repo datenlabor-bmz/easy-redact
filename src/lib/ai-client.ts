@@ -1,4 +1,4 @@
-import { AzureOpenAI, OpenAI } from 'openai'
+import { OpenAI } from 'openai'
 
 function getProxyOptions() {
   const proxy = process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY
@@ -12,29 +12,15 @@ function getProxyOptions() {
   }
 }
 
-// Mirror env var names from redaction-app/backend/app/api.py exactly
-export function getCloudClient() {
-  return new AzureOpenAI({
-    apiKey: process.env.AZURE_OPENAI_API_KEY!,
-    endpoint: process.env.AZURE_OPENAI_API_BASE!,
-    apiVersion: process.env.AZURE_OPENAI_API_VERSION ?? '2024-12-01-preview',
-    ...getProxyOptions(),
-  })
+function makeClient(baseURL: string, apiKey: string) {
+  return new OpenAI({ baseURL, apiKey, ...getProxyOptions() })
 }
 
-export function getLocalClient() {
-  return new OpenAI({
-    baseURL: process.env.OPENAI_API_BASE ?? 'http://localhost:11434/v1',
-    apiKey: process.env.OPENAI_API_KEY ?? 'ollama',
-    ...getProxyOptions(),
-  })
-}
-
-export const modelCloud = () => process.env.AZURE_OPENAI_DEPLOYMENT ?? 'gpt-5.2'
+export const modelCloud = () => process.env.CLOUD_LLM_MODEL ?? 'gpt-5.2'
 export const modelLocal = () => process.env.LOCAL_LLM_MODEL ?? 'llama3.3:latest'
 
-export function getClient(model: 'cloud' | 'local') {
-  return model === 'local'
-    ? { client: getLocalClient(), model: modelLocal() }
-    : { client: getCloudClient(), model: modelCloud() }
+export function getClient(mode: 'cloud' | 'local') {
+  return mode === 'local'
+    ? { client: makeClient(process.env.LOCAL_LLM_API_BASE ?? 'http://localhost:11434/v1', process.env.LOCAL_LLM_API_KEY ?? 'ollama'), model: modelLocal() }
+    : { client: makeClient(process.env.CLOUD_LLM_API_BASE!, process.env.CLOUD_LLM_API_KEY!), model: modelCloud() }
 }

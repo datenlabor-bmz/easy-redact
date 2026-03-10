@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import type { DocumentPage, Redaction, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion } from '@/types'
 import type { RegexCategory } from '@/lib/regex-entities'
 import { extractRegexEntities } from '@/lib/regex-entities'
-import { localBackend } from '@/lib/config'
+import { localAi } from '@/lib/config'
 import type { ModelStatus, ProgressEvent } from '@/lib/browser-nlp'
 
 type NerCategory = 'PER' | 'ORG' | 'LOC'
@@ -34,8 +34,8 @@ const REGEX_OPTIONS: Array<{ key: CategoryKey; icon: React.ElementType; labelKey
   { key: 'regex:id', icon: Hash, labelKey: 'id' },
 ]
 
-const nerEnabled = localBackend === 'spacy' || localBackend === 'browser'
-const isBrowser = localBackend === 'browser'
+const nerEnabled = localAi === 'ner' || localAi === 'ner-browser'
+const isBrowser = localAi === 'ner-browser'
 
 interface NlpPanelProps {
   documentPages?: DocumentPage[]

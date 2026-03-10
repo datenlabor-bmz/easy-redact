@@ -7,17 +7,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { cloudAiEnabled } from '@/lib/config'
-import type { ConsentMode } from '@/types'
+import type { AiMode } from '@/types'
 
 interface OnboardingModalProps {
   open: boolean
-  onAccept: (consent: ConsentMode) => void
+  onAccept: (aiMode: AiMode) => void
 }
 
 export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
   const t = useTranslations('Onboarding')
   const [checked, setChecked] = useState(false)
-  const [selectedMode, setSelectedMode] = useState<ConsentMode>(cloudAiEnabled ? 'cloud' : 'local')
+  const [selectedMode, setSelectedMode] = useState<AiMode>(cloudAiEnabled ? 'cloud' : 'local')
   return (
     <Dialog open={open}>
       <DialogContent className='sm:max-w-xl' showCloseButton={false} onInteractOutside={e => e.preventDefault()}>

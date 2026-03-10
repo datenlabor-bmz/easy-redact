@@ -11,7 +11,6 @@ COPY . .
 ARG BASE_PATH=""
 ENV BASE_PATH=$BASE_PATH
 ENV NEXT_PUBLIC_BASE_PATH=$BASE_PATH
-ENV NEXT_PUBLIC_LOCAL_BACKEND=spacy
 
 RUN npm run build
 
@@ -37,7 +36,7 @@ COPY --from=build /app/scripts ./scripts
 
 ENV NODE_ENV=production
 ENV LIBREOFFICE_PATH=/usr/bin/libreoffice
-ENV LOCAL_BACKEND=spacy
+ENV LOCAL_AI=ner
 ENV PORT=3000
 
 EXPOSE 3000

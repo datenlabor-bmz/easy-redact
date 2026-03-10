@@ -3,19 +3,19 @@
 import { Cloud, Shield } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTranslations } from 'next-intl'
-import { cloudAiEnabled, localBackend } from '@/lib/config'
-import type { ConsentMode } from '@/types'
+import { cloudAiEnabled, localAi } from '@/lib/config'
+import type { AiMode } from '@/types'
 
 interface ModeSelectorProps {
-  consent: ConsentMode
-  onConsentChange: (mode: ConsentMode) => void
+  aiMode: AiMode
+  onAiModeChange: (mode: AiMode) => void
 }
 
-export function ModeSelector({ consent, onConsentChange }: ModeSelectorProps) {
+export function ModeSelector({ aiMode, onAiModeChange }: ModeSelectorProps) {
   const t = useTranslations('ModeSelector')
 
-  const localDesc = localBackend === 'browser' ? t('localBrowserDesc')
-    : localBackend === 'llm' ? t('localLlmDesc')
+  const localDesc = localAi === 'ner-browser' ? t('localBrowserDesc')
+    : localAi === 'llm' ? t('localLlmDesc')
     : t('localSpacyDesc')
 
   if (!cloudAiEnabled) {
@@ -36,9 +36,9 @@ export function ModeSelector({ consent, onConsentChange }: ModeSelectorProps) {
     <div className='flex h-7 rounded-md border bg-muted/50 p-0.5'>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button onClick={() => onConsentChange('cloud')}
+          <button onClick={() => onAiModeChange('cloud')}
             className={`flex items-center gap-1.5 px-2.5 rounded text-xs whitespace-nowrap transition-colors ${
-              consent === 'cloud'
+              aiMode === 'cloud'
                 ? 'bg-background shadow-sm text-foreground font-medium'
                 : 'text-muted-foreground hover:text-foreground'
             }`}>
@@ -50,9 +50,9 @@ export function ModeSelector({ consent, onConsentChange }: ModeSelectorProps) {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button onClick={() => onConsentChange('local')}
+          <button onClick={() => onAiModeChange('local')}
             className={`flex items-center gap-1.5 px-2.5 rounded text-xs whitespace-nowrap transition-colors ${
-              consent === 'local'
+              aiMode === 'local'
                 ? 'bg-background shadow-sm text-foreground font-medium'
                 : 'text-muted-foreground hover:text-foreground'
             }`}>

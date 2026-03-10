@@ -9,10 +9,10 @@ import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
 import { useTranslations, useLocale } from 'next-intl'
-import type { ConsentMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction, DocumentMeta, DocumentPage } from '@/types'
+import type { AiMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction, DocumentMeta, DocumentPage } from '@/types'
 
 interface ChatPanelProps {
-  consent: ConsentMode
+  aiMode: AiMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: DocumentPage[]
@@ -28,13 +28,13 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
+  aiMode, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
   onSuggestionsReceived, onMessagesChange, modeSelector,
 }: ChatPanelProps) {
   const t = useTranslations('ChatPanel')
   const locale = useLocale()
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages } =
-    useChatStream({ consent, redactionMode, foiJurisdiction, documentPages, documents, redactions, locale, onSuggestionsReceived })
+    useChatStream({ aiMode, redactionMode, foiJurisdiction, documentPages, documents, redactions, locale, onSuggestionsReceived })
 
   const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)

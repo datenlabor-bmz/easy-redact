@@ -8,7 +8,6 @@ import type { ToolCall } from './useChatStream'
 const TOOL_ICONS: Record<string, React.ElementType> = {
   read_documents: FileSearch,
   suggest_redactions: Lightbulb,
-  start_nlp_processing: Brain,
 }
 
 const NO_EXPAND = new Set(['ask_user', 'read_documents', 'suggest_redactions'])
@@ -50,7 +49,6 @@ export function ChatToolCall({ toolCall }: { toolCall: ToolCall }) {
 
   const toolLabels: Record<string, string> = {
     read_documents: t('readDocuments'),
-    start_nlp_processing: t('nlpProcessing'),
   }
   const label = toolLabels[toolCall.name] ?? toolCall.name
 

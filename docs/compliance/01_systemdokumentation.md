@@ -13,7 +13,7 @@
 
 EasyRedact ist eine KI-gestützte Webanwendung zur Schwärzung von PDF- und DOCX-Dokumenten. Die Anwendung unterstützt Sachbearbeiterinnen und Sachbearbeiter bei der Bearbeitung von Auskunftsersuchen nach dem Informationsfreiheitsgesetz (IFG) sowie bei der Entfernung personenbezogener Daten aus behördlichen Dokumenten vor deren Weitergabe oder Veröffentlichung.
 
-Das System kombiniert lokale Dokumentenverarbeitung im Browser mit optional zugeschalteter KI-Analyse über Azure OpenAI oder ein lokal betriebenes Sprachmodell.
+Das System kombiniert lokale Dokumentenverarbeitung im Browser mit optional zugeschalteter KI-Analyse über einen Cloud-LLM-Endpunkt (z.B. Azure AI Foundry) oder ein lokal betriebenes Sprachmodell.
 
 ### 1.2 Einsatzbereich
 
@@ -74,7 +74,7 @@ Nutzer-Browser
 │
 ├─[4]─ KI-Chat (nach expliziter Einwilligung)
 │       ├─ POST /api/chat ← [Chatverlauf + Dokumenttext (wenn Einwilligung erteilt)]
-│       │   ├─ Cloud-KI: weiterleitung an Azure OpenAI (Sweden Central)
+│       │   ├─ Cloud-KI: Weiterleitung an Cloud-LLM-Endpunkt (z.B. Azure AI Foundry)
 │       │   └─ Lokal-KI: weiterleitung an lokalen LLM-Endpunkt (z.B. Ollama)
 │       └─ SSE-Stream → Browser (Vorschläge, Fragen, Statusmeldungen)
 │
@@ -86,7 +86,7 @@ Nutzer-Browser
 
 | Route | Methode | Zweck | Externe Verbindungen |
 |-------|---------|-------|---------------------|
-| `/api/chat` | POST | KI-Chat-Proxy, Streaming | Azure OpenAI oder lokaler LLM |
+| `/api/chat` | POST | KI-Chat-Proxy, Streaming | Cloud-LLM oder lokaler LLM |
 | `/api/docx` | POST | DOCX→PDF-Konvertierung | Keine (LibreOffice lokal) |
 | `/api/nlp` | POST | spaCy NER (Docker) | Keine (lokal) |
 
@@ -114,7 +114,7 @@ Nutzer-Browser
 
 | Datenkategorie | Übertragung an | Bedingung |
 |---------------|----------------|-----------|
-| Dokumenttext (extrahiert) | Azure OpenAI (Sweden Central) | Nur nach expliziter Nutzereinwilligung (Cloud-KI) |
+| Dokumenttext (extrahiert) | Cloud-LLM-Endpunkt (z.B. Azure AI Foundry, Sweden Central) | Nur nach expliziter Nutzereinwilligung (Cloud-KI) |
 | Dokumenttext (extrahiert) | Lokaler LLM-Endpunkt | Nur nach expliziter Nutzereinwilligung (Lokal-KI) |
 | IFG-Regelwerk | GitHub CDN (raw.githubusercontent.com) | Nur in FOI-Modus, serverseitig, keine personenbezogenen Daten |
 | Rohdokument | Kein Dritter | Dokumente verbleiben im Browser |
@@ -125,36 +125,37 @@ Nutzer-Browser
 
 | Variable | Pflicht | Beschreibung | Beispielwert |
 |----------|---------|-------------|-------------|
-| `AZURE_OPENAI_API_KEY` | Ja (Cloud) | Azure OpenAI API-Schlüssel | `abc123...` |
-| `AZURE_OPENAI_API_BASE` | Ja (Cloud) | Azure-Endpunkt-URL | `https://behoerde-oai.openai.azure.com` |
-| `AZURE_OPENAI_API_VERSION` | Nein | API-Version | `2024-12-01-preview` |
-| `AZURE_OPENAI_DEPLOYMENT` | Nein | Deployment-Name | `gpt-5.2` |
-| `OPENAI_API_BASE` | Nein (Lokal) | Lokaler LLM-Endpunkt | `http://localhost:11434/v1` |
-| `OPENAI_API_KEY` | Nein (Lokal) | Lokaler LLM-Key | `ollama` |
-| `LOCAL_LLM_MODEL` | Nein | Lokales Modell | `llama3.3:latest` |
-| `NEXT_PUBLIC_LOCAL_LLM_ENABLED` | Nein | Lokal-KI-Option anzeigen | `true` |
+|| `CLOUD_LLM_API_BASE` | Ja (Cloud) | OpenAI-kompatibler Cloud-LLM-Endpunkt | `https://behoerde-oai.openai.azure.com/openai/v1` |
+|| `CLOUD_LLM_API_KEY` | Ja (Cloud) | API-Schlüssel für Cloud-LLM | `abc123...` |
+|| `CLOUD_LLM_MODEL` | Nein | Cloud-Modellname | `gpt-5.2` |
+|| `LOCAL_LLM_API_BASE` | Nein (Lokal-LLM) | Lokaler LLM-Endpunkt | `http://localhost:11434/v1` |
+|| `LOCAL_LLM_API_KEY` | Nein (Lokal-LLM) | Lokaler LLM-Key | `ollama` |
+|| `LOCAL_LLM_MODEL` | Nein | Lokales Modell | `llama3.3:latest` |
+|| `CLOUD_AI` | Nein | Cloud-KI-Option anzeigen (`true`/`false`) | `true` |
+|| `LOCAL_AI` | Nein | Lokaler Verarbeitungsmodus: `llm` oder `ner` | `ner` |
 | `HTTPS_PROXY` | Nein | Unternehmens-Proxy für externe Verbindungen | `http://proxy.behoerde.intern:8080` |
 | `HTTP_PROXY` | Nein | HTTP-Proxy | `http://proxy.behoerde.intern:8080` |
 | `NO_PROXY` | Nein | Proxy-Ausnahmen | `localhost,127.0.0.1` |
 | `LIBREOFFICE_PATH` | Nein (Docker) | LibreOffice-Pfad | `/usr/bin/libreoffice` |
-| `SPACY_ENABLED` | Nein (Docker) | spaCy-Endpunkt aktivieren | `true` |
 
-**Sicherheitshinweis:** `AZURE_OPENAI_API_KEY` muss als Secret in der Deployment-Umgebung hinterlegt werden (Docker Secret / Secrets-Vault), niemals im Klartext in Konfigurationsdateien.
+**Sicherheitshinweis:** `CLOUD_LLM_API_KEY` muss als Secret in der Deployment-Umgebung hinterlegt werden (Docker Secret / Secrets-Vault), niemals im Klartext in Konfigurationsdateien.
 
 ---
 
 ## 6. Abhängigkeiten und externe Dienste
 
-### 6.1 Azure OpenAI (Sweden Central)
+### 6.1 Cloud-LLM (OpenAI-kompatibler Endpunkt)
 
-- **Dienstanbieter:** Microsoft Azure
-- **Region:** Sweden Central (EU-Datenhaltung)
-- **Dienst:** Azure OpenAI Service
+- **Dienstanbieter:** Konfigurierbar — jeder OpenAI-kompatible LLM-Endpunkt (z.B. Azure AI Foundry, OpenAI API)
 - **Nutzung:** Chat Completions API mit Tool Calling und Streaming
+- **Verbindung:** HTTPS/TLS 1.3 via Unternehmens-Proxy
+- **Konfiguration:** Über `CLOUD_LLM_API_BASE`, `CLOUD_LLM_API_KEY`, `CLOUD_LLM_MODEL`
+
+**Beispiel Azure AI Foundry (empfohlen für Bundesbehörden):**
+- **Region:** Sweden Central (EU-Datenhaltung)
 - **Datenverarbeitungsvertrag:** Microsoft Online Services DPA (inkl. EU-Standardvertragsklauseln)
 - **Zertifizierungen:** ISO 27001, ISO 27017, ISO 27018, SOC 2 Type 2
-- **Keine Daten-Retention:** Eingaben werden von Azure OpenAI nicht für Modelltraining verwendet (opt-out standardmäßig aktiv bei Azure-Kunden)
-- **Verbindung:** HTTPS/TLS 1.3 via Unternehmens-Proxy
+- **Keine Daten-Retention:** Eingaben werden nicht für Modelltraining verwendet (opt-out standardmäßig aktiv bei Azure-Kunden)
 
 ### 6.2 GitHub (CDN für IFG-Regelwerk)
 
@@ -179,7 +180,7 @@ Das System implementiert ein zweistufiges Einwilligungsmodell:
 1. **Stufe 1 – Modellauswahl:** Beim ersten Start wählt der Nutzer die Verarbeitungsoption (Cloud-KI / Lokal-KI / Keine KI).
 2. **Stufe 2 – Dokumentenzugang:** Bevor das KI-Modell auf den Dokumenteninhalt zugreifen darf, zeigt das System ein dediziertes Einwilligungsdialog. Erst nach expliziter Bestätigung werden Dokumentinhalte an den `/api/chat`-Endpunkt übermittelt.
 
-Technisch: Das Tool `read_documents` ist im OpenAI-Tool-Schema deaktiviert, solange kein Einwilligungsstatus gesetzt ist. Der Dokumenttext (`documentPages`) wird nur dann im Request-Body mitgesendet, wenn `consent !== null`.
+Technisch: Das Tool `read_documents` ist im OpenAI-Tool-Schema deaktiviert, solange kein Einwilligungsstatus gesetzt ist. Der Dokumenttext (`documentPages`) wird nur dann im Request-Body mitgesendet, wenn der Nutzer die Dokumentenzugangs-Einwilligung erteilt hat.
 
 ### 7.2 Lokale Verarbeitung (Privacy by Design)
 

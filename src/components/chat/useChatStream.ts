@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ConsentMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot, DocumentMeta, DocumentPage } from '@/types'
+import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AiMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot, DocumentMeta, DocumentPage } from '@/types'
 
 export type { ChatMessage, ToolCall }
 
 interface UseChatStreamOptions {
-  consent: ConsentMode
+  aiMode: AiMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
   documentPages?: DocumentPage[]
@@ -69,7 +69,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
     }
 
     const { redactionMode, foiJurisdiction, documentPages, documents, redactions, locale } = optsRef.current
-    const effectiveConsent = optsRef.current.consent
+    const effectiveAiMode = optsRef.current.aiMode
 
     const docNameMap = Object.fromEntries((documents ?? []).map(d => [d.idbKey, d.name]))
     const currentRedactions: RedactionSnapshot[] | undefined = redactions?.length
@@ -85,7 +85,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
         }))
       : undefined
 
-    console.log('[chat] sendMessage', { content: content.slice(0, 80), effectiveConsent, apiMessageCount: apiMessages.length })
+    console.log('[chat] sendMessage', { content: content.slice(0, 80), effectiveAiMode, apiMessageCount: apiMessages.length })
     console.log('[chat] apiMessages', apiMessages.map(m => ({ role: m.role, content: m.content?.slice(0, 60) })))
 
     abortRef.current = new AbortController()
@@ -95,8 +95,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
-          model: effectiveConsent === 'local' ? 'local' : 'cloud',
-          consent: effectiveConsent, redactionMode, foiJurisdiction,
+          model: effectiveAiMode === 'local' ? 'local' : 'cloud',
+          aiMode: effectiveAiMode, redactionMode, foiJurisdiction,
           documentPages,
           currentRedactions,
           locale,

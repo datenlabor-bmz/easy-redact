@@ -111,24 +111,6 @@ export const tools = [
       },
     },
   },
-  {
-    type: 'function' as const,
-    function: {
-      name: 'start_nlp_processing',
-      description: 'Start local NLP processing (e.g. spaCy) when the user does not want to use a cloud LLM for document analysis. This processes documents locally without sending content to any cloud service.',
-      parameters: {
-        type: 'object',
-        properties: {
-          model: {
-            type: 'string',
-            enum: ['spacy', 'stanza', 'piiranha', 'browser'],
-            description: 'Which NLP model to use',
-          },
-        },
-        required: ['model'],
-      },
-    },
-  },
 ]
 
 // The read_documents tool is only added to the schema when consent is given
@@ -225,11 +207,3 @@ export function executeReadDocuments(documentPages: DocumentPage[] | undefined):
   }
 }
 
-export function executeStartNlpProcessing(args: Record<string, unknown>): ToolResult {
-  const model = args.model as string
-  const backend = process.env.LOCAL_BACKEND ?? process.env.NEXT_PUBLIC_LOCAL_BACKEND ?? 'browser'
-  if (backend !== 'spacy' && model !== 'browser') {
-    return { success: false, error: `NLP model '${model}' is not available in this deployment.` }
-  }
-  return { success: true, data: { model, status: 'started', message: `NLP processing with ${model} started.` } }
-}

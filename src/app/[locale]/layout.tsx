@@ -41,6 +41,10 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} className={inter.variable}>
       <body className='antialiased font-sans'>
+        <script dangerouslySetInnerHTML={{ __html: `window.__ER_CFG__=${JSON.stringify({
+          cloudAi: process.env.CLOUD_AI !== 'false',
+          localAi: process.env.LOCAL_AI ?? 'ner-browser',
+        })}` }} />
         <NextIntlClientProvider messages={messages}>
           <Providers>
             {children}

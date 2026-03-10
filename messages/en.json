@@ -25,8 +25,7 @@
     "localLabel": "Local AI",
     "localBrowserDesc": "Runs entirely in your browser. No data leaves your device.",
     "localLlmDesc": "Runs on your organisation's infrastructure. No data leaves your network.",
-    "localSpacyDesc": "Rule-based detection on your organisation's infrastructure. No data leaves your network.",
-    "comingSoon": "coming soon"
+    "localSpacyDesc": "Rule-based detection on your organisation's infrastructure. No data leaves your network."
   },
   "FoiSelector": {
     "label": "FOI mode",
@@ -105,7 +104,7 @@
     "featureMultiDocTitle": "Multiple documents",
     "featureMultiDocDesc": "Upload PDFs and DOCX files as a batch. The assistant has context over all documents simultaneously and can make cross-document suggestions.",
     "featurePrivacyTitle": "Data sovereignty",
-    "featurePrivacyDesc": "Choose between Cloud AI (GDPR-compliant, no data retention) or Local AI on your own infrastructure — without any cloud connection.",
+    "featurePrivacyDesc": "Choose between a GDPR-compliant cloud LLM (no data retention), an Ollama-compatible model on your own server, or fully local in-browser processing — no cloud connection required.",
     "featureMetadataTitle": "Metadata stripping",
     "featureMetadataDesc": "View and selectively remove PDF metadata — author, title, creation date, software — before export. No hidden information leaks.",
     "featureDocxTitle": "DOCX support",
@@ -121,12 +120,12 @@
     "onlineTitle": "Online version",
     "onlineBadge": "easyredact.io",
     "onlineDesc": "Try EasyRedact instantly in your browser — no installation, no setup.",
-    "onlineStandard": "Cloud AI via Azure OpenAI (GDPR-compliant, EU data centre)",
-    "onlineClassified": "In-browser NLP for classified documents (coming soon)",
+    "onlineStandard": "Cloud AI (GDPR-compliant, EU data centre)",
+    "onlineClassified": "In-browser NLP for sensitive documents",
     "premiseTitle": "On-premise version",
     "premiseBadge": "Docker",
     "premiseDesc": "Deploy on your own infrastructure for full control over data flows and compliance.",
-    "premiseStandard": "Cloud AI via Azure OpenAI (bring your own key)",
+    "premiseStandard": "Cloud AI via any OpenAI-compatible endpoint (bring your own key)",
     "premiseClassifiedLlm": "Local LLMs (Ollama, vLLM, etc.) for GPU servers",
     "premiseClassifiedNer": "Local NER via spaCy for standard hardware",
     "premiseDocker": "Single-container Docker deployment",
@@ -166,7 +165,6 @@
     "classifiedTitle": "Classified documents",
     "classifiedDesc": "For classified or otherwise sensitive documents, do not use Cloud AI. Switch to Local AI using the toggle in the right panel.",
     "changeLater": "You can change this at any time using the mode toggle in the top-right of the analysis panel.",
-    "comingSoon": "coming soon",
     "acknowledgement": "I have read and understood these notices and accept personal responsibility for reviewing all redaction suggestions.",
     "proceed": "Get started"
   },

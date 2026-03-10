@@ -53,13 +53,19 @@ const DEFAULT_SESSION: Session = {
   id: SESSION_ID,
   documents: [],
   redactions: [],
-  consent: 'local',
+  aiMode: 'local',
   redactionMode: 'pii',
 }
 
 export async function loadSession(): Promise<Session> {
   const db = await getDB()
-  return (await db.get('session', SESSION_ID)) ?? DEFAULT_SESSION
+  const raw = (await db.get('session', SESSION_ID)) ?? DEFAULT_SESSION
+  // Migrate old 'consent' field to 'aiMode'
+  if ('consent' in raw && !('aiMode' in raw)) {
+    const { consent, ...rest } = raw as Session & { consent?: string }
+    return { ...rest, aiMode: (consent as Session['aiMode']) ?? 'local' }
+  }
+  return raw
 }
 
 export async function saveSession(session: Session) {
