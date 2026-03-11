@@ -161,7 +161,6 @@
     "cloudLabel": "IA cloud",
     "cloudDesc": "Le texte est transmis à Microsoft Azure (UE, Suède) après votre accord explicite. Conforme au RGPD — aucune conservation des données, aucun entraînement de modèle.",
     "localLabel": "IA locale (sur votre serveur)",
-    "localDesc": "Le texte ne quitte jamais l'infrastructure de votre organisation. Recommandé pour les documents particulièrement sensibles.",
     "classifiedTitle": "Documents sensibles ou confidentiels",
     "classifiedDesc": "Pour les documents confidentiels ou à diffusion restreinte, n'utilisez pas l'IA cloud. Privilégiez l'IA locale ou le caviardage manuel.",
     "changeLater": "Vous pouvez modifier ce paramètre à tout moment à l'aide du sélecteur de mode en haut à droite du panneau d'analyse.",
@@ -171,7 +170,7 @@
   "RedactConfirm": {
     "title": "Caviarder et télécharger",
     "detail": "Dans le PDF téléchargé, tous les passages marqués seront caviardés de manière sécurisée — les textes et images sous-jacents seront définitivement supprimés.",
-    "description": "Vous êtes responsable de l'exhaustivité et de l'exactitude des caviardages. Ne vous fiez pas aveuglément à l'IA — vérifiez chaque suggestion avant de télécharger.",
+    "description": "L'IA peut commettre des erreurs. Vous êtes responsable de l'exhaustivité et de l'exactitude des caviardages — vérifiez chaque suggestion avant de télécharger.",
     "cancel": "Continuer à éditer",
     "confirm": "Télécharger le PDF caviardé"
   },

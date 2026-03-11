@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
-import { cloudAiEnabled } from '@/lib/config'
+import { cloudAiEnabled, localAi } from '@/lib/config'
 import type { AiMode } from '@/types'
 
 interface OnboardingModalProps {
@@ -16,6 +16,10 @@ interface OnboardingModalProps {
 
 export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
   const t = useTranslations('Onboarding')
+  const tMode = useTranslations('ModeSelector')
+  const localDesc = localAi === 'ner-browser' ? tMode('localBrowserDesc')
+    : localAi === 'llm' ? tMode('localLlmDesc')
+    : tMode('localSpacyDesc')
   const [checked, setChecked] = useState(false)
   const [selectedMode, setSelectedMode] = useState<AiMode>(cloudAiEnabled ? 'cloud' : 'local')
   return (
@@ -58,7 +62,7 @@ export function OnboardingModal({ open, onAccept }: OnboardingModalProps) {
               <Shield className='h-4 w-4 text-green-600 shrink-0 mt-0.5' />
               <div>
                 <p className='font-medium text-foreground'>{t('localLabel')}</p>
-                <p className='text-muted-foreground text-xs mt-0.5 leading-relaxed'>{t('localDesc')}</p>
+                <p className='text-muted-foreground text-xs mt-0.5 leading-relaxed'>{localDesc}</p>
               </div>
             </button>
 

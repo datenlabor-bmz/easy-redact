@@ -161,7 +161,6 @@
     "cloudLabel": "云端 AI",
     "cloudDesc": "在您明确同意后，文档文本将发送至 Microsoft Azure（欧盟，瑞典）。符合 GDPR 要求——数据不被保留，不用于模型训练。",
     "localLabel": "本地 AI（您的服务器）",
-    "localDesc": "文档文本始终保留在您组织的基础设施内，不外传。适用于处理高度敏感的文件。",
     "classifiedTitle": "保密或受限文件",
     "classifiedDesc": "处理保密文件或传阅范围受限的文件时，请勿使用云端 AI，应使用本地 AI 或手动涂黑。",
     "changeLater": "您可随时通过分析面板右上角的模式开关更改此设置。",
@@ -171,7 +170,7 @@
   "RedactConfirm": {
     "title": "涂黑并下载",
     "detail": "下载的 PDF 中，所有标记段落将被安全涂黑，其下方的文字和图像将被永久移除。",
-    "description": "您须对涂黑内容的完整性和准确性负责。请勿盲目依赖 AI，下载前务必核查所有建议。",
+    "description": "AI 可能会出错。您须对涂黑内容的完整性和准确性负责——下载前务必核查所有建议。",
     "cancel": "继续编辑",
     "confirm": "下载涂黑版 PDF"
   },

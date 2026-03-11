@@ -161,7 +161,6 @@
     "cloudLabel": "Cloud AI",
     "cloudDesc": "Document text is sent to Microsoft Azure (EU, Sweden). GDPR-compliant — no data retention, no model training.",
     "localLabel": "Local AI",
-    "localDesc": "Document text never leaves your device or organisation's infrastructure. Recommended for classified or particularly sensitive material.",
     "classifiedTitle": "Classified documents",
     "classifiedDesc": "For classified or otherwise sensitive documents, do not use Cloud AI. Switch to Local AI using the toggle in the right panel.",
     "changeLater": "You can change this at any time using the mode toggle in the top-right of the analysis panel.",
@@ -171,7 +170,7 @@
   "RedactConfirm": {
     "title": "Redact and download",
     "detail": "The downloaded PDF will have all marked passages securely redacted — underlying text and images are permanently removed.",
-    "description": "You are responsible for the completeness and accuracy of the redactions. Do not rely blindly on the AI — review all suggestions before downloading.",
+    "description": "The AI may make mistakes. You are responsible for the completeness and accuracy of the redactions — review all suggestions before downloading.",
     "cancel": "Keep editing",
     "confirm": "Download redacted PDF"
   },

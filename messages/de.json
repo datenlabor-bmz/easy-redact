@@ -161,7 +161,6 @@
     "cloudLabel": "Cloud-KI",
     "cloudDesc": "Der Dokumenttext wird an Microsoft Azure (EU, Schweden) übermittelt. DSGVO-konform — keine Datenspeicherung, kein Modelltraining.",
     "localLabel": "Lokale KI",
-    "localDesc": "Der Dokumenttext verlässt weder Ihr Gerät noch die Infrastruktur Ihrer Organisation. Empfohlen für eingestufte oder besonders schutzbedürftige Dokumente.",
     "classifiedTitle": "Eingestufte Dokumente (VS-NfD und höher)",
     "classifiedDesc": "Für als VS-NfD oder höher eingestufte Dokumente darf die Cloud-KI nicht verwendet werden. Wechseln Sie zur lokalen KI über den Umschalter im rechten Panel.",
     "changeLater": "Sie können den Modus jederzeit über den Umschalter oben rechts im Analyse-Panel ändern.",
@@ -171,7 +170,7 @@
   "RedactConfirm": {
     "title": "Schwärzen und herunterladen",
     "detail": "Im heruntergeladenen PDF werden alle zur Schwärzung markierten Stellen sicher geschwärzt und darunterliegende Texte und Bilder entfernt.",
-    "description": "Sie sind verantwortlich für die Vollständigkeit und Korrektheit der Schwärzungen. Verlassen Sie sich nicht blind auf die KI, und überprüfen Sie die Vorschläge.",
+    "description": "Die KI kann Fehler machen. Sie sind verantwortlich für die Vollständigkeit und Korrektheit der Schwärzungen — überprüfen Sie alle Vorschläge vor dem Herunterladen.",
     "cancel": "Weiter bearbeiten",
     "confirm": "Geschwärztes PDF herunterladen"
   },

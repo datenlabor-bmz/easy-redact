@@ -161,7 +161,6 @@
     "cloudLabel": "IA en la nube",
     "cloudDesc": "El texto se envía a Microsoft Azure (UE, Suecia) con su consentimiento expreso. Cumple el RGPD: sin retención de datos ni entrenamiento de modelos.",
     "localLabel": "IA local (en su servidor)",
-    "localDesc": "El texto nunca sale de la infraestructura de su organización. Recomendado para documentos especialmente sensibles.",
     "classifiedTitle": "Documentos confidenciales o clasificados",
     "classifiedDesc": "Para documentos confidenciales o con restricciones de difusión, no use la IA en la nube. Opte por la IA local o realice las redacciones manualmente.",
     "changeLater": "Puede cambiar esto en cualquier momento usando el selector de modo en la esquina superior derecha del panel de análisis.",
@@ -171,7 +170,7 @@
   "RedactConfirm": {
     "title": "Redactar y descargar",
     "detail": "En el PDF descargado, todos los fragmentos marcados quedarán redactados de forma segura: los textos e imágenes subyacentes se eliminarán permanentemente.",
-    "description": "Usted es responsable de la integridad y exactitud de las redacciones. No confíe ciegamente en la IA — revise todas las propuestas antes de descargar.",
+    "description": "La IA puede cometer errores. Usted es responsable de la integridad y exactitud de las redacciones — revise todas las propuestas antes de descargar.",
     "cancel": "Seguir editando",
     "confirm": "Descargar PDF redactado"
   },
