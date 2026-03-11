@@ -1,5 +1,7 @@
 # IT-Sicherheitskonzept – EasyRedact
 
+> 📥 [Alle Compliance-Dokumente als DOCX herunterladen](https://github.com/datenlabor-bmz/easy-redact/releases/download/compliance-docs/EasyRedact_Compliance.zip)
+
 **Dokumentversion:** 1.0  
 **Stand:** Februar 2026  
 **Methodik:** BSI IT-Grundschutz (BSI-Standard 200-2), NIST SP 800-53 ergänzend  

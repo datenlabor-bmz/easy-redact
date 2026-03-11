@@ -1,5 +1,7 @@
 # Datenschutz-Folgenabschätzung (DSFA) – EasyRedact
 
+> 📥 [Alle Compliance-Dokumente als DOCX herunterladen](https://github.com/datenlabor-bmz/easy-redact/releases/download/compliance-docs/EasyRedact_Compliance.zip)
+
 **Dokumentversion:** 1.0  
 **Stand:** Februar 2026  
 **Rechtsgrundlage:** Art. 35 DSGVO; § 67 BDSG; DSK-Kurzpapier Nr. 5  

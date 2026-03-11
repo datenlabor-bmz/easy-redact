@@ -1,5 +1,7 @@
 # EasyRedact – Compliance-Dokumentation
 
+> 📥 [Alle Compliance-Dokumente als DOCX herunterladen](https://github.com/datenlabor-bmz/easy-redact/releases/download/compliance-docs/EasyRedact_Compliance.zip)
+
 **Stand:** Februar 2026
 
 Dieses Verzeichnis enthält die vollständige Compliance-, Datenschutz- und IT-Sicherheitsdokumentation für den Einsatz von EasyRedact beim Betreiber. Die Dokumentation richtet sich an den IT-Sicherheitsbeauftragten (ISB) und den Datenschutzbeauftragten (DSB) der Behörde und dient als Vorlage für die behördeninterne Freigabe.

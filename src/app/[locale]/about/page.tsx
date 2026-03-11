@@ -545,6 +545,13 @@ export default async function AboutPage() {
           ) : (
             <p className='text-xs text-gray-400 text-center'>{c('descNonDe')}</p>
           )}
+          <div className='flex justify-center'>
+            <a href='https://github.com/datenlabor-bmz/easy-redact/releases/download/compliance-docs/EasyRedact_Compliance.zip'
+              className='flex items-center gap-2 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-medium text-xs hover:border-primary/40 hover:text-primary transition-colors'>
+              <Download className='h-3.5 w-3.5' />
+              {c('downloadZip')}
+            </a>
+          </div>
         </div>
       </section>
 

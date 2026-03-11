@@ -1,0 +1,43 @@
+name: Compliance Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/compliance/*.md']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pandoc
+        run: sudo apt-get install -y pandoc
+
+      - name: Convert markdown to docx
+        run: |
+          mkdir -p out
+          for f in docs/compliance/[0-9]*.md; do
+            base=$(basename "$f" .md)
+            pandoc "$f" -o "out/${base}.docx" \
+              --from=gfm \
+              --to=docx \
+              -V lang=de \
+              --toc \
+              --toc-depth=2
+          done
+          cd out && zip ../EasyRedact_Compliance.zip *.docx
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="compliance-docs"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Compliance-Dokumentation" \
+              --notes "Auto-generated DOCX versions of the compliance documentation. Updated on every change to \`docs/compliance/\`."
+          fi
+          gh release upload "$TAG" EasyRedact_Compliance.zip --clobber

@@ -1,5 +1,7 @@
 # KI-Klassifizierung nach EU AI Act – EasyRedact
 
+> 📥 [Alle Compliance-Dokumente als DOCX herunterladen](https://github.com/datenlabor-bmz/easy-redact/releases/download/compliance-docs/EasyRedact_Compliance.zip)
+
 **Dokumentversion:** 1.0  
 **Stand:** Februar 2026  
 **Rechtsgrundlage:** Verordnung (EU) 2024/1689 (EU AI Act), in Kraft seit 1. August 2024  
