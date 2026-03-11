@@ -50,3 +50,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy-azure:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    steps:
+      - run: |
+          curl -fsSL -X POST "${{ secrets.AZURE_WEBAPP_WEBHOOK_URL }}"
