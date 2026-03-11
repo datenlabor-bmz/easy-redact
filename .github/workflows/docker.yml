@@ -56,5 +56,6 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !cancelled() && needs.build.result == 'success' }}
     steps:
-      - run: |
-          curl -fsSL -X POST "${{ secrets.AZURE_WEBAPP_WEBHOOK_URL }}"
+      - run: curl -fsSL -X POST "$WEBHOOK_URL"
+        env:
+          WEBHOOK_URL: ${{ secrets.AZURE_WEBAPP_WEBHOOK_URL }}
