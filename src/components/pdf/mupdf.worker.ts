@@ -210,13 +210,16 @@ export class MupdfWorker {
       doc.bake()
     }
 
+    const info = doc.getTrailer().get('Info')
+    if (info && !info.isNull() && info.isDictionary()) {
+      if (fieldsToRemove.length)
+        for (const key of fieldsToRemove) info.delete(key)
+      const producer = info.get('Producer')
+      if (producer.isNull() || producer.asString() !== 'Redacted with EasyRedact')
+        info.put('Producer', doc.newString('Redacted with EasyRedact'))
+    }
+
     if (fieldsToRemove.length) {
-      try {
-        const info = doc.getTrailer().get('Info')
-        if (info && !info.isNull() && info.isDictionary()) {
-          for (const key of fieldsToRemove) info.delete(key)
-        }
-      } catch {}
       try { doc.getTrailer().get('Root').delete('Metadata') } catch {}
     }
 
