@@ -135,6 +135,7 @@ Nutzer-Browser
 || `LOCAL_LLM_MODEL` | Nein | Lokales Modell | `llama3.3:latest` |
 || `CLOUD_AI` | Nein | Cloud-KI-Option anzeigen (`true`/`false`) | `true` |
 || `LOCAL_AI` | Nein | Lokaler Verarbeitungsmodus: `llm` oder `ner` | `ner` |
+| `DEFAULT_LOCALE` | Nein | Standard-UI-Sprache (`en`, `de`, `fr`, `es`, `ru`, `ar`, `zh`) | `de` |
 | `HTTPS_PROXY` | Nein | Unternehmens-Proxy für externe Verbindungen | `http://proxy.behoerde.intern:8080` |
 | `HTTP_PROXY` | Nein | HTTP-Proxy | `http://proxy.behoerde.intern:8080` |
 | `NO_PROXY` | Nein | Proxy-Ausnahmen | `localhost,127.0.0.1` |

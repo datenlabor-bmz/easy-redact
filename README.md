@@ -67,6 +67,9 @@ LOCAL_AI=ner-browser
 
 # Set to 'false' to hide the Cloud AI option from the UI
 CLOUD_AI=true
+
+# Default UI language (optional): en, de, fr, es, ru, ar, zh
+# DEFAULT_LOCALE=de
 ```
 
 ### Azure AI Foundry setup
