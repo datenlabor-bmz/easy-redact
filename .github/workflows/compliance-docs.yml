@@ -17,19 +17,14 @@ jobs:
       - name: Install pandoc
         run: sudo apt-get install -y pandoc
 
-      - name: Convert markdown to docx
-        run: |
-          mkdir -p out
-          for f in docs/compliance/[0-9]*.md; do
-            base=$(basename "$f" .md)
-            pandoc "$f" -o "out/${base}.docx" \
-              --from=gfm \
-              --to=docx \
-              -V lang=de \
-              --toc \
-              --toc-depth=2
-          done
-          cd out && zip ../EasyRedact_Compliance.zip *.docx
+      - name: Install mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Build DOCX files
+        run: bash docs/compliance/build-docx.sh out
+
+      - name: Create zip
+        run: cd out && zip ../EasyRedact_Compliance.zip *.docx
 
       - name: Upload to release
         env:
