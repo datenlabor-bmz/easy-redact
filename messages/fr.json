@@ -21,7 +21,7 @@
   },
   "ModeSelector": {
     "cloudLabel": "IA cloud",
-    "cloudDesc": "Conforme RGPD, pas de conservation des données, pas d'entraînement de modèle.",
+    "cloudDesc": "Conforme au RGPD, sans conservation des données ni entraînement de modèle.",
     "localLabel": "IA locale",
     "localBrowserDesc": "Fonctionne entièrement dans votre navigateur. Aucune donnée ne quitte votre appareil.",
     "localLlmDesc": "Fonctionne sur l'infrastructure de votre organisation. Aucune donnée ne quitte votre réseau.",
@@ -100,7 +100,7 @@
     "featureManualTitle": "Caviardage manuel",
     "featureManualDesc": "Sélectionnez du texte par cliquer-glisser ou à main levée directement dans le document. Acceptez ou rejetez les suggestions en un clic.",
     "featureGroupTitle": "Vue par groupes de personnes",
-    "featureGroupDesc": "Les caviardages sont regroupés par personne et catégorie dans la barre latérale gauche. Toutes les entrées d'une personne peuvent être traitées d'un seul coup.",
+    "featureGroupDesc": "Les caviardages sont regroupés par personne et catégorie dans la barre latérale gauche. Toutes les entrées d'une personne peuvent être acceptées ou rejetées d'un seul coup.",
     "featureMultiDocTitle": "Plusieurs documents",
     "featureMultiDocDesc": "Téléversez des PDF et DOCX en lot. L'assistant dispose du contexte de tous les documents simultanément et peut faire des suggestions inter-documents.",
     "featurePrivacyTitle": "Souveraineté des données",
