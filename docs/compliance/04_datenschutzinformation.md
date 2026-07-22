@@ -99,12 +99,14 @@ Azure OpenAI verarbeitet Daten in der **Region Sweden Central** (Europäische Un
 
 | Datenkategorie | Speicherort | Löschung |
 |---------------|-------------|---------|
-| Dokumentinhalte | IndexedDB (Browser, Arbeitsplatz) | Durch Nutzer (manuell, „Sitzung löschen"-Funktion), oder bei Browserdaten-Löschung |
+| Dokumentinhalte | IndexedDB (Browser, Arbeitsplatz) | Automatisch nach 6 Monaten (beim nächsten App-Aufruf), durch Nutzer (manuell, „Sitzung löschen"-Funktion), oder bei Browserdaten-Löschung |
 | Chat-Verlauf | IndexedDB (Browser) | Wie Dokumentinhalte |
 | Azure OpenAI (Übermittlungen) | Azure OpenAI Service | **Keine Datenspeicherung** durch Microsoft nach der Verarbeitung (gemäß Azure OpenAI DPA); Eingaben werden nicht für Modelltraining verwendet |
 | Temporäre DOCX-Dateien | Server-Dateisystem (RAM/tmp) | Sofortige Löschung nach Konvertierung |
 
-> **Empfehlung:** Bearbeiter sollten Sitzungsdaten nach Abschluss der Schwärzungsarbeit löschen, insbesondere bei Bearbeitung sensibler Dokumente.
+> **Automatische Löschfrist:** Im Browser gespeicherte Sitzungsdaten (Dokumente, Schwärzungen, Chat-Verlauf) werden spätestens 6 Monate nach Beginn der Sitzung automatisch gelöscht. Die Prüfung erfolgt beim Start der Anwendung; da eine Browser-Anwendung nicht im Hintergrund laufen kann, greift die Löschung beim nächsten Aufruf der App nach Ablauf der Frist.
+>
+> **Empfehlung:** Bearbeiter sollten Sitzungsdaten dennoch nach Abschluss der Schwärzungsarbeit löschen, insbesondere bei Bearbeitung sensibler Dokumente.
 
 ---
 

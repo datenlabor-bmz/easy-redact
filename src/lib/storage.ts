@@ -70,7 +70,14 @@ export async function loadSession(): Promise<Session> {
 
 export async function saveSession(session: Session) {
   const db = await getDB()
-  await db.put('session', session)
+  let createdAt = session.createdAt
+  if (!session.documents.length) {
+    createdAt = undefined // empty session: retention clock resets
+  } else if (!createdAt) {
+    // Keep an earlier stamp if one exists (the in-memory session may lag behind the DB)
+    createdAt = (await db.get('session', SESSION_ID))?.createdAt ?? new Date().toISOString()
+  }
+  await db.put('session', { ...session, createdAt })
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
@@ -84,6 +91,38 @@ export async function loadChat(): Promise<ChatMessage[]> {
 export async function saveChat(messages: ChatMessage[]) {
   const db = await getDB()
   await db.put('chat', { id: SESSION_ID, messages })
+}
+
+// ── Retention ─────────────────────────────────────────────────────────────────
+
+// Stored data is kept for at most 6 months, counted from when the first document
+// was added to an empty session (Session.createdAt). Enforced lazily: this check
+// runs once on app load, since a browser app cannot delete data in the background.
+const RETENTION_MONTHS = 6
+
+function isExpired(iso: string): boolean {
+  const cutoff = new Date()
+  cutoff.setMonth(cutoff.getMonth() - RETENTION_MONTHS)
+  return new Date(iso).getTime() < cutoff.getTime()
+}
+
+/** Delete stored data older than the retention period. Call before loading the session. */
+export async function purgeExpiredData() {
+  const db = await getDB()
+  const session = await db.get('session', SESSION_ID)
+  if (session?.documents.length) {
+    if (!session.createdAt) {
+      // Data stored before retention was introduced: start the clock now
+      await db.put('session', { ...session, createdAt: new Date().toISOString() })
+    } else if (isExpired(session.createdAt)) {
+      await clearAll()
+      return
+    }
+  }
+  // Chat can outlive the documents; expire it based on its oldest message
+  const chat = await db.get('chat', SESSION_ID)
+  const oldest = chat?.messages[0]?.timestamp
+  if (oldest && isExpired(oldest)) await db.delete('chat', SESSION_ID)
 }
 
 export async function clearAll() {
