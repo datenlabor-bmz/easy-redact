@@ -100,9 +100,11 @@ Nutzer-Browser
 
 | Datenbankname | Object Store | Inhalt | Löschung |
 |---------------|-------------|--------|---------|
-| `easy-redact` | `files` | Rohdaten hochgeladener Dokumente (ArrayBuffer) | Manuell durch Nutzer oder Browser-Datenlöschung |
+| `easy-redact` | `files` | Rohdaten hochgeladener Dokumente (ArrayBuffer) | Automatisch nach 6 Monaten (Prüfung beim App-Start), manuell durch Nutzer oder Browser-Datenlöschung |
 | `easy-redact` | `session` | Sitzungsstatus, Schwärzungsgeometrie, Einwilligungsstatus | Wie `files` |
-| `easy-redact` | `chat` | Chat-Verlauf (Nachrichten mit Rollen) | Wie `files` |
+| `easy-redact` | `chat` | Chat-Verlauf (Nachrichten mit Rollen) | Wie `files`; zusätzlich Ablauf anhand des Zeitstempels der ältesten Nachricht |
+
+**Aufbewahrungsfrist (Retention):** Beim Start der Anwendung prüft `purgeExpiredData()` (`src/lib/storage.ts`), ob die Sitzung älter als 6 Monate ist (Zeitstempel `Session.createdAt`, gesetzt beim ersten Dokument-Upload). Ist die Frist abgelaufen, werden alle drei Object Stores geleert. Da Browser-Anwendungen nicht im Hintergrund laufen, greift die Löschung beim nächsten Aufruf der App.
 
 **localStorage:**
 - `er-left-width`, `er-right-width`: Panel-Breiten (keine sensiblen Daten)

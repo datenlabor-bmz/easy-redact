@@ -15,7 +15,7 @@ import { NlpPanel } from '@/components/NlpPanel'
 import { FoiSelector } from '@/components/SettingsPopover'
 import { ModeSelector } from '@/components/ModeSelector'
 import { localAi } from '@/lib/config'
-import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile } from '@/lib/storage'
+import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile, purgeExpiredData } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
 import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
@@ -82,8 +82,11 @@ export default function App() {
   }, [leftWidth, rightWidth])
 
   useEffect(() => {
-    loadSession().then(setSession)
-    loadChat().then(setChatMessages)
+    // Enforce the 6-month retention policy before restoring persisted state
+    purgeExpiredData().catch(() => {}).then(() => {
+      loadSession().then(setSession)
+      loadChat().then(setChatMessages)
+    })
   }, [])
 
   // Intercept Ctrl+scroll → drive PDF zoom; Ctrl+F → focus search

@@ -135,6 +135,7 @@ export interface Session {
   redactionMode: RedactionMode
   foiJurisdiction?: string
   onboardingAccepted?: boolean
+  createdAt?: string  // ISO string; stamped on first load, used for the 6-month retention purge
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
