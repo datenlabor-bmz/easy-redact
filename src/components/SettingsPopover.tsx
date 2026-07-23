@@ -15,15 +15,28 @@ interface FoiSelectorProps {
   onFoiJurisdictionChange: (id: string) => void
 }
 
+// Preferred default jurisdiction when entering FOI mode (Germany Federal — IFG).
+const DEFAULT_FOI_JURISDICTION = 'de-ifg-bund'
+
 export function FoiSelector({ redactionMode, foiJurisdiction, onRedactionModeChange, onFoiJurisdictionChange }: FoiSelectorProps) {
   const t = useTranslations('FoiSelector')
   const [open, setOpen] = useState(false)
   const [jurisdictions, setJurisdictions] = useState<JurisdictionMeta[]>([])
 
+  // Load jurisdictions once (on mount) so we can apply a sensible default even
+  // before the popover is opened.
   useEffect(() => {
-    if (open && !jurisdictions.length)
-      getJurisdictions().then(setJurisdictions).catch(() => {})
-  }, [open, jurisdictions.length])
+    getJurisdictions().then(setJurisdictions).catch(() => {})
+  }, [])
+
+  // When in FOI mode without a valid jurisdiction, default to Germany (Federal) — IFG if available.
+  useEffect(() => {
+    if (redactionMode !== 'foi' || !jurisdictions.length) return
+    const hasValid = foiJurisdiction && jurisdictions.some(j => j.id === foiJurisdiction)
+    if (hasValid) return
+    if (jurisdictions.some(j => j.id === DEFAULT_FOI_JURISDICTION))
+      onFoiJurisdictionChange(DEFAULT_FOI_JURISDICTION)
+  }, [redactionMode, foiJurisdiction, jurisdictions, onFoiJurisdictionChange])
 
   const activeLabel = redactionMode === 'foi' && foiJurisdiction
     ? jurisdictions.find(j => j.id === foiJurisdiction)?.abbreviation ?? t('label')

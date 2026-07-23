@@ -54,7 +54,8 @@ const DEFAULT_SESSION: Session = {
   documents: [],
   redactions: [],
   aiMode: 'local',
-  redactionMode: 'pii',
+  redactionMode: 'foi',
+  foiJurisdiction: 'de-ifg-bund',
 }
 
 export async function loadSession(): Promise<Session> {

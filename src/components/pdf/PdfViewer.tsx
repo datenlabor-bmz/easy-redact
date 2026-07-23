@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Redaction, PageData, HighlightInProgress, WordData, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, RedactionRule, RedactionMode, RedactionPart } from '@/types'
 import { useMupdf } from './useMupdf'
-import { finalizeHighlight, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
+import { finalizeHighlight, caretIndexAt, redactionsToAnnotations, quadToPart, generateUUID } from './geometry'
 import { PdfPage } from './PdfPage'
 import { RuleSelectorOverlay } from './RuleSelectorOverlay'
 import { MetadataPanel } from './MetadataPanel'
@@ -261,11 +261,13 @@ export function PdfViewer({
     const rect = e.currentTarget.getBoundingClientRect()
     const x = (e.clientX - rect.left) * (pw / rect.width)
     const y = (e.clientY - rect.top) * (ph / rect.height)
-    const startWord = page.words.find((w: WordData) => x >= w.bbox.x0 && x <= w.bbox.x1 && y >= w.bbox.y0 && y <= w.bbox.y1) ?? null
-    if (selectMode === 'text' && !startWord) return
     dragRef.current = { rect, pw, ph, pageIndex }
-    const type = selectMode === 'freehand' ? 'freehand' : (startWord ? 'text' : 'freehand')
-    setCurrentHighlight({ pageIndex, type, startX: x, startY: y, endX: x, endY: y, startWord, endWord: startWord })
+    if (selectMode === 'freehand') {
+      setCurrentHighlight({ pageIndex, type: 'freehand', startX: x, startY: y, endX: x, endY: y, startWordIndex: null, endWordIndex: null })
+    } else {
+      const caret = caretIndexAt(page.words, x, y)
+      setCurrentHighlight({ pageIndex, type: 'text', startX: x, startY: y, endX: x, endY: y, startWordIndex: caret, endWordIndex: caret })
+    }
   }
 
   useEffect(() => {
@@ -278,18 +280,24 @@ export function PdfViewer({
       const cy = Math.max(0, Math.min((e.clientY - drag.rect.top) * (drag.ph / drag.rect.height), drag.ph))
       setCurrentHighlight(prev => {
         if (!prev) return null
-        const endWord = prev.type === 'text'
-          ? (page.words.find((w: WordData) => cx >= w.bbox.x0 && cx <= w.bbox.x1 && cy >= w.bbox.y0 && cy <= w.bbox.y1) ?? prev.endWord)
-          : prev.endWord
-        return { ...prev, endX: cx, endY: cy, endWord }
+        const endWordIndex = prev.type === 'text' ? caretIndexAt(page.words, cx, cy) : prev.endWordIndex
+        return { ...prev, endX: cx, endY: cy, endWordIndex }
       })
     }
 
     const onUp = () => {
-      const hl = currentHighlightRef.current
+      let hl = currentHighlightRef.current
       if (hl) {
-        const r = finalizeHighlight(pages[hl.pageIndex], hl)
-        if (hl.type !== 'freehand' || r.parts[0].width * r.parts[0].height >= 100) onRedactionAdd(r)
+        // A plain click (no drag) in text mode redacts the word under the cursor, if any
+        if (hl.type === 'text' && hl.startWordIndex === hl.endWordIndex) {
+          const { startX: x, startY: y } = hl
+          const idx = page.words.findIndex((w: WordData) => x >= w.bbox.x0 && x <= w.bbox.x1 && y >= w.bbox.y0 && y <= w.bbox.y1)
+          hl = idx >= 0 ? { ...hl, startWordIndex: idx, endWordIndex: idx + 1 } : null
+        }
+        if (hl) {
+          const r = finalizeHighlight(pages[hl.pageIndex], hl)
+          if (r.parts.length > 0 && (hl.type !== 'freehand' || r.parts[0].width * r.parts[0].height >= 100)) onRedactionAdd(r)
+        }
       }
       setCurrentHighlight(null)
       dragRef.current = null

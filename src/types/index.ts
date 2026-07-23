@@ -28,7 +28,8 @@ export interface HighlightInProgress {
   pageIndex: number
   type: 'freehand' | 'text'
   startX: number; startY: number; endX: number; endY: number
-  startWord: WordData | null; endWord: WordData | null
+  // Indices into PageData.words (reading order); null for freehand highlights
+  startWordIndex: number | null; endWordIndex: number | null
 }
 
 // ── Rules ─────────────────────────────────────────────────────────────────────
