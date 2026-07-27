@@ -1,0 +1,162 @@
+{
+    "metadata": {
+        "jurisdiction": "DE",
+        "jurisdiction_name": "Germany (Federal)",
+        "law_name": "Informationsfreiheitsgesetz",
+        "law_name_en": "Freedom of Information Act",
+        "abbreviation": "IFG",
+        "enacted": "2006-01-01",
+        "last_amended": "2024-03-22",
+        "version_date": "2025-12-29",
+        "official_url": "https://www.gesetze-im-internet.de/ifg/",
+        "oversight_body": "Bundesbeauftragter für den Datenschutz und die Informationsfreiheit (BfDI)",
+        "language": "de",
+        "scope": "Bundesbehörden"
+    },
+    "rules": [
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Internationale Beziehungen",
+            "reference": "§3 Nr. 1 lit. a)",
+            "reason": "Nachteilige Auswirkungen auf internationale Beziehungen",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf internationale Beziehungen.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Bundeswehr",
+            "reference": "§3 Nr. 1 lit. b)",
+            "reason": "Nachteilige Auswirkungen auf militärische und sonstige sicherheitsempfindliche Belange der Bundeswehr",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf militärische und sonstige sicherheitsempfindliche Belange der Bundeswehr.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Innere/äußere Sicherheit",
+            "reference": "§3 Nr. 1 lit. c)",
+            "reason": "Nachteilige Auswirkungen auf Belange der inneren oder äußeren Sicherheit",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf Belange der inneren oder äußeren Sicherheit.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Kontrollaufgaben",
+            "reference": "§3 Nr. 1 lit. d)",
+            "reason": "Nachteilige Auswirkungen auf Kontroll- oder Aufsichtsaufgaben der Finanz-, Wettbewerbs- und Regulierungsbehörden",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf Kontroll- oder Aufsichtsaufgaben der Finanz-, Wettbewerbs- und Regulierungsbehörden.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Externe Finanzkontrolle",
+            "reference": "§3 Nr. 1 lit. e)",
+            "reason": "Nachteilige Auswirkungen auf Angelegenheiten der externen Finanzkontrolle",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf Angelegenheiten der externen Finanzkontrolle.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Außenwirtschaftsverkehr",
+            "reference": "§3 Nr. 1 lit. f)",
+            "reason": "Nachteilige Auswirkungen auf Maßnahmen zum Schutz vor unerlaubtem Außenwirtschaftsverkehr",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf Maßnahmen zum Schutz vor unerlaubtem Außenwirtschaftsverkehr.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Laufende Gerichtsverfahren",
+            "reference": "§3 Nr. 1 lit. g)",
+            "reason": "Nachteilige Auswirkungen auf die Durchführung eines laufenden Gerichtsverfahrens, den Anspruch auf ein faires Verfahren oder die Durchführung von Ermittlungen",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information nachteilige Auswirkungen haben kann auf die Durchführung eines laufenden Gerichtsverfahrens, den Anspruch auf ein faires Verfahren oder die Durchführung strafrechtlicher, ordnungswidrigkeitsrechtlicher oder disziplinarischer Ermittlungen.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Öffentliche Sicherheit",
+            "reference": "§3 Nr. 2",
+            "reason": "Gefährdung der öffentlichen Sicherheit",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information die öffentliche Sicherheit gefährden kann.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Internationale Verhandlungen",
+            "reference": "§3 Nr. 3 lit. a)",
+            "reason": "Beeinträchtigung der notwendigen Vertraulichkeit internationaler Verhandlungen",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn und solange die notwendige Vertraulichkeit internationaler Verhandlungen beeinträchtigt wird.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Beratungen von Behörden",
+            "reference": "§3 Nr. 3 lit. b)",
+            "reason": "Beeinträchtigung der Beratungen von Behörden",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn und solange die Beratungen von Behörden beeinträchtigt werden.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Geheimhaltungspflicht",
+            "reference": "§3 Nr. 4",
+            "reason": "Geheimhaltungspflicht / Vertraulichkeitspflicht / Berufsgeheimnis / besonderes Amtsgeheimnis",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn die Information einer durch Rechtsvorschrift oder durch die Allgemeine Verwaltungsvorschrift zum materiellen und organisatorischen Schutz von Verschlusssachen geregelten Geheimhaltungs- oder Vertraulichkeitspflicht oder einem Berufs- oder besonderen Amtsgeheimnis unterliegt.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Vorübergehende Information",
+            "reference": "§3 Nr. 5",
+            "reason": "Vorübergehend beigezogene Information einer anderen öffentlichen Stelle",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht hinsichtlich vorübergehend beigezogener Information einer anderen öffentlichen Stelle, die nicht Bestandteil der eigenen Vorgänge werden soll.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Fiskalische Interessen",
+            "reference": "§3 Nr. 6",
+            "reason": "Beeinträchtigung fiskalischer Interessen des Bundes im Wirtschaftsverkehr oder wirtschaftlicher Interessen der Sozialversicherungen",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, wenn das Bekanntwerden der Information geeignet wäre, fiskalische Interessen des Bundes im Wirtschaftsverkehr oder wirtschaftliche Interessen der Sozialversicherungen zu beeinträchtigen.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Besondere öffentliche Belange",
+            "title": "Vertraulichkeit",
+            "reference": "§3 Nr. 7",
+            "reason": "Vertraulich erhobene oder übermittelte Information mit fortbestehendem Vertraulichkeitsinteresse",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht bei vertraulich erhobener oder übermittelter Information, soweit das Interesse des Dritten an einer vertraulichen Behandlung im Zeitpunkt des Antrags auf Informationszugang noch fortbesteht.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__3.html"
+        },
+        {
+            "group": "Behördlicher Entscheidungsprozess",
+            "title": "Vereitlung von Entscheidungen",
+            "reference": "§4 Abs. 1",
+            "reason": "Vereitlung von vorbereiteten Entscheidungen oder Maßnahmen",
+            "full_text": "Der Antrag auf Informationszugang soll abgelehnt werden für Entwürfe zu Entscheidungen sowie Arbeiten und Beschlüsse zu ihrer unmittelbaren Vorbereitung, soweit und solange durch die vorzeitige Bekanntgabe der Informationen der Erfolg der Entscheidung oder bevorstehender behördlicher Maßnahmen vereitelt würde. Nicht der unmittelbaren Entscheidungsvorbereitung nach Satz 1 dienen regelmäßig Ergebnisse der Beweiserhebung und Gutachten oder Stellungnahmen Dritter.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__4.html"
+        },
+        {
+            "group": "Personenbezogene Daten",
+            "title": "Personenbezogene Daten",
+            "reference": "§5",
+            "reason": "Personenbezogene Daten",
+            "full_text": "1. Zugang zu personenbezogenen Daten darf nur gewährt werden, soweit das Informationsinteresse des Antragstellers das schutzwürdige Interesse des Dritten am Ausschluss des Informationszugangs überwiegt oder der Dritte eingewilligt hat. Besondere Kategorien personenbezogener Daten im Sinne des Artikels 9 Absatz 1 der Verordnung (EU) 2016/679 des Europäischen Parlaments und des Rates vom 27. April 2016 zum Schutz natürlicher Personen bei der Verarbeitung personenbezogener Daten, zum freien Datenverkehr und zur Aufhebung der Richtlinie 95/46/EG (Datenschutz-Grundverordnung) (ABl. L 119 vom 4.5.2016, S. 1; L 314 vom 22.11.2016, S. 72; L 127 vom 23.5.2018, S. 2) in der jeweils geltenden Fassung dürfen nur übermittelt werden, wenn der Dritte ausdrücklich eingewilligt hat.\n\n2. Das Informationsinteresse des Antragstellers überwiegt nicht bei Informationen aus Unterlagen, soweit sie mit dem Dienst- oder Amtsverhältnis oder einem Mandat des Dritten in Zusammenhang stehen und bei Informationen, die einem Berufs- oder Amtsgeheimnis unterliegen.\n\n3. Das Informationsinteresse des Antragstellers überwiegt das schutzwürdige Interesse des Dritten am Ausschluss des Informationszugangs in der Regel dann, wenn sich die Angabe auf Name, Titel, akademischen Grad, Berufs- und Funktionsbezeichnung, Büroanschrift und -telekommunikationsnummer beschränkt und der Dritte als Gutachter, Sachverständiger oder in vergleichbarer Weise eine Stellungnahme in einem Verfahren abgegeben hat.\n\n4. Name, Titel, akademischer Grad, Berufs- und Funktionsbezeichnung, Büroanschrift und -telekommunikationsnummer von Bearbeitern sind vom Informationszugang nicht ausgeschlossen, soweit sie Ausdruck und Folge der amtlichen Tätigkeit sind und kein Ausnahmetatbestand erfüllt ist.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__5.html"
+        },
+        {
+            "group": "IP & Geschäftsgeheimnisse",
+            "title": "Geistiges Eigentum",
+            "reference": "§6 S. 1",
+            "reason": "Schutz geistigen Eigentums",
+            "full_text": "Der Anspruch auf Informationszugang besteht nicht, soweit der Schutz geistigen Eigentums entgegensteht.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__6.html"
+        },
+        {
+            "group": "IP & Geschäftsgeheimnisse",
+            "title": "Geschäftsgeheimnisse",
+            "reference": "§6 S. 2",
+            "reason": "Betriebs- und Geschäftsgeheimnisse",
+            "full_text": "Zugang zu Betriebs- oder Geschäftsgeheimnissen darf nur gewährt werden, soweit der Betroffene eingewilligt hat.",
+            "url": "https://www.gesetze-im-internet.de/ifg/__6.html"
+        }
+    ]
+}

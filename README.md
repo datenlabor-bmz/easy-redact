@@ -8,7 +8,7 @@ AI-assisted PDF redaction tool for German federal ministries (BMZ). Upload a PDF
 
 - **Two redaction modes**
   - **PII** — redacts personal data: names, addresses, emails, phone numbers, bank details, dates of birth
-  - **FOI / IFG** — redacts based on the exemption clauses of a chosen Freedom of Information law; jurisdiction rules are loaded at runtime from [`datenlabor-bmz/redaction-rules`](https://github.com/datenlabor-bmz/redaction-rules)
+  - **FOI / IFG** — redacts based on the exemption clauses of a chosen Freedom of Information law; jurisdiction rules are loaded either from a bundled local copy or at runtime from [`datenlabor-bmz/redaction-rules`](https://github.com/datenlabor-bmz/redaction-rules), selectable via `REDACTION_RULES_SOURCE` (see below)
 
 - **Cloud AI and Local AI** (switchable at any time via the mode selector)
   - **Cloud AI** — any OpenAI-compatible LLM endpoint (e.g. Azure AI Foundry, GDPR-compliant, no data retention)
@@ -68,9 +68,23 @@ LOCAL_AI=ner-browser
 # Set to 'false' to hide the Cloud AI option from the UI
 CLOUD_AI=true
 
+# Source of the FOI/IFG redaction rules: 'github' (default) or 'local'
+REDACTION_RULES_SOURCE=github
+
 # Default UI language (optional): en, de, fr, es, ru, ar, zh
 # DEFAULT_LOCALE=de
 ```
+
+### FOI rule source (`REDACTION_RULES_SOURCE`)
+
+In FOI mode the AI is given the exemption clauses of the selected jurisdiction's law. Where those rule sets come from is controlled by `REDACTION_RULES_SOURCE`:
+
+| Value | Behaviour |
+|-------|-----------|
+| `github` (default) | Fetches the jurisdiction index and rule files at runtime from [`datenlabor-bmz/redaction-rules`](https://github.com/datenlabor-bmz/redaction-rules) |
+| `local` | Serves the JSON bundled in `src/data/rules/` — no outbound network call, works fully air-gapped |
+
+The bundled local set ships with the German **IFG** (`de-ifg-bund`). To add or update rules for local mode, drop a `<jurisdiction-id>.json` file into `src/data/rules/` (same shape as the upstream repo) and add a matching entry to `src/data/rules/index.json`. The browser always reaches the rules through the `/api/rules` proxy, so the source stays a server-side concern regardless of the setting.
 
 ### Azure AI Foundry setup
 
@@ -164,7 +178,7 @@ location /easyredact/ {
 ## See Also
 
 - [`datenlabor-bmz/redaction-ui`](https://github.com/datenlabor-bmz/redaction-ui) — standalone React component library (`@datenlabor-bmz/redaction-ui`) for PDF viewing and redaction, published to npm for use in other applications
-- [`datenlabor-bmz/redaction-rules`](https://github.com/datenlabor-bmz/redaction-rules) — machine-readable FOI exemption rules by jurisdiction, fetched at runtime in FOI mode
+- [`datenlabor-bmz/redaction-rules`](https://github.com/datenlabor-bmz/redaction-rules) — machine-readable FOI exemption rules by jurisdiction; used in FOI mode either at runtime or as a bundled local copy (see `REDACTION_RULES_SOURCE`)
 
 ## License
 

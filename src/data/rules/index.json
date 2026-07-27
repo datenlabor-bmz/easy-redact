@@ -1,0 +1,13 @@
+{
+    "rules": [
+        {
+            "id": "de-ifg-bund",
+            "jurisdiction": "DE",
+            "jurisdiction_name": "Germany (Federal)",
+            "law_name": "Informationsfreiheitsgesetz",
+            "abbreviation": "IFG",
+            "language": "de",
+            "url": "https://www.gesetze-im-internet.de/ifg/"
+        }
+    ]
+}
