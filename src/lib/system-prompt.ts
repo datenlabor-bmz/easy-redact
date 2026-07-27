@@ -18,13 +18,20 @@ export function buildSystemPrompt(opts: {
 }): string {
   const { redactionMode, foiJurisdiction, foiRules, locale } = opts
 
+  // `reason` is often just a restatement of `title` (e.g. "Personenbezogene Daten"),
+  // so the statutory text carries the criteria the model actually needs to apply.
+  const formatRule = (r: RedactionRule) => {
+    const summary = r.reason && r.reason !== r.title ? r.reason : undefined
+    const heading = `- **${r.title}**${r.reference ? ` (${r.reference})` : ''}${summary ? `: ${summary}` : ''}`
+    const detail = r.full_text?.replace(/\s*\n+\s*/g, ' ').trim()
+    return detail ? `${heading}\n  ${detail}` : heading
+  }
+
   const foiSection = redactionMode === 'foi'
     ? [
         '## FOI Mode',
         `Legal basis: ${foiJurisdiction ?? 'not selected'}`,
-        foiRules?.length
-          ? foiRules.map(r => `- **${r.title}** (${r.reference ?? ''}): ${r.reason ?? r.full_text ?? ''}`).join('\n')
-          : '',
+        foiRules?.length ? foiRules.map(formatRule).join('\n') : '',
       ].join('\n')
     : ''
 
@@ -83,6 +90,8 @@ export function buildSystemPrompt(opts: {
     '- `confidence`, `person`, `personGroup`, `reason`',
     '',
     'Use "low" ONLY for genuinely ambiguous individual cases in the document, not as a blanket rating.',
+    '',
+    'If the document genuinely contains nothing that needs redacting, do NOT call `suggest_redactions` with empty arguments — say so in your reply instead.',
     '',
     '## Tool discipline',
     '',

@@ -148,8 +148,8 @@ export function executeAskUser(args: Record<string, unknown>): { special: Specia
   }
 }
 
-export function executeSuggestRedactions(args: Record<string, unknown>): { special: SpecialToolResult; toolResult: ToolResult } {
-  const raw = args.suggestions as Array<Record<string, unknown>>
+export function executeSuggestRedactions(args: Record<string, unknown>): { special: SpecialToolResult | null; toolResult: ToolResult } {
+  const raw = (args.suggestions as Array<Record<string, unknown>> | undefined) ?? []
   const suggestions: RedactionSuggestion[] = raw.map(s => ({
     documentKey: s.documentKey as string | undefined,
     text: s.text as string,
@@ -184,6 +184,18 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
   }))
   const remove = (args.remove as string[] | undefined) ?? []
   const total = suggestions.length + textRanges.length + pageRanges.length
+  // An empty call is always a protocol error: a document with nothing to redact
+  // is reported in prose instead of through this tool, so reaching here means
+  // the arguments failed to serialise rather than that the document is clean.
+  if (total === 0 && remove.length === 0) {
+    return {
+      special: null,
+      toolResult: {
+        success: false,
+        error: 'This call carried no arguments, so nothing was applied. If the document genuinely contains nothing to redact, do not call this tool at all — say so in your reply instead. If you did intend to suggest redactions, repeat the call with "suggestions" (or "textRanges"/"pageRanges") populated; each entry needs documentKey, the exact text copied from the read_documents response, pageIndex, confidence, person and personGroup.',
+      },
+    }
+  }
   return {
     special: { type: 'suggest_redactions', suggestions, textRanges, pageRanges, remove },
     toolResult: { success: true, data: `${total} Vorschläge hinzugefügt (${suggestions.length} Textstellen, ${textRanges.length} Textbereiche, ${pageRanges.length} Seitenbereiche), ${remove.length} entfernt.` },

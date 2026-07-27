@@ -4,9 +4,7 @@ import { routing } from './i18n/routing'
 export default createMiddleware(routing)
 
 export const config = {
-  // The `matcher` is relative to the `basePath`. The explicit '/' entry is
-  // required so the middleware fires on the base-path root (e.g. `/easyredact/`);
-  // Next.js does not trigger middleware on the root when a `basePath` is set and
-  // the matcher uses a negative-lookahead regex. See vercel/next.js#50161.
+  // Next.js skips the middleware on the base-path root when the matcher is a
+  // negative-lookahead regex, so '/' has to be listed explicitly.
   matcher: ['/', '/((?!api|_next|_vercel|.*\\..*).*)'],
 }
