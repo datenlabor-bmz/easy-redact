@@ -5,6 +5,10 @@ const GITHUB_RULES = 'https://raw.githubusercontent.com/datenlabor-bmz/redaction
 
 const isServer = typeof window === 'undefined'
 
+// Browser fetches are root-relative, so they need the base path prepended
+// explicitly — Next.js only applies `basePath` to navigation and static assets.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 // Source of the FOI rule sets: 'local' serves the JSON bundled in src/data/rules,
 // 'github' fetches from the datenlabor-bmz/redaction-rules repo (default).
 // Only evaluated on the server — the browser always proxies through /api/rules,
@@ -51,7 +55,7 @@ export async function getJurisdictions(): Promise<JurisdictionMeta[]> {
   if (isServer) {
     data = await loadRulesIndex()
   } else {
-    const res = await fetch('/api/rules')
+    const res = await fetch(`${basePath}/api/rules`)
     if (!res.ok) throw new Error(`Failed to fetch rules index: ${res.status}`)
     data = await res.json()
   }
@@ -65,7 +69,7 @@ export async function getRulesForJurisdiction(jurisdictionId: string): Promise<R
   if (isServer) {
     data = await loadRuleFile(jurisdictionId)
   } else {
-    const res = await fetch(`/api/rules?id=${jurisdictionId}`)
+    const res = await fetch(`${basePath}/api/rules?id=${jurisdictionId}`)
     data = res.ok ? await res.json() : null
   }
   if (!data) throw new Error(`Failed to fetch rules for ${jurisdictionId}`)
