@@ -9,7 +9,7 @@ const isServer = typeof window === 'undefined'
 // 'github' fetches from the datenlabor-bmz/redaction-rules repo (default).
 // Only evaluated on the server — the browser always proxies through /api/rules,
 // so the API route decides the source in one place.
-const useLocalRules = () => (process.env.REDACTION_RULES_SOURCE ?? 'github').toLowerCase() === 'local'
+const localRulesEnabled = () => (process.env.REDACTION_RULES_SOURCE ?? 'github').toLowerCase() === 'local'
 
 interface RulesIndexFile { rules: JurisdictionMeta[] }
 interface RuleFile { rules: RedactionRule[] }
@@ -19,7 +19,7 @@ interface RuleFile { rules: RedactionRule[] }
 // so both the /api/rules proxy and server components can share them.
 
 export async function loadRulesIndex(): Promise<RulesIndexFile> {
-  if (useLocalRules()) {
+  if (localRulesEnabled()) {
     return (await import('../data/rules/index.json')).default as RulesIndexFile
   }
   const res = await fetch(GITHUB_INDEX)
@@ -28,7 +28,7 @@ export async function loadRulesIndex(): Promise<RulesIndexFile> {
 }
 
 export async function loadRuleFile(id: string): Promise<RuleFile | null> {
-  if (useLocalRules()) {
+  if (localRulesEnabled()) {
     try {
       return (await import(`../data/rules/${id}.json`)).default as RuleFile
     } catch {
