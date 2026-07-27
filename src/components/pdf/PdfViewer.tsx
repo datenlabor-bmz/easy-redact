@@ -171,22 +171,30 @@ export function PdfViewer({
   useEffect(() => {
     if (!pendingSuggestions?.length || !pages.length) return
     ;(async () => {
-      const existingTexts = redactions
-        .filter(r => r.searchText && r.status !== 'ignored')
-        .map(r => ({ page: r.pageIndex, text: r.searchText! }))
-      const processedTexts: Array<{ page: number; text: string }> = []
+      // Each match is judged on where it lands, not on its text: it is redundant
+      // only when its box already sits inside a redacted area. A longer match
+      // overlapping a shorter one still contributes its extra area, and a name
+      // repeated elsewhere on the page keeps its own box.
+      const covered = redactions
+        .filter(r => r.status !== 'ignored')
+        .map(r => ({ page: r.pageIndex, parts: r.parts }))
 
-      const isSubsumed = (page: number, text: string) =>
-        [...existingTexts, ...processedTexts].some(e =>
-          e.page === page && (e.text.includes(text) || text.includes(e.text)))
+      const TOLERANCE = 1
+      const isInside = (inner: RedactionPart, outer: RedactionPart) =>
+        inner.x >= outer.x - TOLERANCE &&
+        inner.y >= outer.y - TOLERANCE &&
+        inner.x + inner.width <= outer.x + outer.width + TOLERANCE &&
+        inner.y + inner.height <= outer.y + outer.height + TOLERANCE
+
+      const isCovered = (page: number, parts: RedactionPart[]) =>
+        parts.every(p => covered.some(c => c.page === page && c.parts.some(q => isInside(p, q))))
 
       for (const s of pendingSuggestions) {
-        if (isSubsumed(s.pageIndex, s.text)) continue
-        processedTexts.push({ page: s.pageIndex, text: s.text })
-        const quads = await searchPage(s.pageIndex, s.text)
-        if (quads.length === 0) continue
-        for (const matchQuads of quads as number[][][]) {
+        const quads = await searchPage(s.pageIndex, s.text) as number[][][]
+        for (const matchQuads of quads) {
           const parts = matchQuads.map(q => quadToPart(q as number[]))
+          if (isCovered(s.pageIndex, parts)) continue
+          covered.push({ page: s.pageIndex, parts })
           onRedactionAdd({
             id: generateUUID(), documentKey: '', pageIndex: s.pageIndex, parts,
             searchText: s.text,

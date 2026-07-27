@@ -118,7 +118,7 @@ export async function POST(req: Request) {
                 break
               }
               case 'suggest_redactions': {
-                const r = executeSuggestRedactions(args)
+                const r = executeSuggestRedactions(args, documentPages)
                 special = r.special
                 result = r.toolResult
                 break

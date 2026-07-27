@@ -148,7 +148,39 @@ export function executeAskUser(args: Record<string, unknown>): { special: Specia
   }
 }
 
-export function executeSuggestRedactions(args: Record<string, unknown>): { special: SpecialToolResult | null; toolResult: ToolResult } {
+const normalizeForSearch = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase()
+
+// The model sometimes paraphrases or mistypes the text it claims to have read, and
+// the browser can only redact strings it finds verbatim in the PDF. Checking each
+// suggestion against the extracted page text turns that silent miss into feedback
+// the model can act on. Comparison is deliberately lenient about whitespace and
+// case so that only genuinely absent text is reported.
+function describeUnlocatable(suggestions: RedactionSuggestion[], documentPages?: DocumentPage[]): string[] {
+  if (!documentPages?.length) return []
+  const pages = documentPages.map(p => ({
+    documentKey: p.documentKey,
+    pageIndex: p.pageIndex,
+    text: normalizeForSearch(p.text),
+  }))
+
+  const problems: string[] = []
+  for (const s of suggestions) {
+    const needle = normalizeForSearch(s.text ?? '')
+    if (!needle) continue
+    const onStatedPage = pages.some(p =>
+      p.pageIndex === s.pageIndex &&
+      (!s.documentKey || p.documentKey === s.documentKey) &&
+      p.text.includes(needle))
+    if (onStatedPage) continue
+    const elsewhere = pages.find(p => p.text.includes(needle))
+    problems.push(elsewhere
+      ? `"${s.text}" steht nicht auf Seite ${s.pageIndex + 1}, sondern auf Seite ${elsewhere.pageIndex + 1}`
+      : `"${s.text}" kommt im Dokument nicht vor`)
+  }
+  return problems
+}
+
+export function executeSuggestRedactions(args: Record<string, unknown>, documentPages?: DocumentPage[]): { special: SpecialToolResult | null; toolResult: ToolResult } {
   const raw = (args.suggestions as Array<Record<string, unknown>> | undefined) ?? []
   const suggestions: RedactionSuggestion[] = raw.map(s => ({
     documentKey: s.documentKey as string | undefined,
@@ -196,9 +228,16 @@ export function executeSuggestRedactions(args: Record<string, unknown>): { speci
       },
     }
   }
+  const summary = `${total} Vorschläge hinzugefügt (${suggestions.length} Textstellen, ${textRanges.length} Textbereiche, ${pageRanges.length} Seitenbereiche), ${remove.length} entfernt.`
+  const problems = describeUnlocatable(suggestions, documentPages)
   return {
     special: { type: 'suggest_redactions', suggestions, textRanges, pageRanges, remove },
-    toolResult: { success: true, data: `${total} Vorschläge hinzugefügt (${suggestions.length} Textstellen, ${textRanges.length} Textbereiche, ${pageRanges.length} Seitenbereiche), ${remove.length} entfernt.` },
+    toolResult: {
+      success: true,
+      data: problems.length
+        ? `${summary} Diese Stellen konnten nicht gefunden werden: ${problems.join('; ')}. Wiederhole den Aufruf für sie mit dem exakten Wortlaut aus der read_documents-Antwort.`
+        : summary,
+    },
   }
 }
 
