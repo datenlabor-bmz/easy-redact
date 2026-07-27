@@ -258,15 +258,20 @@ export default function App() {
       const key = generateUUID()
       lastKey = key
       await saveFile(key, pdf.name, await pdf.arrayBuffer())
-      updateSession({
-        documents: [...(session?.documents ?? []), { name: pdf.name, idbKey: key }],
+      // Appending via the updater keeps each iteration based on the current
+      // documents, rather than on a snapshot that predates the await and would
+      // both drop earlier files of this batch and revive closed ones.
+      setSession(prev => {
+        const next = { ...prev!, documents: [...prev!.documents, { name: pdf.name, idbKey: key }] }
+        saveSession(next)
+        return next
       })
     }
 
     const names = pdfs.map(f => f.name).join(', ')
     pendingChatTrigger.current = `[System: New documents uploaded: ${names}. Access already granted. Read the documents and suggest redactions.]`
     pendingChatTriggerDocKey.current = lastKey
-  }, [files, session, updateSession])
+  }, [files, t])
 
   useEffect(() => {
     if (!session?.documents.length || files.length) return

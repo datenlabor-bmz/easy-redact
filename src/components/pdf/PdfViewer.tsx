@@ -199,7 +199,9 @@ export function PdfViewer({
       }
       onSuggestionsApplied?.()
     })()
-  }, [pendingSuggestions])
+    // `pages.length` is a dependency because suggestions can arrive before the
+    // document has finished loading, and would otherwise never be applied.
+  }, [pendingSuggestions, pages.length])
 
   // Apply text-range and page-range suggestions
   useEffect(() => {
@@ -247,7 +249,7 @@ export function PdfViewer({
       }
       onSuggestionsApplied?.()
     })()
-  }, [pendingTextRanges, pendingPageRanges])
+  }, [pendingTextRanges, pendingPageRanges, pages.length])
 
   const scrollToPage = (idx: number) => {
     const el = pdfViewerRef.current?.querySelectorAll('[data-page-index]')[idx] as HTMLElement

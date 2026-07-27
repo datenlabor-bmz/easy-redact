@@ -163,6 +163,12 @@ export async function POST(req: Request) {
   })
 
   return new Response(stream, {
-    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' },
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      // Tells nginx to forward chunks as they arrive instead of buffering the stream.
+      'X-Accel-Buffering': 'no',
+    },
   })
 }
