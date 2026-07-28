@@ -7,7 +7,7 @@ export const tools = [
     type: 'function' as const,
     function: {
       name: 'ask_user',
-      description: 'Ask the user a structured question with pre-defined answer options. Use this for all key decisions (redaction mode, person categories, information types, model choice, etc.). The UI will display clickable option chips.',
+      description: 'Ask the user a structured question with pre-defined answer options. Use this only for concrete ambiguities that arise from the actual document content (e.g. which category a specific person belongs to, whether a specific item should be treated as an exception). Never use this to ask about the redaction mode or which AI model to use — those are already chosen by the user in the UI. The UI will display clickable option chips.',
       parameters: {
         type: 'object',
         properties: {

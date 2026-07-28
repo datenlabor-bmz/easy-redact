@@ -16,7 +16,9 @@ function send(ctrl: SSEController, event: Record<string, unknown>) {
 }
 
 async function* streamCompletion(client: any, model: string, messages: ApiChatMessage[], toolList: any[]) {
-  const stream = await client.chat.completions.create({ model, messages, tools: toolList, stream: true })
+  const stream = await client.chat.completions.create({
+    model, messages, tools: toolList, stream: true,
+  })
   for await (const chunk of stream) yield chunk
 }
 
@@ -32,7 +34,8 @@ export async function POST(req: Request) {
     : undefined
 
   const systemPrompt = buildSystemPrompt({ redactionMode, foiJurisdiction, foiRules, locale })
-  const { client, model: modelName } = getClient(aiMode === 'local' ? 'local' : 'cloud')
+  const isLocal = aiMode === 'local'
+  const { client, model: modelName } = getClient(isLocal ? 'local' : 'cloud')
   const activeTools = [...tools, readDocumentsTool]
 
   const stream = new ReadableStream({
@@ -101,7 +104,7 @@ export async function POST(req: Request) {
               })
               send(ctrl, {
                 type: 'error',
-                message: `The model returned an empty response (finish_reason: ${finishReason ?? 'unknown'}). If this keeps happening, the request may be exceeding the model's context window.`,
+                message: `The model returned an empty response (finish_reason: ${finishReason ?? 'unknown'}). If that is at or near the model's context window, the prompt may be getting truncated — raise it with OLLAMA_CONTEXT_LENGTH for Ollama.`,
               })
             }
             send(ctrl, { type: 'done' })
@@ -110,7 +113,7 @@ export async function POST(req: Request) {
 
           // Only process the first tool call per iteration
           toolCalls = toolCalls.slice(0, 1)
-          apiMessages.push({ role: 'assistant', content: assistantContent, tool_calls: toolCalls })
+          apiMessages.push({ role: 'assistant', content: assistantContent || null, tool_calls: toolCalls })
 
           for (const tc of toolCalls) {
             const name = tc.function.name

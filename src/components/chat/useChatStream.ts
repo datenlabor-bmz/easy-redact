@@ -53,7 +53,8 @@ export function useChatStream(opts: UseChatStreamOptions) {
       } else {
         if (m.toolCalls?.length) {
           apiMessages.push({
-            role: 'assistant', content: m.content,
+            // Null rather than '' for a tool-call-only turn, matching the server side.
+            role: 'assistant', content: m.content || null,
             tool_calls: m.toolCalls.map(tc => ({
               id: tc.id, type: 'function' as const,
               function: { name: tc.name, arguments: JSON.stringify(tc.args) },

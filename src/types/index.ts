@@ -187,7 +187,10 @@ export type SSEEvent =
 
 export interface ApiChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
-  content: string
+  // Null for an assistant message that only carries tool_calls: the OpenAI schema
+  // expects null there, and an empty string can render badly in the chat templates
+  // that local backends use to replay the history.
+  content: string | null
   tool_call_id?: string
   tool_calls?: Array<{
     id: string
