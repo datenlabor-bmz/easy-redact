@@ -85,7 +85,7 @@ export const tools = [
           },
           pageRanges: {
             type: 'array',
-            description: 'Redact entire pages. Use for full appendices or attachments. Page indices come from the read_documents response (0-based).',
+            description: 'LAST RESORT — redact entire pages. Only use when the whole page is sensitive top to bottom (e.g. a full signature-list annex), verified against the actual read_documents text. If only part of a page needs redacting, use `suggestions` or `textRanges` for that part instead. Page indices come from the read_documents response (0-based).',
             items: {
               type: 'object',
               properties: {
