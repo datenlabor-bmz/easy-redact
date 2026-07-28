@@ -21,6 +21,7 @@ interface ChatPanelProps {
   documentNames?: string[]
   initialMessages?: Msg[]
   triggerRef?: React.MutableRefObject<((msg: string) => void) | null>
+  silentContextRef?: React.MutableRefObject<((msg: string) => void) | null>
   onDeferredTrigger?: (msg: string) => void
   onSuggestionsReceived: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
   onMessagesChange?: (messages: Msg[]) => void
@@ -28,7 +29,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  aiMode, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, onDeferredTrigger,
+  aiMode, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, silentContextRef, onDeferredTrigger,
   onSuggestionsReceived, onMessagesChange, modeSelector,
 }: ChatPanelProps) {
   const t = useTranslations('ChatPanel')
@@ -40,6 +41,7 @@ export function ChatPanel({
   const initialLoaded = useRef(false)
 
   useEffect(() => { if (triggerRef) triggerRef.current = sendMessage }, [triggerRef, sendMessage])
+  useEffect(() => { if (silentContextRef) silentContextRef.current = addSilentContext }, [silentContextRef, addSilentContext])
 
   useEffect(() => {
     if (initialLoaded.current) return

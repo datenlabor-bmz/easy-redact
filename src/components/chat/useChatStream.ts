@@ -46,6 +46,15 @@ export function useChatStream(opts: UseChatStreamOptions) {
 
     // Reconstruct full OpenAI message format including tool call/result pairs
     const history = allMessages.filter(m => m.id !== assistantId)
+
+    // A read_documents result embeds the full text of every open document. Once a
+    // later call supersedes it, replaying the old one forever both wastes context
+    // and — if a document was closed or replaced meanwhile — feeds the model text
+    // from a document that no longer exists. Only the most recent call's result
+    // needs to survive; the model can always call read_documents again.
+    const lastReadDocumentsId = [...history].reverse()
+      .find(m => m.toolCalls?.some(tc => tc.name === 'read_documents'))?.id
+
     const apiMessages: ApiChatMessage[] = []
     for (const m of history) {
       if (m.role === 'user') {
@@ -61,7 +70,11 @@ export function useChatStream(opts: UseChatStreamOptions) {
             })),
           })
           for (const tc of m.toolCalls) {
-            apiMessages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(tc.result ?? '') })
+            const stale = tc.name === 'read_documents' && m.id !== lastReadDocumentsId
+            const content = stale
+              ? JSON.stringify('[superseded by a later read_documents call — call read_documents again if you need current document content]')
+              : JSON.stringify(tc.result ?? '')
+            apiMessages.push({ role: 'tool', tool_call_id: tc.id, content })
           }
         } else if (m.content) {
           apiMessages.push({ role: 'assistant', content: m.content })

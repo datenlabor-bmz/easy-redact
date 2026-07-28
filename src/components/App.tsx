@@ -53,6 +53,7 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportRef = useRef<((apply: boolean) => void) | null>(null)
   const chatTriggerRef = useRef<((msg: string) => void) | null>(null)
+  const silentContextRef = useRef<((msg: string) => void) | null>(null)
   const pendingChatTrigger = useRef<string | null>(null)
   // Mirrors the resolved active key so callbacks read it at call time rather than
   // capturing whatever it happened to be when they were created.
@@ -388,6 +389,8 @@ export default function App() {
   const activeRedactions = session.redactions.filter(r => r.documentKey === activeDocKey)
 
   const closeDocument = (key: string) => {
+    const closedDoc = session.documents.find(d => d.idbKey === key)
+    const remainingNames = session.documents.filter(d => d.idbKey !== key).map(d => d.name)
     setFilesByKey(prev => { const next = { ...prev }; delete next[key]; return next })
     setSelectedId(null)
     if (key === activeDocKey) setActiveKey(openDocuments.find(d => d.idbKey !== key)?.idbKey ?? '')
@@ -405,6 +408,12 @@ export default function App() {
     // the model and no stale suggestions can be applied to a document that reuses it.
     setPendingByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
     setDocumentPages(prev => prev.filter(p => p.documentKey !== key))
+    // The chat history still contains this document's full text from an earlier
+    // read_documents result. Tell the model explicitly rather than relying on it to
+    // notice — otherwise it can keep referencing content that is no longer valid.
+    if (chatMessages.length && closedDoc) {
+      silentContextRef.current?.(`[System: Document "${closedDoc.name}" was closed and is no longer available — disregard anything you previously read from it. Currently open documents: ${remainingNames.join(', ') || 'none'}.]`)
+    }
   }
 
   return (
@@ -624,6 +633,7 @@ export default function App() {
               documents={session.documents}
               documentNames={session.documents.map(d => d.name)}
               triggerRef={chatTriggerRef}
+              silentContextRef={silentContextRef}
               onDeferredTrigger={msg => {
                 pendingChatTrigger.current = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
                 pendingChatTriggerDocKey.current = activeDocKey || null
