@@ -52,6 +52,8 @@ export function buildSystemPrompt(opts: {
     '4. **Targeted follow-up questions**: Only ask questions that arise from the actual document content — about persons or cases that are genuinely unclear. Ask concretely, not abstractly.',
     '5. **Make suggestions**: As soon as you have identified what to redact, call `suggest_redactions` directly — do NOT describe the candidates in chat text first and ask "should I add these?". The suggestions already land in the sidebar/document as a reviewable, reversible proposal, so that preview step is redundant and slows the user down. Only ask first if a genuine ambiguity needs resolving (step 4).',
     '',
+    'NEVER claim, state, or imply that redactions were suggested, added, or found unless you are ACTUALLY invoking `suggest_redactions` as a real tool call in this exact same response. A sentence like "I have suggested 12 redactions" is only true right after the corresponding tool call — writing that sentence without making the call is a false statement to the user and creates suggestions that do not actually exist anywhere. If you are unsure how to structure the call, still attempt the real tool call — do not fall back to describing it in plain text instead.',
+    '',
     '## Redaction modes',
     '',
     'Two redaction modes exist. The user selects the mode in the menu, before this conversation starts — do NOT ask about it, via `ask_user` or otherwise, under any circumstances.',

@@ -11,6 +11,12 @@ import type { ChatRequest, ApiChatMessage } from '@/types'
 type SSEController = ReadableStreamDefaultController
 const enc = new TextEncoder()
 
+// Heuristic only, for diagnostics: catches a model narrating "I've suggested N
+// redactions" (or the equivalent in another supported locale) in plain text
+// instead of actually calling suggest_redactions. Not perfect, but a false
+// positive here only produces an extra log line, never a behavior change.
+const SUGGESTS_REDACTIONS_WITHOUT_CALLING = /\d+[^.!?\n]{0,40}(suggest|redact|vorschl|schwärz|schw[aä]rzung|proposi|masqu|suprim|suger|ocult|редак|предлож|涂黑|遮盖|建议|تنقيح|اقتراح)/i
+
 function send(ctrl: SSEController, event: Record<string, unknown>) {
   ctrl.enqueue(enc.encode(`data: ${JSON.stringify(event)}\n\n`))
 }
@@ -120,6 +126,15 @@ export async function POST(req: Request) {
               send(ctrl, {
                 type: 'error',
                 message: `The model stopped without a reply after ${MAX_EMPTY_RETRIES + 1} attempts (finish_reason: ${finishReason ?? 'unknown'}). This is usually the model getting stuck retrying a tool call rather than a context-length issue — try asking again or rephrasing.`,
+              })
+            } else if (SUGGESTS_REDACTIONS_WITHOUT_CALLING.test(assistantContent)) {
+              // The model described making suggestions in prose without an actual
+              // suggest_redactions call — nothing was applied. Already streamed to the
+              // client as text, so this can only be logged for now, not corrected
+              // in-place; see it as a signal that the tool schema or prompt needs
+              // another look if it keeps recurring.
+              console.warn('[chat] claimed suggest_redactions without calling it', {
+                finishReason, content: assistantContent,
               })
             }
             send(ctrl, { type: 'done' })
