@@ -50,10 +50,11 @@ export function ChatPanel({
       setMessages(initialMessages)
     } else if (documentNames?.length) {
       onDeferredTrigger?.(`Documents loaded: ${documentNames.join(', ')}. Access already granted. Greet the user briefly, call read_documents IMMEDIATELY, then suggest redactions.`)
-    } else {
-      sendMessage(`[System: Greet the user briefly, explain what you can do, and ask them to upload a document.]`)
     }
-  }, [initialMessages, setMessages, sendMessage])
+    // No document yet and no history: the empty-state placeholder below already
+    // greets the user and asks them to upload, so there is nothing for the model
+    // to do — skip the call rather than spend a request generating the same thing.
+  }, [initialMessages, setMessages, documentNames, onDeferredTrigger])
 
   useEffect(() => {
     if (messages.length > 0) onMessagesChange?.(messages)

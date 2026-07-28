@@ -57,6 +57,8 @@ export async function POST(req: Request) {
         }
 
         let iterations = 0
+        let emptyRetries = 0
+        const MAX_EMPTY_RETRIES = 2
         while (iterations < 20) {
           iterations++
           let assistantContent = ''
@@ -101,15 +103,29 @@ export async function POST(req: Request) {
               console.warn('[chat] empty completion', {
                 finishReason,
                 discardedToolArguments: [...toolCallArgs.values()],
+                retry: emptyRetries,
               })
+              // In practice this is almost always the model stalling mid-retry — e.g.
+              // after suggest_redactions reported a piece of text it couldn't locate —
+              // rather than a context-length problem. Nudge it back into action a
+              // couple of times before giving up and surfacing an error.
+              if (emptyRetries < MAX_EMPTY_RETRIES) {
+                emptyRetries++
+                apiMessages.push({
+                  role: 'user',
+                  content: '[System: Your last response was empty. If you were retrying suggest_redactions for text that could not be located, use the exact wording from the read_documents response, or drop that item and continue with the rest. Otherwise, reply to the user now.]',
+                })
+                continue
+              }
               send(ctrl, {
                 type: 'error',
-                message: `The model returned an empty response (finish_reason: ${finishReason ?? 'unknown'}). If that is at or near the model's context window, the prompt may be getting truncated — raise it with OLLAMA_CONTEXT_LENGTH for Ollama.`,
+                message: `The model stopped without a reply after ${MAX_EMPTY_RETRIES + 1} attempts (finish_reason: ${finishReason ?? 'unknown'}). This is usually the model getting stuck retrying a tool call rather than a context-length issue — try asking again or rephrasing.`,
               })
             }
             send(ctrl, { type: 'done' })
             break
           }
+          emptyRetries = 0
 
           // Only process the first tool call per iteration
           toolCalls = toolCalls.slice(0, 1)

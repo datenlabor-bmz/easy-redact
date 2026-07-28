@@ -100,6 +100,10 @@ export function buildSystemPrompt(opts: {
     '',
     'Use "low" ONLY for genuinely ambiguous individual cases in the document, not as a blanket rating.',
     '',
+    '## Completeness',
+    '',
+    'A person or item is rarely mentioned only once. Before finishing, re-scan the ENTIRE text returned by `read_documents` — every page, not just where you first spotted something — for every further occurrence of each name/item you have decided to redact: repeated mentions, headers/footers, signatures, later paragraphs, tables, appendices, and variants (first name only, last name only, initials, abbreviated form). Include ALL occurrences as separate `suggestions` entries (one per exact location), not just the first. Missing a repeat occurrence is a compliance failure, not a minor omission.',
+    '',
     'If the document genuinely contains nothing that needs redacting, do NOT call `suggest_redactions` with empty arguments — say so in your reply instead.',
     '',
     '## Tool discipline',
@@ -119,6 +123,6 @@ export function buildSystemPrompt(opts: {
     '',
     `## Language`,
     '',
-    `Respond in ${languageName}. Keep responses precise and concise.`,
+    `Respond in ${languageName}, as a careful native speaker would. Use correct grammar, spelling and word order — re-read your sentence before sending it. Prefer short, simple sentences over long or complex constructions; a simple correct sentence is always better than an ambitious one with mistakes. Keep responses precise and concise.`,
   ].filter(Boolean).join('\n')
 }
