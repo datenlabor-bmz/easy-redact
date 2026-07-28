@@ -57,10 +57,12 @@ export async function POST(req: Request) {
         while (iterations < 20) {
           iterations++
           let assistantContent = ''
+          let finishReason: string | null = null
           let toolCalls: ApiChatMessage['tool_calls'] = []
           const toolCallArgs = new Map<number, string>()
 
           for await (const chunk of streamCompletion(client, modelName, apiMessages, activeTools)) {
+            if (chunk.choices?.[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason
             const delta = chunk.choices?.[0]?.delta
             if (delta?.content) {
               assistantContent += delta.content
@@ -88,6 +90,20 @@ export async function POST(req: Request) {
           toolCalls = toolCalls!.filter(Boolean)
 
           if (!toolCalls.length) {
+            // Neither text nor a usable tool call: without this the turn ends on an
+            // empty bubble that is indistinguishable from a real answer. The logged
+            // arguments show whether the model said nothing at all or whether a tool
+            // call was accumulated but discarded for lacking an id/index.
+            if (!assistantContent.trim()) {
+              console.warn('[chat] empty completion', {
+                finishReason,
+                discardedToolArguments: [...toolCallArgs.values()],
+              })
+              send(ctrl, {
+                type: 'error',
+                message: `The model returned an empty response (finish_reason: ${finishReason ?? 'unknown'}). If this keeps happening, the request may be exceeding the model's context window.`,
+              })
+            }
             send(ctrl, { type: 'done' })
             break
           }

@@ -27,8 +27,10 @@ export default function App() {
   const t = useTranslations('App')
   const [session, setSession] = useState<Session | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [files, setFiles] = useState<File[]>([])
-  const [activeFileIdx, setActiveFileIdx] = useState(0)
+  // Documents are identified by idbKey, never by position: `session.documents` owns
+  // the list and its order, while this map holds the File for each key that is open.
+  const [filesByKey, setFilesByKey] = useState<Record<string, File>>({})
+  const [activeKey, setActiveKey] = useState('')
   const [zoom, setZoom] = useState(100)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedFromPdf, setSelectedFromPdf] = useState(false)
@@ -52,6 +54,9 @@ export default function App() {
   const exportRef = useRef<((apply: boolean) => void) | null>(null)
   const chatTriggerRef = useRef<((msg: string) => void) | null>(null)
   const pendingChatTrigger = useRef<string | null>(null)
+  // Mirrors the resolved active key so callbacks read it at call time rather than
+  // capturing whatever it happened to be when they were created.
+  const activeKeyRef = useRef('')
 
   // Resizable panels
   const [leftWidth, setLeftWidth] = useState(() => {
@@ -154,12 +159,11 @@ export default function App() {
 
   const addRedaction = useCallback((r: Redaction) => {
     setSession(prev => {
-      const docKey = prev!.documents[activeFileIdx]?.idbKey ?? ''
-      const next = { ...prev!, redactions: [...prev!.redactions, { ...r, documentKey: docKey }] }
+      const next = { ...prev!, redactions: [...prev!.redactions, { ...r, documentKey: activeKeyRef.current }] }
       saveSession(next)
       return next
     })
-  }, [activeFileIdx])
+  }, [])
 
   const updateRedaction = useCallback((id: string, updates: Partial<Redaction>) => {
     setSession(prev => {
@@ -214,14 +218,18 @@ export default function App() {
         return next
       })
     })
-    const docKey = session?.documents[activeFileIdx]?.idbKey ?? ''
+    const docKey = activeKeyRef.current
+    // A key the model made up would bucket suggestions under a document that is not
+    // open, where nothing would ever read them, so fall back to the active document.
+    const known = new Set(sessionRef.current?.documents.map(d => d.idbKey) ?? [])
+    const resolve = (k?: string) => (k && known.has(k) ? k : docKey)
     const byDoc: Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }> = {}
     const ensure = (k: string) => { if (!byDoc[k]) byDoc[k] = { suggestions: [], textRanges: [], pageRanges: [] } }
-    for (const s of suggestions) { const k = s.documentKey || docKey; ensure(k); byDoc[k].suggestions.push(s) }
-    for (const r of textRanges) { const k = r.documentKey || docKey; ensure(k); byDoc[k].textRanges.push(r) }
-    for (const r of pageRanges) { const k = r.documentKey || docKey; ensure(k); byDoc[k].pageRanges.push(r) }
+    for (const s of suggestions) { const k = resolve(s.documentKey); ensure(k); byDoc[k].suggestions.push(s) }
+    for (const r of textRanges) { const k = resolve(r.documentKey); ensure(k); byDoc[k].textRanges.push(r) }
+    for (const r of pageRanges) { const k = resolve(r.documentKey); ensure(k); byDoc[k].pageRanges.push(r) }
     setPendingByDoc(prev => ({ ...prev, ...byDoc }))
-  }, [session?.documents, activeFileIdx])
+  }, [])
 
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {
     const arr = Array.from(fileList)
@@ -248,9 +256,6 @@ export default function App() {
     }
 
     if (!pdfs.length) return
-    const newFiles = [...files, ...pdfs]
-    setFiles(newFiles)
-    setActiveFileIdx(newFiles.length - 1)
     setSelectedId(null)
 
     let lastKey = ''
@@ -258,32 +263,44 @@ export default function App() {
       const key = generateUUID()
       lastKey = key
       await saveFile(key, pdf.name, await pdf.arrayBuffer())
-      // Appending via the updater keeps each iteration based on the current
-      // documents, rather than on a snapshot that predates the await and would
-      // both drop earlier files of this batch and revive closed ones.
+      // The File and its document entry are registered under the same key in the
+      // same step, so the two can never describe different sets of documents.
+      setFilesByKey(prev => ({ ...prev, [key]: pdf }))
       setSession(prev => {
         const next = { ...prev!, documents: [...prev!.documents, { name: pdf.name, idbKey: key }] }
         saveSession(next)
         return next
       })
     }
+    if (lastKey) setActiveKey(lastKey)
 
     const names = pdfs.map(f => f.name).join(', ')
     pendingChatTrigger.current = `[System: New documents uploaded: ${names}. Access already granted. Read the documents and suggest redactions.]`
     pendingChatTriggerDocKey.current = lastKey
-  }, [files, t])
+  }, [t])
 
   useEffect(() => {
-    if (!session?.documents.length || files.length) return
+    if (!session?.documents.length || Object.keys(filesByKey).length) return
     ;(async () => {
-      const restored: File[] = []
+      const loaded: Record<string, File> = {}
       for (const doc of session.documents) {
         const buf = await loadFile(doc.idbKey)
-        if (buf) restored.push(new File([buf], doc.name, { type: 'application/pdf' }))
+        if (buf) loaded[doc.idbKey] = new File([buf], doc.name, { type: 'application/pdf' })
       }
-      if (restored.length) { setFiles(restored); setActiveFileIdx(0) }
+      // Drop entries whose stored file has gone, so the list only ever advertises
+      // documents that can actually be opened.
+      if (Object.keys(loaded).length !== session.documents.length) {
+        setSession(prev => {
+          const updated = { ...prev!, documents: prev!.documents.filter(d => loaded[d.idbKey]) }
+          saveSession(updated)
+          return updated
+        })
+      }
+      setFilesByKey(loaded)
+      const first = session.documents.find(d => loaded[d.idbKey])
+      if (first) setActiveKey(first.idbKey)
     })()
-  }, [session?.documents])
+  }, [session?.documents, filesByKey])
 
   const handleDrop = useCallback((e: React.DragEvent | DragEvent) => {
     e.preventDefault(); setIsDragging(false); dragCountRef.current = 0
@@ -340,12 +357,12 @@ export default function App() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    const orig = files[activeFileIdx]?.name ?? 'document.pdf'
+    const orig = sessionRef.current?.documents.find(d => d.idbKey === activeKeyRef.current)?.name ?? 'document.pdf'
     const base = orig.replace(/\.pdf$/i, '')
     a.download = `${base}.${_applied ? 'redacted' : 'preview'}.pdf`
     a.click()
     URL.revokeObjectURL(url)
-  }, [files, activeFileIdx])
+  }, [])
 
   const handleNavigatePage = useCallback((idx: number) => {
     const el = document.querySelectorAll('[data-page-index]')[idx] as HTMLElement
@@ -358,28 +375,36 @@ export default function App() {
     </div>
   )
 
-  const activeFile = files[activeFileIdx]
-  const activeDocKey = session.documents[activeFileIdx]?.idbKey ?? ''
+  // Only documents whose File is loaded can be shown, and `session.documents` fixes
+  // their order. The active key falls back to the first open document so a stale key
+  // can never leave the viewer pointing at nothing.
+  const openDocuments = session.documents.filter(d => filesByKey[d.idbKey])
+  const activeDocKey = openDocuments.some(d => d.idbKey === activeKey)
+    ? activeKey
+    : (openDocuments[0]?.idbKey ?? '')
+  activeKeyRef.current = activeDocKey
+  const activeDoc = openDocuments.find(d => d.idbKey === activeDocKey)
+  const activeFile = activeDocKey ? filesByKey[activeDocKey] : undefined
   const activeRedactions = session.redactions.filter(r => r.documentKey === activeDocKey)
 
-  const removeFile = (i: number) => {
-    const next = files.filter((_, fi) => fi !== i)
-    setFiles(next)
-    setActiveFileIdx(Math.min(activeFileIdx, Math.max(0, next.length - 1)))
+  const closeDocument = (key: string) => {
+    setFilesByKey(prev => { const next = { ...prev }; delete next[key]; return next })
     setSelectedId(null)
-    const doc = session.documents[i]
-    if (doc) {
-      deleteFile(doc.idbKey)
-      setSession(prev => {
-        const updated = {
-          ...prev!,
-          documents: prev!.documents.filter((_, di) => di !== i),
-          redactions: prev!.redactions.filter(r => r.documentKey !== doc.idbKey),
-        }
-        saveSession(updated)
-        return updated
-      })
-    }
+    if (key === activeDocKey) setActiveKey(openDocuments.find(d => d.idbKey !== key)?.idbKey ?? '')
+    deleteFile(key)
+    setSession(prev => {
+      const updated = {
+        ...prev!,
+        documents: prev!.documents.filter(d => d.idbKey !== key),
+        redactions: prev!.redactions.filter(r => r.documentKey !== key),
+      }
+      saveSession(updated)
+      return updated
+    })
+    // Drop the closed document's derived state too, so its text is no longer sent to
+    // the model and no stale suggestions can be applied to a document that reuses it.
+    setPendingByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
+    setDocumentPages(prev => prev.filter(p => p.documentKey !== key))
   }
 
   return (
@@ -520,12 +545,12 @@ export default function App() {
             <div className='flex flex-col flex-1 min-h-0'>
               {/* Tabs strip */}
               <div className='shrink-0 flex items-center gap-0.5 px-2 pt-1.5 pb-1 flex-wrap min-w-0 bg-muted'>
-                {files.map((f, i) => (
-                  <button key={i} onClick={() => { setActiveFileIdx(i); setSelectedId(null) }}
-                    className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${i === activeFileIdx ? 'bg-background shadow-sm border text-foreground' : 'bg-muted-foreground/10 border border-transparent text-muted-foreground hover:text-foreground hover:bg-muted-foreground/20'}`}>
+                {openDocuments.map(doc => (
+                  <button key={doc.idbKey} onClick={() => { setActiveKey(doc.idbKey); setSelectedId(null) }}
+                    className={`flex items-center gap-1.5 px-2.5 h-6 rounded text-xs whitespace-nowrap transition-colors shrink-0 ${doc.idbKey === activeDocKey ? 'bg-background shadow-sm border text-foreground' : 'bg-muted-foreground/10 border border-transparent text-muted-foreground hover:text-foreground hover:bg-muted-foreground/20'}`}>
                     <FileText className='h-3 w-3 shrink-0' />
-                    <span className='max-w-[130px] truncate'>{f.name}</span>
-                    <X className='h-2.5 w-2.5 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive' onClick={e => { e.stopPropagation(); removeFile(i) }} />
+                    <span className='max-w-[130px] truncate'>{doc.name}</span>
+                    <X className='h-2.5 w-2.5 shrink-0 opacity-50 hover:opacity-100 hover:text-destructive' onClick={e => { e.stopPropagation(); closeDocument(doc.idbKey) }} />
                   </button>
                 ))}
                 <button onClick={() => fileInputRef.current?.click()}
@@ -534,7 +559,7 @@ export default function App() {
                 </button>
               </div>
             <PdfViewer file={activeFile} redactions={activeRedactions} selectedId={selectedId} zoom={zoom}
-              documentKey={activeDocKey} documentName={session.documents[activeFileIdx]?.name}
+              documentKey={activeDocKey} documentName={activeDoc?.name}
               onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
               onSelectionChange={id => { setSelectedId(id); setSelectedFromPdf(id !== null) }} onZoomChange={setZoom} onExport={handleExport}
               overlayEnabled={selectedFromPdf}
@@ -601,7 +626,7 @@ export default function App() {
               triggerRef={chatTriggerRef}
               onDeferredTrigger={msg => {
                 pendingChatTrigger.current = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
-                pendingChatTriggerDocKey.current = session.documents[activeFileIdx]?.idbKey ?? null
+                pendingChatTriggerDocKey.current = activeDocKey || null
               }}
               foiJurisdiction={session.foiJurisdiction}
               documentPages={documentPages}
