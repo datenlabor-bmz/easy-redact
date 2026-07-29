@@ -39,6 +39,15 @@ export function ChatPanel({
 
   const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)
+  // `onMessagesChange` is a fresh inline function on every parent render (it
+  // closes over `doc.idbKey`). Depending on it directly in the effect below
+  // would re-fire on every App render, not just when `messages` actually
+  // changes — and since the parent's setState always builds a new object
+  // (there's no single shared value to bail out on via Object.is anymore),
+  // that turns into an infinite render loop. Reading it through a ref keeps
+  // the effect keyed on the one thing that should trigger it: new messages.
+  const onMessagesChangeRef = useRef(onMessagesChange)
+  onMessagesChangeRef.current = onMessagesChange
 
   useEffect(() => { if (triggerRef) triggerRef.current = sendMessage }, [triggerRef, sendMessage])
   useEffect(() => { if (silentContextRef) silentContextRef.current = addSilentContext }, [silentContextRef, addSilentContext])
@@ -56,8 +65,8 @@ export function ChatPanel({
   }, [initialMessages, setMessages, documentName, onDeferredTrigger])
 
   useEffect(() => {
-    if (messages.length > 0) onMessagesChange?.(messages)
-  }, [messages, onMessagesChange])
+    if (messages.length > 0) onMessagesChangeRef.current?.(messages)
+  }, [messages])
 
   const handleOptionSelect = useCallback((msgId: string, optId: string, label: string) => {
     setMessages(messages.map((m: Msg) =>
