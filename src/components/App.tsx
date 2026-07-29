@@ -42,6 +42,12 @@ export default function App() {
   const [selectedFromPdf, setSelectedFromPdf] = useState(false)
   const [pages, setPages] = useState<PageData[]>([])
   const [documentPages, setDocumentPages] = useState<DocumentPage[]>([])
+  // True page count per document, known as soon as the PDF is opened — tracked
+  // separately per document (rather than derived from `pages`/`documentPages`,
+  // which describe whichever document is currently mid-extraction) so that
+  // checking "has this document finished extracting" never accidentally
+  // compares against a different document's page count.
+  const [pageCountByDoc, setPageCountByDoc] = useState<Record<string, number>>({})
   // Per-document pending suggestions: docKey → {suggestions, textRanges, pageRanges}
   const [pendingByDoc, setPendingByDoc] = useState<Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }>>({})
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
@@ -383,19 +389,20 @@ export default function App() {
   }, [])
 
   // Fire the active document's pending chat trigger once all of its pages have
-  // been extracted. `pages` always reflects whichever document is currently
-  // active (there is only ever one mounted PdfViewer), so this only ever fires
-  // for that document — which is also the only one a pending trigger can exist
-  // for at this point (a fresh document's own ChatPanel only mounts, and so only
-  // queues its trigger, once it becomes active).
+  // been extracted. Compared against `pageCountByDoc[activeKey]` — that document's
+  // own known total — rather than the shared `pages` state, which can still be
+  // holding a previously-active document's (possibly smaller) page count while
+  // this one is mid-extraction; comparing against the wrong total let the trigger
+  // fire after only a page or two had actually been extracted.
   useEffect(() => {
     const msg = pendingChatTriggers.current[activeKey]
-    if (!msg || !pages.length) return
+    const total = pageCountByDoc[activeKey]
+    if (!msg || total === undefined) return
     const docPages = documentPages.filter(p => p.documentKey === activeKey)
-    if (docPages.length < pages.length) return
+    if (docPages.length < total) return
     delete pendingChatTriggers.current[activeKey]
     getChatRefs(activeKey).trigger.current?.(msg)
-  }, [documentPages, pages, activeKey])
+  }, [documentPages, pageCountByDoc, activeKey])
 
   const handleExport = useCallback((blob: Blob, _applied: boolean) => {
     const url = URL.createObjectURL(blob)
@@ -449,6 +456,7 @@ export default function App() {
     // the model and no stale suggestions can be applied to a document that reuses it.
     setPendingByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
     setDocumentPages(prev => prev.filter(p => p.documentKey !== key))
+    setPageCountByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
     // The document's own chat simply ceases to exist along with it — no need to
     // notify it, and other documents' chats are fully isolated so they're unaffected.
     setChatsByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
@@ -614,7 +622,9 @@ export default function App() {
               onRedactionAdd={addRedaction} onRedactionRemove={() => {}} onRedactionUpdate={updateRedaction}
               onSelectionChange={id => { setSelectedId(id); setSelectedFromPdf(id !== null) }} onZoomChange={setZoom} onExport={handleExport}
               overlayEnabled={selectedFromPdf}
-              onPageTextExtracted={handleTextExtracted} onPagesLoaded={setPages}
+              onPageTextExtracted={handleTextExtracted}
+              onPageCountKnown={(count, key) => setPageCountByDoc(prev => ({ ...prev, [key]: count }))}
+              onPagesLoaded={setPages}
               pendingSuggestions={pendingByDoc[activeDocKey]?.suggestions}
               pendingTextRanges={pendingByDoc[activeDocKey]?.textRanges}
               pendingPageRanges={pendingByDoc[activeDocKey]?.pageRanges}

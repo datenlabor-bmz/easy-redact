@@ -29,6 +29,7 @@ export interface PdfViewerProps {
   documentKey?: string
   documentName?: string
   onPageTextExtracted?: (text: string, pageIndex: number, documentKey: string) => void
+  onPageCountKnown?: (count: number, documentKey: string) => void
   onPagesLoaded?: (pages: PageData[]) => void
   pendingSuggestions?: RedactionSuggestion[]
   pendingTextRanges?: TextRangeSuggestion[]
@@ -48,7 +49,7 @@ export function PdfViewer({
   file, redactions, selectedId, zoom, onRedactionAdd, onRedactionRemove,
   onRedactionUpdate, onSelectionChange, onZoomChange, onExport,
   documentKey, documentName,
-  onPageTextExtracted, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
+  onPageTextExtracted, onPageCountKnown, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
   onSuggestionsApplied, exportRef,
   onAccept, onIgnore, foiRules, redactionMode,
   searchQuery, onSearchInfoChange, searchNavigateRef, selectMode = 'text', overlayEnabled = false,
@@ -145,6 +146,12 @@ export function PdfViewer({
       })
 
       const total = await countPages()
+      // Fired as soon as the true page count is known — well before extraction of
+      // all of them finishes — so callers waiting for "every page done" have a
+      // reliable target to compare against per document, instead of having to
+      // infer completeness from another piece of state that may currently belong
+      // to a different, previously-active document.
+      onPageCountKnown?.(total, documentKey ?? '')
       const stack: PageData[] = []
       for (let i = 0; i < total; i++) {
         const pngData = await renderPage(i)
