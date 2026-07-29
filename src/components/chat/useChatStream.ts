@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AiMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot, DocumentMeta, DocumentPage } from '@/types'
+import type { ChatMessage, ToolCall, SSEEvent, AskUserQuestion, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AiMode, RedactionMode, ApiChatMessage, Redaction, RedactionSnapshot, DocumentPage } from '@/types'
 
 export type { ChatMessage, ToolCall }
 
@@ -9,8 +9,9 @@ interface UseChatStreamOptions {
   aiMode: AiMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
+  documentKey: string
+  documentName: string
   documentPages?: DocumentPage[]
-  documents?: DocumentMeta[]
   redactions?: Redaction[]
   locale?: string
   onSuggestionsReceived?: (suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => void
@@ -82,12 +83,15 @@ export function useChatStream(opts: UseChatStreamOptions) {
       }
     }
 
-    const { redactionMode, foiJurisdiction, documentPages, documents, redactions, locale } = optsRef.current
+    const { redactionMode, foiJurisdiction, documentKey, documentName, documentPages, redactions, locale } = optsRef.current
     const effectiveAiMode = optsRef.current.aiMode
 
-    const docNameMap = Object.fromEntries((documents ?? []).map(d => [d.idbKey, d.name]))
+    // This conversation is scoped to one document — only its own pages and
+    // redactions are ever sent, so there is nothing else for the model to see or
+    // accidentally act on, and no cross-document bookkeeping for it to get wrong.
+    const scopedDocumentPages = documentPages?.filter(p => p.documentKey === documentKey)
     const currentRedactions: RedactionSnapshot[] | undefined = redactions?.length
-      ? redactions.filter(r => r.status !== 'ignored').map(r => ({
+      ? redactions.filter(r => r.status !== 'ignored' && r.documentKey === documentKey).map(r => ({
           id: r.id,
           status: r.status,
           pageIndex: r.pageIndex,
@@ -95,7 +99,7 @@ export function useChatStream(opts: UseChatStreamOptions) {
           person: r.person,
           personGroup: r.personGroup,
           documentKey: r.documentKey,
-          documentName: docNameMap[r.documentKey],
+          documentName,
         }))
       : undefined
 
@@ -111,9 +115,11 @@ export function useChatStream(opts: UseChatStreamOptions) {
           messages: apiMessages,
           model: effectiveAiMode === 'local' ? 'local' : 'cloud',
           aiMode: effectiveAiMode, redactionMode, foiJurisdiction,
-          documentPages,
+          documentPages: scopedDocumentPages,
           currentRedactions,
           locale,
+          primaryDocumentKey: documentKey,
+          primaryDocumentName: documentName,
         }),
         signal: abortRef.current.signal,
       })

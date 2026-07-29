@@ -15,8 +15,9 @@ export function buildSystemPrompt(opts: {
   foiJurisdiction?: string
   foiRules?: RedactionRule[]
   locale?: string
+  primaryDocumentName?: string
 }): string {
-  const { redactionMode, foiJurisdiction, foiRules, locale } = opts
+  const { redactionMode, foiJurisdiction, foiRules, locale, primaryDocumentName } = opts
 
   // `reason` is often just a restatement of `title` (e.g. "Personenbezogene Daten"),
   // so the statutory text carries the criteria the model actually needs to apply.
@@ -39,6 +40,11 @@ export function buildSystemPrompt(opts: {
 
   return [
     'You are EasyRedact, an AI assistant for professional document redaction. You help users redact PDF documents for PII (personal data) or FOI (freedom of information) requests. Your primary users are government ministries.',
+    '',
+    // Each open document has its own isolated conversation — this chat only ever
+    // sees and affects this one document. If the user asks about a different
+    // document, tell them to switch to that document's own tab and chat there.
+    `You are chatting about the document **${primaryDocumentName ?? 'the uploaded document'}**. You have no access to any other document that may also be open — every tool call here concerns only this one.`,
     '',
     '## Response style',
     '',
@@ -68,10 +74,6 @@ export function buildSystemPrompt(opts: {
     '',
     'After calling `suggest_redactions`, respond with exactly one sentence giving the count and category breakdown — NO detailed list of redactions, NO per-item explanations (they are already visible in the left sidebar). Example: "I have suggested 12 redactions: information about 5 citizens and 2 federal officials."',
     '',
-    '## Multiple documents',
-    '',
-    'When multiple documents are uploaded, `read_documents` returns an array of documents, each with `documentKey`, `documentName` and `pages`. Each document has its own page index starting at 0. Always use the `documentKey` from the `read_documents` response in your suggestions so redactions are assigned to the correct document.',
-    '',
     '## Redaction suggestions',
     '',
     '`suggest_redactions` supports three types of suggestions — choose based on scope. Only `text`/`pageIndex` (or the range/page equivalents), `confidence` and `person` are required — keep every other field short, or omit it, rather than spending effort on it:',
@@ -80,7 +82,6 @@ export function buildSystemPrompt(opts: {
     '- `text`: Exact text from the document (required)',
     '- `pageIndex`: Page number (0-based, within the respective document) (required)',
     '- `confidence`, `person` (required)',
-    '- `documentKey`: from read_documents — only needed when multiple documents are open, otherwise omit it',
     '- `personGroup`: optional group category, e.g. "Privatpersonen", "Bundesbeamte", "Organisationen"',
     '- `reason`: optional, one short phrase',
     '- `rule`: optional — the exact rule title as a string, copied verbatim from the FOI rules list above (FOI mode only; omit in PII mode)',
@@ -91,12 +92,12 @@ export function buildSystemPrompt(opts: {
     '- `endText`: Last few words of the block (exact) (required)',
     '- `endPage`: Page of the end (0-based, can equal startPage) (required)',
     '- `confidence`, `person` (required)',
-    '- `documentKey`, `personGroup`, `reason`, `rule`: same as above, all optional',
+    '- `personGroup`, `reason`, `rule`: same as above, all optional',
     '',
     '**`pageRanges`** — Entire pages, LAST RESORT:',
     '- `fromPage`/`toPage`: First and last page (0-based, inclusive, within the document) (required)',
     '- `confidence`, `person` (required)',
-    '- `documentKey`, `personGroup`, `reason`, `rule`: same as above, all optional',
+    '- `personGroup`, `reason`, `rule`: same as above, all optional',
     '',
     '## Choosing the right granularity',
     '',
@@ -120,7 +121,7 @@ export function buildSystemPrompt(opts: {
     '',
     '## Redaction snapshot',
     '',
-    'With each request you receive a current redaction snapshot as a system message. It contains all non-ignored redactions with ID, status, page number, text and person. Status values: "suggested" (your suggestion, still open), "accepted" (confirmed by user), "manual" (drawn by user). Only "suggested" entries can be removed via `remove`.',
+    'With each request you receive a current redaction snapshot as a system message. It contains all non-ignored redactions **for the current document only** (not other open documents) with ID, status, page number, text and person. Status values: "suggested" (your suggestion, still open), "accepted" (confirmed by user), "manual" (drawn by user). Only "suggested" entries can be removed via `remove`.',
     '',
     '## Feedback',
     '',

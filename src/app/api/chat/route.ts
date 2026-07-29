@@ -30,7 +30,10 @@ async function* streamCompletion(client: any, model: string, messages: ApiChatMe
 
 export async function POST(req: Request) {
   const body: ChatRequest = await req.json()
-  const { messages, model, aiMode, redactionMode, foiJurisdiction, documentPages, currentRedactions, locale } = body
+  const {
+    messages, model, aiMode, redactionMode, foiJurisdiction, documentPages, currentRedactions, locale,
+    primaryDocumentName,
+  } = body
 
   console.log('[chat] POST', { aiMode, redactionMode, messageCount: messages.length, hasDocumentPages: !!documentPages?.length })
 
@@ -39,7 +42,7 @@ export async function POST(req: Request) {
     ? await getRulesForJurisdiction(foiJurisdiction).catch(() => undefined)
     : undefined
 
-  const systemPrompt = buildSystemPrompt({ redactionMode, foiJurisdiction, foiRules, locale })
+  const systemPrompt = buildSystemPrompt({ redactionMode, foiJurisdiction, foiRules, locale, primaryDocumentName })
   const isLocal = aiMode === 'local'
   const { client, model: modelName } = getClient(isLocal ? 'local' : 'cloud')
   const activeTools = [...tools, readDocumentsTool]

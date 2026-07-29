@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from '@/lib/navigation'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
-import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect, Loader2 } from 'lucide-react'
+import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect, Loader2, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -15,7 +15,7 @@ import { NlpPanel } from '@/components/NlpPanel'
 import { FoiSelector } from '@/components/SettingsPopover'
 import { ModeSelector } from '@/components/ModeSelector'
 import { localAi } from '@/lib/config'
-import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteFile, purgeExpiredData } from '@/lib/storage'
+import { saveFile, loadFile, saveSession, loadSession, saveChat, loadChat, deleteChat, loadLegacyChat, deleteLegacyChat, deleteFile, purgeExpiredData } from '@/lib/storage'
 import { generateUUID } from '@/components/pdf/geometry'
 import type { Redaction, Session, PageData, DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage, RedactionRule } from '@/types'
 import { getRulesForJurisdiction } from '@/lib/redaction-rules'
@@ -25,8 +25,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 export default function App() {
   const t = useTranslations('App')
+  const tChat = useTranslations('ChatPanel')
   const [session, setSession] = useState<Session | null>(null)
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  // One isolated chat per document, keyed by idbKey.
+  const [chatsByDoc, setChatsByDoc] = useState<Record<string, ChatMessage[]>>({})
+  // Which documents have ever been the active tab this session — a chat only
+  // mounts (and its greet/read/suggest kickoff only fires) once its document has
+  // actually been viewed, since that's also when its pages get extracted.
+  const [visitedDocKeys, setVisitedDocKeys] = useState<Record<string, boolean>>({})
   // Documents are identified by idbKey, never by position: `session.documents` owns
   // the list and its order, while this map holds the File for each key that is open.
   const [filesByKey, setFilesByKey] = useState<Record<string, File>>({})
@@ -38,7 +44,6 @@ export default function App() {
   const [documentPages, setDocumentPages] = useState<DocumentPage[]>([])
   // Per-document pending suggestions: docKey → {suggestions, textRanges, pageRanges}
   const [pendingByDoc, setPendingByDoc] = useState<Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }>>({})
-  const pendingChatTriggerDocKey = useRef<string | null>(null)
   const [foiRules, setFoiRules] = useState<RedactionRule[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,9 +57,21 @@ export default function App() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const exportRef = useRef<((apply: boolean) => void) | null>(null)
-  const chatTriggerRef = useRef<((msg: string) => void) | null>(null)
-  const silentContextRef = useRef<((msg: string) => void) | null>(null)
-  const pendingChatTrigger = useRef<string | null>(null)
+  // Per-document trigger/silent-context handles, registered by each ChatPanel
+  // instance on mount so App can address a specific document's own conversation.
+  const chatRefsByDoc = useRef<Record<string, {
+    trigger: React.MutableRefObject<((msg: string) => void) | null>
+    silentContext: React.MutableRefObject<((msg: string) => void) | null>
+  }>>({})
+  const getChatRefs = (key: string) => {
+    if (!chatRefsByDoc.current[key]) {
+      chatRefsByDoc.current[key] = { trigger: { current: null }, silentContext: { current: null } }
+    }
+    return chatRefsByDoc.current[key]
+  }
+  // Deferred "greet + read + suggest" messages, keyed by the document they belong
+  // to, fired once that document's own pages have finished extracting.
+  const pendingChatTriggers = useRef<Record<string, string>>({})
   // Mirrors the resolved active key so callbacks read it at call time rather than
   // capturing whatever it happened to be when they were created.
   const activeKeyRef = useRef('')
@@ -91,9 +108,16 @@ export default function App() {
     // Enforce the 6-month retention policy before restoring persisted state
     purgeExpiredData().catch(() => {}).then(() => {
       loadSession().then(setSession)
-      loadChat().then(setChatMessages)
     })
   }, [])
+
+  // Track which document is active so its chat gets marked "visited" (mounted)
+  // the moment it's viewed — matches the fact that page extraction (and so a
+  // usable read_documents) also only starts once a document becomes active.
+  useEffect(() => {
+    if (!activeKey) return
+    setVisitedDocKeys(prev => (prev[activeKey] ? prev : { ...prev, [activeKey]: true }))
+  }, [activeKey])
 
   // Intercept Ctrl+scroll → drive PDF zoom; Ctrl+F → focus search
   useEffect(() => {
@@ -132,6 +156,13 @@ export default function App() {
   // Whether both old and new mode use the ChatPanel (preservable chat)
   const usesChatPanel = (mode: 'cloud' | 'local') => mode === 'cloud' || localAi === 'llm'
 
+  // Mode is a session-wide setting, so switching to/from an incompatible panel
+  // (chat <-> NlpPanel) clears every open document's chat, not just one.
+  const clearAllChats = (docKeys: string[]) => {
+    docKeys.forEach(k => { deleteChat(k) })
+    setChatsByDoc({})
+  }
+
   const handleModeChange = useCallback((mode: 'cloud' | 'local') => {
     if (mode === session?.aiMode) return
     const hasSuggested = session?.redactions.some(r => r.status === 'suggested')
@@ -139,8 +170,7 @@ export default function App() {
     updateSession({ aiMode: mode })
     // Only clear chat when switching between incompatible panels
     if (!usesChatPanel(mode) || !usesChatPanel(session!.aiMode)) {
-      setChatMessages([])
-      saveChat([])
+      clearAllChats(session!.documents.map(d => d.idbKey))
     }
   }, [session, updateSession])
 
@@ -152,8 +182,7 @@ export default function App() {
       return next
     })
     if (!usesChatPanel(pendingAiModeSwitch) || !usesChatPanel(session!.aiMode)) {
-      setChatMessages([])
-      saveChat([])
+      clearAllChats(session!.documents.map(d => d.idbKey))
     }
     setPendingAiModeSwitch(null)
   }, [pendingAiModeSwitch, session])
@@ -210,7 +239,10 @@ export default function App() {
     })
   }, [])
 
-  const handleSuggestionsReceived = useCallback((suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => {
+  // `docKey` is the document the calling chat is bound to — every suggestion from
+  // a given chat always belongs to that one document, since chats no longer have
+  // any way to see or target a different one.
+  const handleSuggestionsReceived = useCallback((docKey: string, suggestions: RedactionSuggestion[], textRanges: TextRangeSuggestion[], pageRanges: PageRangeSuggestion[], remove: string[]) => {
     remove.forEach(id => {
       setSession(prev => {
         if (!prev || prev.redactions.find(r => r.id === id)?.status !== 'suggested') return prev
@@ -219,17 +251,9 @@ export default function App() {
         return next
       })
     })
-    const docKey = activeKeyRef.current
-    // A key the model made up would bucket suggestions under a document that is not
-    // open, where nothing would ever read them, so fall back to the active document.
-    const known = new Set(sessionRef.current?.documents.map(d => d.idbKey) ?? [])
-    const resolve = (k?: string) => (k && known.has(k) ? k : docKey)
-    const byDoc: Record<string, { suggestions: RedactionSuggestion[]; textRanges: TextRangeSuggestion[]; pageRanges: PageRangeSuggestion[] }> = {}
-    const ensure = (k: string) => { if (!byDoc[k]) byDoc[k] = { suggestions: [], textRanges: [], pageRanges: [] } }
-    for (const s of suggestions) { const k = resolve(s.documentKey); ensure(k); byDoc[k].suggestions.push(s) }
-    for (const r of textRanges) { const k = resolve(r.documentKey); ensure(k); byDoc[k].textRanges.push(r) }
-    for (const r of pageRanges) { const k = resolve(r.documentKey); ensure(k); byDoc[k].pageRanges.push(r) }
-    setPendingByDoc(prev => ({ ...prev, ...byDoc }))
+    if (suggestions.length || textRanges.length || pageRanges.length) {
+      setPendingByDoc(prev => ({ ...prev, [docKey]: { suggestions, textRanges, pageRanges } }))
+    }
   }, [])
 
   const handleFiles = useCallback(async (fileList: FileList | File[]) => {
@@ -273,11 +297,11 @@ export default function App() {
         return next
       })
     }
+    // Only the most recently uploaded document becomes active — the others wait
+    // for the user to actually click their tab before their own chat mounts and
+    // kicks off its own greet/read/suggest (see the ChatPanel mount effect),
+    // exactly like any other not-yet-viewed document.
     if (lastKey) setActiveKey(lastKey)
-
-    const names = pdfs.map(f => f.name).join(', ')
-    pendingChatTrigger.current = `[System: New documents uploaded: ${names}. Access already granted. Read the documents and suggest redactions.]`
-    pendingChatTriggerDocKey.current = lastKey
   }, [t])
 
   useEffect(() => {
@@ -298,6 +322,23 @@ export default function App() {
         })
       }
       setFilesByKey(loaded)
+
+      const openKeys = session.documents.filter(d => loaded[d.idbKey]).map(d => d.idbKey)
+      const chats: Record<string, ChatMessage[]> = {}
+      for (const key of openKeys) chats[key] = await loadChat(key)
+
+      // One-time migration: an older install may have a single shared conversation
+      // stored under the pre-isolation id. Seed every open document with a copy of
+      // it rather than silently discarding the user's existing history.
+      if (!Object.values(chats).some(m => m.length > 0)) {
+        const legacy = await loadLegacyChat()
+        if (legacy?.length) {
+          for (const key of openKeys) { chats[key] = legacy; await saveChat(key, legacy) }
+          await deleteLegacyChat()
+        }
+      }
+      setChatsByDoc(chats)
+
       const first = session.documents.find(d => loaded[d.idbKey])
       if (first) setActiveKey(first.idbKey)
     })()
@@ -341,18 +382,20 @@ export default function App() {
     })
   }, [])
 
-  // Fire pending chat trigger once all pages of the newly uploaded doc have been extracted
+  // Fire the active document's pending chat trigger once all of its pages have
+  // been extracted. `pages` always reflects whichever document is currently
+  // active (there is only ever one mounted PdfViewer), so this only ever fires
+  // for that document — which is also the only one a pending trigger can exist
+  // for at this point (a fresh document's own ChatPanel only mounts, and so only
+  // queues its trigger, once it becomes active).
   useEffect(() => {
-    if (!pendingChatTrigger.current || !pendingChatTriggerDocKey.current) return
-    if (!pages.length) return
-    const targetKey = pendingChatTriggerDocKey.current
-    const docPages = documentPages.filter(p => p.documentKey === targetKey)
+    const msg = pendingChatTriggers.current[activeKey]
+    if (!msg || !pages.length) return
+    const docPages = documentPages.filter(p => p.documentKey === activeKey)
     if (docPages.length < pages.length) return
-    const msg = pendingChatTrigger.current
-    pendingChatTrigger.current = null
-    pendingChatTriggerDocKey.current = null
-    chatTriggerRef.current?.(msg)
-  }, [documentPages, pages])
+    delete pendingChatTriggers.current[activeKey]
+    getChatRefs(activeKey).trigger.current?.(msg)
+  }, [documentPages, pages, activeKey])
 
   const handleExport = useCallback((blob: Blob, _applied: boolean) => {
     const url = URL.createObjectURL(blob)
@@ -389,8 +432,6 @@ export default function App() {
   const activeRedactions = session.redactions.filter(r => r.documentKey === activeDocKey)
 
   const closeDocument = (key: string) => {
-    const closedDoc = session.documents.find(d => d.idbKey === key)
-    const remainingNames = session.documents.filter(d => d.idbKey !== key).map(d => d.name)
     setFilesByKey(prev => { const next = { ...prev }; delete next[key]; return next })
     setSelectedId(null)
     if (key === activeDocKey) setActiveKey(openDocuments.find(d => d.idbKey !== key)?.idbKey ?? '')
@@ -408,12 +449,13 @@ export default function App() {
     // the model and no stale suggestions can be applied to a document that reuses it.
     setPendingByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
     setDocumentPages(prev => prev.filter(p => p.documentKey !== key))
-    // The chat history still contains this document's full text from an earlier
-    // read_documents result. Tell the model explicitly rather than relying on it to
-    // notice — otherwise it can keep referencing content that is no longer valid.
-    if (chatMessages.length && closedDoc) {
-      silentContextRef.current?.(`[System: Document "${closedDoc.name}" was closed and is no longer available — disregard anything you previously read from it. Currently open documents: ${remainingNames.join(', ') || 'none'}.]`)
-    }
+    // The document's own chat simply ceases to exist along with it — no need to
+    // notify it, and other documents' chats are fully isolated so they're unaffected.
+    setChatsByDoc(prev => { const next = { ...prev }; delete next[key]; return next })
+    setVisitedDocKeys(prev => { const next = { ...prev }; delete next[key]; return next })
+    delete chatRefsByDoc.current[key]
+    delete pendingChatTriggers.current[key]
+    deleteChat(key)
   }
 
   return (
@@ -624,27 +666,43 @@ export default function App() {
           {session.aiMode === 'local' && (localAi === 'ner' || localAi === 'ner-browser') ? (
             <NlpPanel documentPages={documentPages}
               redactions={session.redactions}
-              onSuggestionsReceived={handleSuggestionsReceived}
+              onSuggestionsReceived={(s, tr, pr, rm) => handleSuggestionsReceived(activeDocKey, s, tr, pr, rm)}
               onRemoveByReason={handleRemoveByReason}
               onRestoreByReason={handleRestoreByReason}
               modeSelector={<ModeSelector aiMode={session.aiMode} onAiModeChange={handleModeChange} />} />
+          ) : openDocuments.length === 0 ? (
+            <div className='flex flex-col h-full bg-card'>
+              <div className='shrink-0 h-11 flex items-center justify-between gap-1 px-3 border-b bg-muted/50'>
+                <span className='text-xs font-medium text-foreground'>{tChat('header')}</span>
+                <ModeSelector aiMode={session.aiMode} onAiModeChange={handleModeChange} />
+              </div>
+              <div className='flex-1 flex flex-col items-center justify-center text-center py-12 gap-3 px-4'>
+                <Bot className='h-10 w-10 text-muted-foreground/40' />
+                <p className='text-sm text-muted-foreground max-w-xs'>{tChat('emptyState')}</p>
+              </div>
+            </div>
           ) : (
-            <ChatPanel aiMode={session.aiMode} redactionMode={session.redactionMode}
-              documents={session.documents}
-              documentNames={session.documents.map(d => d.name)}
-              triggerRef={chatTriggerRef}
-              silentContextRef={silentContextRef}
-              onDeferredTrigger={msg => {
-                pendingChatTrigger.current = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
-                pendingChatTriggerDocKey.current = activeDocKey || null
-              }}
-              foiJurisdiction={session.foiJurisdiction}
-              documentPages={documentPages}
-              initialMessages={chatMessages}
-              redactions={session.redactions}
-              onSuggestionsReceived={handleSuggestionsReceived}
-              onMessagesChange={msgs => { setChatMessages(msgs); saveChat(msgs) }}
-              modeSelector={<ModeSelector aiMode={session.aiMode} onAiModeChange={handleModeChange} />} />
+            // Every visited document keeps its own ChatPanel mounted (just hidden
+            // when not active) so switching tabs never interrupts a response that
+            // is still streaming for a document you've navigated away from.
+            openDocuments.filter(d => visitedDocKeys[d.idbKey]).map(doc => (
+              <div key={doc.idbKey} className={doc.idbKey === activeDocKey ? 'flex flex-col h-full min-h-0' : 'hidden'}>
+                <ChatPanel aiMode={session.aiMode} redactionMode={session.redactionMode}
+                  documentKey={doc.idbKey} documentName={doc.name}
+                  triggerRef={getChatRefs(doc.idbKey).trigger}
+                  silentContextRef={getChatRefs(doc.idbKey).silentContext}
+                  onDeferredTrigger={msg => {
+                    pendingChatTriggers.current[doc.idbKey] = msg.startsWith('[System:') ? msg : `[System: ${msg}]`
+                  }}
+                  foiJurisdiction={session.foiJurisdiction}
+                  documentPages={documentPages}
+                  initialMessages={chatsByDoc[doc.idbKey]}
+                  redactions={session.redactions}
+                  onSuggestionsReceived={(s, tr, pr, rm) => handleSuggestionsReceived(doc.idbKey, s, tr, pr, rm)}
+                  onMessagesChange={msgs => { setChatsByDoc(prev => ({ ...prev, [doc.idbKey]: msgs })); saveChat(doc.idbKey, msgs) }}
+                  modeSelector={<ModeSelector aiMode={session.aiMode} onAiModeChange={handleModeChange} />} />
+              </div>
+            ))
           )}
         </div>
       </div>

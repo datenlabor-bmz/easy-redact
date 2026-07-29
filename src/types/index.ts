@@ -90,7 +90,6 @@ export interface RedactionSuggestion {
   personGroup?: string
   rule?: RedactionRule
   reason?: string
-  documentKey?: string
 }
 
 export interface TextRangeSuggestion {
@@ -103,7 +102,6 @@ export interface TextRangeSuggestion {
   personGroup?: string
   reason?: string
   rule?: RedactionRule
-  documentKey?: string
 }
 
 export interface PageRangeSuggestion {
@@ -114,7 +112,6 @@ export interface PageRangeSuggestion {
   personGroup?: string
   reason?: string
   rule?: RedactionRule
-  documentKey?: string
 }
 
 // ── Session ───────────────────────────────────────────────────────────────────
@@ -219,4 +216,7 @@ export interface ChatRequest {
   documentPages?: DocumentPage[]
   currentRedactions?: RedactionSnapshot[]
   locale?: string
+  // The document this chat is scoped to, used to personalise the system prompt.
+  primaryDocumentKey?: string
+  primaryDocumentName?: string
 }

@@ -82,16 +82,39 @@ export async function saveSession(session: Session) {
 }
 
 // ── Chat ──────────────────────────────────────────────────────────────────────
+// One chat per document, keyed by the document's idbKey — same object store as
+// before (keyPath 'id', no schema change), just no longer pinned to a single
+// fixed id shared by every document.
 
-export async function loadChat(): Promise<ChatMessage[]> {
+export async function loadChat(docKey: string): Promise<ChatMessage[]> {
   const db = await getDB()
-  const record = await db.get('chat', SESSION_ID)
+  const record = await db.get('chat', docKey)
   return record?.messages ?? []
 }
 
-export async function saveChat(messages: ChatMessage[]) {
+export async function saveChat(docKey: string, messages: ChatMessage[]) {
   const db = await getDB()
-  await db.put('chat', { id: SESSION_ID, messages })
+  await db.put('chat', { id: docKey, messages })
+}
+
+export async function deleteChat(docKey: string) {
+  const db = await getDB()
+  await db.delete('chat', docKey)
+}
+
+// Pre-per-document-chat installs stored a single shared conversation under this
+// id. Read once during the one-time migration so it isn't silently discarded.
+const LEGACY_CHAT_ID = 'current'
+
+export async function loadLegacyChat(): Promise<ChatMessage[] | undefined> {
+  const db = await getDB()
+  const record = await db.get('chat', LEGACY_CHAT_ID)
+  return record?.messages
+}
+
+export async function deleteLegacyChat() {
+  const db = await getDB()
+  await db.delete('chat', LEGACY_CHAT_ID)
 }
 
 // ── Retention ─────────────────────────────────────────────────────────────────
@@ -120,10 +143,13 @@ export async function purgeExpiredData() {
       return
     }
   }
-  // Chat can outlive the documents; expire it based on its oldest message
-  const chat = await db.get('chat', SESSION_ID)
-  const oldest = chat?.messages[0]?.timestamp
-  if (oldest && isExpired(oldest)) await db.delete('chat', SESSION_ID)
+  // Chat can outlive its document (e.g. after the document itself was closed);
+  // expire each per-document chat independently based on its own oldest message.
+  const chats = await db.getAll('chat')
+  for (const c of chats) {
+    const oldest = c.messages[0]?.timestamp
+    if (oldest && isExpired(oldest)) await db.delete('chat', c.id)
+  }
 }
 
 export async function clearAll() {

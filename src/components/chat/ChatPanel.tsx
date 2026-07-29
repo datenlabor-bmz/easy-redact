@@ -9,16 +9,16 @@ import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useChatStream } from './useChatStream'
 import { useTranslations, useLocale } from 'next-intl'
-import type { AiMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction, DocumentMeta, DocumentPage } from '@/types'
+import type { AiMode, RedactionMode, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, ChatMessage as Msg, Redaction, DocumentPage } from '@/types'
 
 interface ChatPanelProps {
   aiMode: AiMode
   redactionMode: RedactionMode
   foiJurisdiction?: string
+  documentKey: string
+  documentName: string
   documentPages?: DocumentPage[]
-  documents?: DocumentMeta[]
   redactions?: Redaction[]
-  documentNames?: string[]
   initialMessages?: Msg[]
   triggerRef?: React.MutableRefObject<((msg: string) => void) | null>
   silentContextRef?: React.MutableRefObject<((msg: string) => void) | null>
@@ -29,13 +29,13 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({
-  aiMode, redactionMode, foiJurisdiction, documentPages, documents, redactions, documentNames, initialMessages, triggerRef, silentContextRef, onDeferredTrigger,
+  aiMode, redactionMode, foiJurisdiction, documentKey, documentName, documentPages, redactions, initialMessages, triggerRef, silentContextRef, onDeferredTrigger,
   onSuggestionsReceived, onMessagesChange, modeSelector,
 }: ChatPanelProps) {
   const t = useTranslations('ChatPanel')
   const locale = useLocale()
   const { messages, isStreaming, error, sendMessage, stopStreaming, addSilentContext, setMessages } =
-    useChatStream({ aiMode, redactionMode, foiJurisdiction, documentPages, documents, redactions, locale, onSuggestionsReceived })
+    useChatStream({ aiMode, redactionMode, foiJurisdiction, documentKey, documentName, documentPages, redactions, locale, onSuggestionsReceived })
 
   const { scrollRef, contentRef } = useStickToBottom({ initial: 'smooth', resize: 'smooth' })
   const initialLoaded = useRef(false)
@@ -48,13 +48,12 @@ export function ChatPanel({
     initialLoaded.current = true
     if (initialMessages && initialMessages.length > 0) {
       setMessages(initialMessages)
-    } else if (documentNames?.length) {
-      onDeferredTrigger?.(`Documents loaded: ${documentNames.join(', ')}. Access already granted. Greet the user briefly, call read_documents IMMEDIATELY, then suggest redactions.`)
+    } else {
+      // A ChatPanel only ever mounts for a document that is actually open, so a
+      // fresh conversation always has something to do: greet and get started on it.
+      onDeferredTrigger?.(`Document loaded: ${documentName}. Access already granted. Greet the user briefly, call read_documents IMMEDIATELY, then suggest redactions.`)
     }
-    // No document yet and no history: the empty-state placeholder below already
-    // greets the user and asks them to upload, so there is nothing for the model
-    // to do — skip the call rather than spend a request generating the same thing.
-  }, [initialMessages, setMessages, documentNames, onDeferredTrigger])
+  }, [initialMessages, setMessages, documentName, onDeferredTrigger])
 
   useEffect(() => {
     if (messages.length > 0) onMessagesChange?.(messages)
@@ -70,7 +69,7 @@ export function ChatPanel({
   return (
     <div className='flex flex-col h-full bg-card'>
       <div className='shrink-0 h-11 flex items-center justify-between gap-1 px-3 border-b bg-muted/50'>
-        <span className='text-xs font-medium text-foreground'>{t('header')}</span>
+        <span className='text-xs font-medium text-foreground truncate' title={documentName}>{t('header')} — {documentName}</span>
         <div className='flex items-center gap-1'>
           {modeSelector}
         <Tooltip>
