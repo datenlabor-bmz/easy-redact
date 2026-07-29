@@ -1,6 +1,7 @@
 {
   "ChatInput": {
-    "placeholder": "Ask the assistant…"
+    "placeholder": "Ask the assistant…",
+    "placeholderStreaming": "Waiting for the assistant…"
   },
   "ChatMessage": {
     "thinking": "Thinking…"
@@ -17,7 +18,8 @@
   "ChatPanel": {
     "header": "Redaction Assistant",
     "clearConversation": "Clear conversation",
-    "emptyState": "I am your AI assistant for document redaction. Upload a document to start the conversation."
+    "emptyState": "I am your AI assistant for document redaction. Upload a document to start the conversation.",
+    "working": "Working…"
   },
   "ModeSelector": {
     "cloudLabel": "Cloud AI",

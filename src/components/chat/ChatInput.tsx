@@ -47,10 +47,10 @@ export function ChatInput({ onSend, onStop, isStreaming, suggestions = [] }: {
           ))}
         </div>
       )}
-      <div className='flex items-center gap-2 bg-background border rounded-2xl shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all pl-4 pr-2 py-2'>
+      <div className={`flex items-center gap-2 bg-background border rounded-2xl shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all pl-4 pr-2 py-2 ${isStreaming ? 'opacity-60' : ''}`}>
         <textarea ref={ref} value={value} onChange={e => setValue(e.target.value)}
-          onKeyDown={onKey} placeholder={t('placeholder')} disabled={isStreaming}
-          className='flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none max-h-[180px] py-0 leading-5 [field-sizing:content]' />
+          onKeyDown={onKey} placeholder={isStreaming ? t('placeholderStreaming') : t('placeholder')} disabled={isStreaming}
+          className='flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none max-h-[180px] py-0 leading-5 [field-sizing:content] disabled:cursor-not-allowed' />
         <div className='shrink-0'>
           {isStreaming ? (
             <Button variant='outline' size='icon' onClick={onStop} className='h-8 w-8 rounded-lg'>

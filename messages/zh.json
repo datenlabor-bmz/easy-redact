@@ -1,6 +1,7 @@
 {
   "ChatInput": {
-    "placeholder": "向助手提问…"
+    "placeholder": "向助手提问…",
+    "placeholderStreaming": "正在等待助手回复…"
   },
   "ChatMessage": {
     "thinking": "思考中…"
@@ -17,7 +18,8 @@
   "ChatPanel": {
     "header": "文档脱敏助手",
     "clearConversation": "清空对话",
-    "emptyState": "我是您的AI文档脱敏助手。上传文档即可开始。"
+    "emptyState": "我是您的AI文档脱敏助手。上传文档即可开始。",
+    "working": "处理中…"
   },
   "ModeSelector": {
     "cloudLabel": "云端 AI",

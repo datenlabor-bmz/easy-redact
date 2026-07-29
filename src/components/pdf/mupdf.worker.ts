@@ -6,6 +6,19 @@ import type { Quad, Rect } from 'mupdf'
 
 export const MUPDF_LOADED = 'MUPDF_LOADED'
 
+// A short, plain label for the PDF's Producer field — kept in the user's own
+// language rather than a fixed English/branded string, since this metadata is
+// visible to anyone inspecting the exported file's properties.
+const REDACTED_LABEL: Record<string, string> = {
+  en: 'Redacted',
+  de: 'Geschwärzt',
+  fr: 'Caviardé',
+  es: 'Redactado',
+  ru: 'Отредактировано',
+  ar: 'تم الحجب',
+  zh: '已脱敏',
+}
+
 // Define an interface for the word data we'll return
 export interface WordData {
   text: string
@@ -178,7 +191,7 @@ export class MupdfWorker {
     return result
   }
 
-  getRedactedDocument(annotations: any[], applyRedactions: boolean = true, fieldsToRemove: string[] = []) {
+  getRedactedDocument(annotations: any[], applyRedactions: boolean = true, fieldsToRemove: string[] = [], locale: string = 'en') {
     if (!this.pdfdocument) throw new Error('Document not loaded')
 
     const doc = mupdf.Document.openDocument(
@@ -214,9 +227,10 @@ export class MupdfWorker {
     if (info && !info.isNull() && info.isDictionary()) {
       if (fieldsToRemove.length)
         for (const key of fieldsToRemove) info.delete(key)
+      const label = REDACTED_LABEL[locale] ?? REDACTED_LABEL.en
       const producer = info.get('Producer')
-      if (producer.isNull() || producer.asString() !== 'Redacted with EasyRedact')
-        info.put('Producer', doc.newString('Redacted with EasyRedact'))
+      if (producer.isNull() || producer.asString() !== label)
+        info.put('Producer', doc.newString(label))
     }
 
     if (fieldsToRemove.length) {

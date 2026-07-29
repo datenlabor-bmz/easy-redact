@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useCallback } from 'react'
 import { useStickToBottom } from 'use-stick-to-bottom'
-import { Trash2, Bot, ShieldAlert } from 'lucide-react'
+import { Trash2, Bot, ShieldAlert, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ChatMessage } from './ChatMessage'
@@ -75,6 +75,17 @@ export function ChatPanel({
     sendMessage(label)
   }, [messages, setMessages, sendMessage])
 
+  // The per-message "thinking" bubble only covers the very start of a turn
+  // (no content, no tool calls yet), and a running tool call already shows its
+  // own spinner — but there's a real gap in between: once a tool result comes
+  // back, the client waits on the next model round with nothing on screen
+  // indicating work is still happening. This fills that gap with one small,
+  // persistent indicator instead of leaving the conversation looking idle.
+  const lastMessage = messages[messages.length - 1]
+  const lastToolRunning = lastMessage?.toolCalls?.some(tc => tc.status === 'running') ?? false
+  const showsThinkingBubble = !lastMessage?.content && !lastMessage?.toolCalls?.length
+  const showWorkingIndicator = isStreaming && lastMessage?.role === 'assistant' && !lastToolRunning && !showsThinkingBubble
+
   return (
     <div className='flex flex-col h-full bg-card'>
       <div className='shrink-0 h-11 flex items-center justify-between gap-1 px-3 border-b bg-muted/50'>
@@ -108,6 +119,12 @@ export function ChatPanel({
               const thinking = isStreaming && i === messages.length - 1 && m.role === 'assistant' && !m.content
               return <ChatMessage key={m.id} message={m} onOptionSelect={handleOptionSelect} isThinking={thinking} />
             })
+          )}
+
+          {showWorkingIndicator && (
+            <div className='flex items-center gap-2 pl-10 text-xs text-muted-foreground'>
+              <Loader2 className='h-3 w-3 animate-spin shrink-0' /> {t('working')}
+            </div>
           )}
 
           {error && (

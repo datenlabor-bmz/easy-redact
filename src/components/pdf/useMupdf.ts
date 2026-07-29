@@ -88,11 +88,11 @@ export function useMupdf() {
     return mupdfWorker.current!.getMetadata()
   }, [])
 
-  const getRedactedDocument = useCallback((annotations: any[], applyRedactions: boolean = true, fieldsToRemove: string[] = []) => {
+  const getRedactedDocument = useCallback((annotations: any[], applyRedactions: boolean = true, fieldsToRemove: string[] = [], locale: string = 'en') => {
     if (!document.current) {
       throw new Error('Document not loaded')
     }
-    return mupdfWorker.current!.getRedactedDocument(annotations, applyRedactions, fieldsToRemove)
+    return mupdfWorker.current!.getRedactedDocument(annotations, applyRedactions, fieldsToRemove, locale)
   }, [])
 
   return {

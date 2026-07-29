@@ -1,6 +1,7 @@
 {
   "ChatInput": {
-    "placeholder": "Haga una pregunta al asistente…"
+    "placeholder": "Haga una pregunta al asistente…",
+    "placeholderStreaming": "Esperando al asistente…"
   },
   "ChatMessage": {
     "thinking": "Pensando…"
@@ -17,7 +18,8 @@
   "ChatPanel": {
     "header": "Asistente de supresión",
     "clearConversation": "Borrar conversación",
-    "emptyState": "Soy su asistente de IA para la supresión de datos en documentos. Suba un documento para comenzar."
+    "emptyState": "Soy su asistente de IA para la supresión de datos en documentos. Suba un documento para comenzar.",
+    "working": "Procesando…"
   },
   "ModeSelector": {
     "cloudLabel": "IA en la nube",

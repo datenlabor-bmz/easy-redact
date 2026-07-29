@@ -1,6 +1,7 @@
 {
   "ChatInput": {
-    "placeholder": "Posez une question à l'assistant…"
+    "placeholder": "Posez une question à l'assistant…",
+    "placeholderStreaming": "En attente de l'assistant…"
   },
   "ChatMessage": {
     "thinking": "Réflexion en cours…"
@@ -17,7 +18,8 @@
   "ChatPanel": {
     "header": "Assistant de caviardage",
     "clearConversation": "Effacer la conversation",
-    "emptyState": "Je suis votre assistant IA pour le caviardage de documents. Téléversez un document pour commencer."
+    "emptyState": "Je suis votre assistant IA pour le caviardage de documents. Téléversez un document pour commencer.",
+    "working": "En cours…"
   },
   "ModeSelector": {
     "cloudLabel": "IA cloud",

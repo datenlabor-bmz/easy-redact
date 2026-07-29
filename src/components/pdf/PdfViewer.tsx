@@ -43,6 +43,7 @@ export interface PdfViewerProps {
   searchNavigateRef?: React.MutableRefObject<((dir: 1|-1) => void) | null>
   selectMode?: 'text' | 'freehand'
   overlayEnabled?: boolean
+  locale?: string
 }
 
 export function PdfViewer({
@@ -52,7 +53,7 @@ export function PdfViewer({
   onPageTextExtracted, onPageCountKnown, onPagesLoaded, pendingSuggestions, pendingTextRanges, pendingPageRanges,
   onSuggestionsApplied, exportRef,
   onAccept, onIgnore, foiRules, redactionMode,
-  searchQuery, onSearchInfoChange, searchNavigateRef, selectMode = 'text', overlayEnabled = false,
+  searchQuery, onSearchInfoChange, searchNavigateRef, selectMode = 'text', overlayEnabled = false, locale,
 }: PdfViewerProps) {
   const { isWorkerInitialized, renderPage, loadDocumentAndAnnotations, countPages,
     getPageContent, getPageBounds, getPageWords, getMetadata, getRedactedDocument, searchPage } = useMupdf()
@@ -407,7 +408,7 @@ export function PdfViewer({
 
   const handleExport = async (apply: boolean) => {
     const annotations = redactionsToAnnotations(redactions)
-    const blob = await getRedactedDocument(annotations, apply, [...fieldsToRemove])
+    const blob = await getRedactedDocument(annotations, apply, [...fieldsToRemove], locale)
     onExport(blob, apply)
   }
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from '@/lib/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { Upload, FileText, X, AlertCircle, Minus, Plus, Download, FileLock2, Search, Type, BoxSelect, Loader2, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 export default function App() {
   const t = useTranslations('App')
   const tChat = useTranslations('ChatPanel')
+  const locale = useLocale()
   const [session, setSession] = useState<Session | null>(null)
   // One isolated chat per document, keyed by idbKey.
   const [chatsByDoc, setChatsByDoc] = useState<Record<string, ChatMessage[]>>({})
@@ -636,7 +637,8 @@ export default function App() {
               searchQuery={searchQuery}
               onSearchInfoChange={setSearchMatchInfo}
               searchNavigateRef={searchNavigateRef}
-              selectMode={selectMode} />
+              selectMode={selectMode}
+              locale={locale} />
             </div>
           ) : (
             <div

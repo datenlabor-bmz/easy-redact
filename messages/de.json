@@ -1,6 +1,7 @@
 {
   "ChatInput": {
-    "placeholder": "Fragen Sie den Assistenten…"
+    "placeholder": "Fragen Sie den Assistenten…",
+    "placeholderStreaming": "Warte auf den Assistenten…"
   },
   "ChatMessage": {
     "thinking": "Denke nach…"
@@ -17,7 +18,8 @@
   "ChatPanel": {
     "header": "Schwärzungsassistent",
     "clearConversation": "Gespräch löschen",
-    "emptyState": "Ich bin Ihr KI-Assistent für die Dokumentenschwärzung. Laden Sie ein Dokument hoch und beginnen Sie das Gespräch."
+    "emptyState": "Ich bin Ihr KI-Assistent für die Dokumentenschwärzung. Laden Sie ein Dokument hoch und beginnen Sie das Gespräch.",
+    "working": "Arbeitet…"
   },
   "ModeSelector": {
     "cloudLabel": "Cloud-KI",
