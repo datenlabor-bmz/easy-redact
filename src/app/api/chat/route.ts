@@ -65,6 +65,8 @@ export async function POST(req: Request) {
         let iterations = 0
         let emptyRetries = 0
         const MAX_EMPTY_RETRIES = 2
+        let claimRetries = 0
+        const MAX_CLAIM_RETRIES = 1
         while (iterations < 20) {
           iterations++
           let assistantContent = ''
@@ -129,13 +131,21 @@ export async function POST(req: Request) {
               })
             } else if (SUGGESTS_REDACTIONS_WITHOUT_CALLING.test(assistantContent)) {
               // The model described making suggestions in prose without an actual
-              // suggest_redactions call — nothing was applied. Already streamed to the
-              // client as text, so this can only be logged for now, not corrected
-              // in-place; see it as a signal that the tool schema or prompt needs
-              // another look if it keeps recurring.
+              // suggest_redactions call — nothing was applied. The prose is already
+              // streamed to the client as text, but the tool call itself never
+              // happened, so nudge the model to make it for real instead of just
+              // logging and ending the turn on a claim that isn't backed by anything.
               console.warn('[chat] claimed suggest_redactions without calling it', {
-                finishReason, content: assistantContent,
+                finishReason, content: assistantContent, retry: claimRetries,
               })
+              if (claimRetries < MAX_CLAIM_RETRIES) {
+                claimRetries++
+                apiMessages.push({
+                  role: 'user',
+                  content: '[System: You just described adding or finding redaction suggestions in text, but did not call suggest_redactions — nothing was actually applied. Call suggest_redactions now with the real data, or state clearly that you found nothing.]',
+                })
+                continue
+              }
             }
             send(ctrl, { type: 'done' })
             break
@@ -168,7 +178,7 @@ export async function POST(req: Request) {
                 break
               }
               case 'suggest_redactions': {
-                const r = executeSuggestRedactions(args, documentPages)
+                const r = executeSuggestRedactions(args, documentPages, foiRules)
                 special = r.special
                 result = r.toolResult
                 break

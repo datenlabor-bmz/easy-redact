@@ -1,4 +1,4 @@
-import type { DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AskUserQuestion } from '@/types'
+import type { DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AskUserQuestion, RedactionRule } from '@/types'
 
 // ── Tool schemas for OpenAI function calling ───────────────────────────────────
 
@@ -49,18 +49,9 @@ export const tools = [
                 person: { type: 'string', description: 'Name of the person or organisation this redaction belongs to — use the actual name (e.g. "Max Mustermann", "Diversifix e. V."), never leave empty' },
                 personGroup: { type: 'string', description: 'Group category, e.g. "Privatpersonen", "Bundesbeamte", "Organisationen"' },
                 reason: { type: 'string', description: 'Brief explanation why this should be redacted' },
-                rule: {
-                  type: 'object',
-                  description: 'The specific FOI rule that justifies this redaction (FOI mode only)',
-                  properties: {
-                    title: { type: 'string', description: 'Rule title, e.g. "Personenbezogene Daten"' },
-                    reference: { type: 'string', description: 'Legal reference, e.g. "§5 IFG"' },
-                    group: { type: 'string', description: 'Rule group/category' },
-                  },
-                  required: ['title'],
-                },
+                rule: { type: 'string', description: 'Exact title of the applicable FOI rule, copied verbatim from the system prompt (FOI mode only). Omit in PII mode or when no specific rule applies.' },
               },
-              required: ['text', 'pageIndex', 'confidence', 'person', 'personGroup', 'documentKey'],
+              required: ['text', 'pageIndex', 'confidence', 'person'],
             },
           },
           textRanges: {
@@ -78,9 +69,9 @@ export const tools = [
                 person: { type: 'string', description: 'Person or organisation this range belongs to' },
                 personGroup: { type: 'string', description: 'Group category' },
                 reason: { type: 'string' },
-                rule: { type: 'object', properties: { title: { type: 'string' }, reference: { type: 'string' }, group: { type: 'string' } }, required: ['title'] },
+                rule: { type: 'string', description: 'Exact title of the applicable FOI rule, copied verbatim from the system prompt (FOI mode only). Omit in PII mode or when no specific rule applies.' },
               },
-              required: ['documentKey', 'startText', 'startPage', 'endText', 'endPage', 'confidence', 'person', 'personGroup'],
+              required: ['startText', 'startPage', 'endText', 'endPage', 'confidence', 'person'],
             },
           },
           pageRanges: {
@@ -96,9 +87,9 @@ export const tools = [
                 person: { type: 'string' },
                 personGroup: { type: 'string' },
                 reason: { type: 'string' },
-                rule: { type: 'object', properties: { title: { type: 'string' }, reference: { type: 'string' }, group: { type: 'string' } }, required: ['title'] },
+                rule: { type: 'string', description: 'Exact title of the applicable FOI rule, copied verbatim from the system prompt (FOI mode only). Omit in PII mode or when no specific rule applies.' },
               },
-              required: ['documentKey', 'fromPage', 'toPage', 'confidence', 'person', 'personGroup'],
+              required: ['fromPage', 'toPage', 'confidence', 'person'],
             },
           },
           remove: {
@@ -148,6 +139,17 @@ export function executeAskUser(args: Record<string, unknown>): { special: Specia
   }
 }
 
+// The model only sends the rule's title (as shown to it in the system prompt) rather
+// than reconstructing the full {title, reference, group} object — much cheaper per
+// suggestion, and the canonical rule (with reference/group/full_text/url) is looked
+// up here instead. An unrecognised title still gets attached as a bare {title} so
+// the suggestion is never silently dropped.
+function resolveRule(title: unknown, foiRules?: RedactionRule[]): RedactionRule | undefined {
+  if (typeof title !== 'string' || !title.trim()) return undefined
+  const needle = title.trim().toLowerCase()
+  return foiRules?.find(r => r.title.trim().toLowerCase() === needle) ?? { title: title.trim() }
+}
+
 const normalizeForSearch = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase()
 
 // The model sometimes paraphrases or mistypes the text it claims to have read, and
@@ -180,7 +182,7 @@ function describeUnlocatable(suggestions: RedactionSuggestion[], documentPages?:
   return problems
 }
 
-export function executeSuggestRedactions(args: Record<string, unknown>, documentPages?: DocumentPage[]): { special: SpecialToolResult | null; toolResult: ToolResult } {
+export function executeSuggestRedactions(args: Record<string, unknown>, documentPages?: DocumentPage[], foiRules?: RedactionRule[]): { special: SpecialToolResult | null; toolResult: ToolResult } {
   const raw = (args.suggestions as Array<Record<string, unknown>> | undefined) ?? []
   const suggestions: RedactionSuggestion[] = raw.map(s => ({
     documentKey: s.documentKey as string | undefined,
@@ -190,7 +192,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
     person: s.person as string | undefined,
     personGroup: s.personGroup as string | undefined,
     reason: s.reason as string | undefined,
-    rule: s.rule as RedactionSuggestion['rule'],
+    rule: resolveRule(s.rule, foiRules),
   }))
   const textRanges: TextRangeSuggestion[] = ((args.textRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
     documentKey: r.documentKey as string | undefined,
@@ -202,7 +204,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
     person: r.person as string | undefined,
     personGroup: r.personGroup as string | undefined,
     reason: r.reason as string | undefined,
-    rule: r.rule as TextRangeSuggestion['rule'],
+    rule: resolveRule(r.rule, foiRules),
   }))
   const pageRanges: PageRangeSuggestion[] = ((args.pageRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
     documentKey: r.documentKey as string | undefined,
@@ -212,7 +214,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
     person: r.person as string | undefined,
     personGroup: r.personGroup as string | undefined,
     reason: r.reason as string | undefined,
-    rule: r.rule as PageRangeSuggestion['rule'],
+    rule: resolveRule(r.rule, foiRules),
   }))
   const remove = (args.remove as string[] | undefined) ?? []
   const total = suggestions.length + textRanges.length + pageRanges.length
@@ -224,7 +226,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
       special: null,
       toolResult: {
         success: false,
-        error: 'This call carried no arguments, so nothing was applied. If the document genuinely contains nothing to redact, do not call this tool at all — say so in your reply instead. If you did intend to suggest redactions, repeat the call with "suggestions" (or "textRanges"/"pageRanges") populated; each entry needs documentKey, the exact text copied from the read_documents response, pageIndex, confidence, person and personGroup.',
+        error: 'This call carried no arguments, so nothing was applied. If the document genuinely contains nothing to redact, do not call this tool at all — say so in your reply instead. If you did intend to suggest redactions, repeat the call with "suggestions" (or "textRanges"/"pageRanges") populated; each entry needs at least the exact text copied from the read_documents response, pageIndex, confidence and person.',
       },
     }
   }
