@@ -70,6 +70,13 @@ export async function POST(req: Request) {
         const MAX_EMPTY_RETRIES = 2
         let claimRetries = 0
         const MAX_CLAIM_RETRIES = 1
+        // Small/local models frequently don't act on the "N Stellen konnten nicht
+        // gefunden werden" note in a suggest_redactions result on their own — it's
+        // just ordinary tool-result text to them, easy to skim past. A couple of
+        // forced nudges make the retry the default instead of leaving it to the
+        // model's initiative, the same way empty completions are already handled.
+        let unlocatableRetries = 0
+        const MAX_UNLOCATABLE_RETRIES = 2
         while (iterations < 20) {
           iterations++
           let assistantContent = ''
@@ -172,6 +179,7 @@ export async function POST(req: Request) {
 
             let result: { success: boolean; data?: unknown; error?: string }
             let special: SpecialToolResult | null = null
+            let unresolvedCount = 0
 
             switch (name) {
               case 'ask_user': {
@@ -184,6 +192,7 @@ export async function POST(req: Request) {
                 const r = executeSuggestRedactions(args, documentPages, foiRules)
                 special = r.special
                 result = r.toolResult
+                unresolvedCount = r.unresolvedCount
                 break
               }
               case 'read_documents':
@@ -211,6 +220,19 @@ export async function POST(req: Request) {
             if (special?.type === 'ask_user') {
               send(ctrl, { type: 'done' })
               return
+            }
+
+            if (name === 'suggest_redactions') {
+              if (unresolvedCount > 0 && unlocatableRetries < MAX_UNLOCATABLE_RETRIES) {
+                unlocatableRetries++
+                console.warn('[chat] suggest_redactions left unresolved entries', { unresolvedCount, retry: unlocatableRetries })
+                apiMessages.push({
+                  role: 'user',
+                  content: `[System: Your last suggest_redactions call left ${unresolvedCount} entr${unresolvedCount === 1 ? 'y' : 'ies'} unresolved (see the tool result above for which ones and why). Call suggest_redactions again now, right away — do not reply in plain text first — fixing just those entries with the exact wording from the read_documents response. If an entry truly doesn't exist in the document, drop it instead of resending it unchanged.]`,
+                })
+              } else {
+                unlocatableRetries = 0
+              }
             }
           }
         }

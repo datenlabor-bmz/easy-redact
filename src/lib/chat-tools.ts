@@ -1,4 +1,5 @@
 import type { DocumentPage, RedactionSuggestion, TextRangeSuggestion, PageRangeSuggestion, AskUserQuestion, RedactionRule } from '@/types'
+import { findFuzzyMatch } from '@/lib/text-match'
 
 // ── Tool schemas for OpenAI function calling ───────────────────────────────────
 
@@ -153,13 +154,17 @@ const normalizeForSearch = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerC
 // the browser can only redact strings it finds verbatim in the PDF. Checking each
 // suggestion against the extracted page text turns that silent miss into feedback
 // the model can act on. Comparison is deliberately lenient about whitespace and
-// case so that only genuinely absent text is reported.
+// case so that only genuinely absent text is reported — and a fuzzy pass catches
+// the near-misses (accents, "&" vs "and", a one-letter spelling slip) that the
+// client already tolerates when it actually searches the PDF, so those aren't
+// reported as problems here even though they aren't a byte-for-byte match.
 function describeUnlocatable(suggestions: RedactionSuggestion[], documentPages?: DocumentPage[]): string[] {
   if (!documentPages?.length) return []
   const pages = documentPages.map(p => ({
     documentKey: p.documentKey,
     pageIndex: p.pageIndex,
     text: normalizeForSearch(p.text),
+    rawText: p.text,
   }))
 
   const problems: string[] = []
@@ -169,44 +174,85 @@ function describeUnlocatable(suggestions: RedactionSuggestion[], documentPages?:
     const onStatedPage = pages.some(p => p.pageIndex === s.pageIndex && p.text.includes(needle))
     if (onStatedPage) continue
     const elsewhere = pages.find(p => p.text.includes(needle))
-    problems.push(elsewhere
-      ? `"${s.text}" steht nicht auf Seite ${s.pageIndex + 1}, sondern auf Seite ${elsewhere.pageIndex + 1}`
-      : `"${s.text}" kommt im Dokument nicht vor`)
+    if (elsewhere) {
+      problems.push(`"${s.text}" steht nicht auf Seite ${s.pageIndex + 1}, sondern auf Seite ${elsewhere.pageIndex + 1}`)
+      continue
+    }
+    // The fuzzy check itself only runs against the single page the model
+    // claimed — scanning every other page with it too would turn one missed
+    // suggestion into a full-document fuzzy pass. The client applies the same
+    // single-page-first fuzzy fallback, so this only needs to predict that,
+    // not exhaustively search for the best possible match location.
+    const statedPage = pages.find(p => p.pageIndex === s.pageIndex)
+    const fuzzyOnStatedPage = statedPage && findFuzzyMatch(statedPage.rawText, s.text)
+    if (fuzzyOnStatedPage) continue
+    problems.push(`"${s.text}" kommt im Dokument nicht (in dieser Form) vor`)
   }
   return problems
 }
 
-export function executeSuggestRedactions(args: Record<string, unknown>, documentPages?: DocumentPage[], foiRules?: RedactionRule[]): { special: SpecialToolResult | null; toolResult: ToolResult } {
-  const raw = (args.suggestions as Array<Record<string, unknown>> | undefined) ?? []
-  const suggestions: RedactionSuggestion[] = raw.map(s => ({
-    text: s.text as string,
-    pageIndex: s.pageIndex as number,
-    confidence: s.confidence as RedactionSuggestion['confidence'],
-    person: s.person as string | undefined,
-    personGroup: s.personGroup as string | undefined,
-    reason: s.reason as string | undefined,
-    rule: resolveRule(s.rule, foiRules),
-  }))
-  const textRanges: TextRangeSuggestion[] = ((args.textRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
-    startText: r.startText as string,
-    startPage: r.startPage as number,
-    endText: r.endText as string,
-    endPage: r.endPage as number,
-    confidence: r.confidence as TextRangeSuggestion['confidence'],
-    person: r.person as string | undefined,
-    personGroup: r.personGroup as string | undefined,
-    reason: r.reason as string | undefined,
-    rule: resolveRule(r.rule, foiRules),
-  }))
-  const pageRanges: PageRangeSuggestion[] = ((args.pageRanges as Array<Record<string, unknown>> | undefined) ?? []).map(r => ({
-    fromPage: r.fromPage as number,
-    toPage: r.toPage as number,
-    confidence: r.confidence as PageRangeSuggestion['confidence'],
-    person: r.person as string | undefined,
-    personGroup: r.personGroup as string | undefined,
-    reason: r.reason as string | undefined,
-    rule: resolveRule(r.rule, foiRules),
-  }))
+export function executeSuggestRedactions(args: Record<string, unknown>, documentPages?: DocumentPage[], foiRules?: RedactionRule[]): { special: SpecialToolResult | null; toolResult: ToolResult; unresolvedCount: number } {
+  const rawSuggestions = (args.suggestions as Array<Record<string, unknown>> | undefined) ?? []
+  const rawRanges = (args.textRanges as Array<Record<string, unknown>> | undefined) ?? []
+  const rawPageRanges = (args.pageRanges as Array<Record<string, unknown>> | undefined) ?? []
+
+  // A model occasionally emits one malformed entry — most often a missing or
+  // empty `text` — inside an otherwise valid array. Previously that slipped
+  // through as `text: undefined` and crashed the PDF-side matching loop partway
+  // through, silently dropping every suggestion that came after it in the same
+  // call. Validating and dropping just the bad entry here keeps the rest intact
+  // and tells the model exactly what to resend instead.
+  const invalid: string[] = []
+
+  const suggestions: RedactionSuggestion[] = []
+  rawSuggestions.forEach((s, i) => {
+    const text = typeof s.text === 'string' ? s.text.trim() : ''
+    if (!text) { invalid.push(`suggestions[${i}] hat kein (nicht-leeres) "text"-Feld`); return }
+    if (typeof s.pageIndex !== 'number') { invalid.push(`suggestions[${i}] ("${text}") hat kein gültiges "pageIndex"-Feld`); return }
+    suggestions.push({
+      text,
+      pageIndex: s.pageIndex,
+      confidence: s.confidence as RedactionSuggestion['confidence'],
+      person: s.person as string | undefined,
+      personGroup: s.personGroup as string | undefined,
+      reason: s.reason as string | undefined,
+      rule: resolveRule(s.rule, foiRules),
+    })
+  })
+
+  const textRanges: TextRangeSuggestion[] = []
+  rawRanges.forEach((r, i) => {
+    const startText = typeof r.startText === 'string' ? r.startText.trim() : ''
+    const endText = typeof r.endText === 'string' ? r.endText.trim() : ''
+    if (!startText || !endText) { invalid.push(`textRanges[${i}] hat kein (nicht-leeres) "startText"/"endText"-Feld`); return }
+    if (typeof r.startPage !== 'number' || typeof r.endPage !== 'number') { invalid.push(`textRanges[${i}] hat kein gültiges "startPage"/"endPage"-Feld`); return }
+    textRanges.push({
+      startText,
+      startPage: r.startPage,
+      endText,
+      endPage: r.endPage,
+      confidence: r.confidence as TextRangeSuggestion['confidence'],
+      person: r.person as string | undefined,
+      personGroup: r.personGroup as string | undefined,
+      reason: r.reason as string | undefined,
+      rule: resolveRule(r.rule, foiRules),
+    })
+  })
+
+  const pageRanges: PageRangeSuggestion[] = []
+  rawPageRanges.forEach((r, i) => {
+    if (typeof r.fromPage !== 'number' || typeof r.toPage !== 'number') { invalid.push(`pageRanges[${i}] hat kein gültiges "fromPage"/"toPage"-Feld`); return }
+    pageRanges.push({
+      fromPage: r.fromPage,
+      toPage: r.toPage,
+      confidence: r.confidence as PageRangeSuggestion['confidence'],
+      person: r.person as string | undefined,
+      personGroup: r.personGroup as string | undefined,
+      reason: r.reason as string | undefined,
+      rule: resolveRule(r.rule, foiRules),
+    })
+  })
+
   const remove = (args.remove as string[] | undefined) ?? []
   const total = suggestions.length + textRanges.length + pageRanges.length
   // An empty call is always a protocol error: a document with nothing to redact
@@ -215,21 +261,27 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
   if (total === 0 && remove.length === 0) {
     return {
       special: null,
+      unresolvedCount: invalid.length,
       toolResult: {
         success: false,
-        error: 'This call carried no arguments, so nothing was applied. If the document genuinely contains nothing to redact, do not call this tool at all — say so in your reply instead. If you did intend to suggest redactions, repeat the call with "suggestions" (or "textRanges"/"pageRanges") populated; each entry needs at least the exact text copied from the read_documents response, pageIndex, confidence and person.',
+        error: invalid.length
+          ? `This call carried only invalid entries and nothing was applied: ${invalid.join('; ')}. Repeat the call with valid entries — each needs at least the exact text copied from the read_documents response, pageIndex, confidence and person.`
+          : 'This call carried no arguments, so nothing was applied. If the document genuinely contains nothing to redact, do not call this tool at all — say so in your reply instead. If you did intend to suggest redactions, repeat the call with "suggestions" (or "textRanges"/"pageRanges") populated; each entry needs at least the exact text copied from the read_documents response, pageIndex, confidence and person.',
       },
     }
   }
   const summary = `${total} Vorschläge hinzugefügt (${suggestions.length} Textstellen, ${textRanges.length} Textbereiche, ${pageRanges.length} Seitenbereiche), ${remove.length} entfernt.`
   const problems = describeUnlocatable(suggestions, documentPages)
+  const notes = [
+    ...(invalid.length ? [`${invalid.length} Einträge waren ungültig und wurden übersprungen: ${invalid.join('; ')}.`] : []),
+    ...(problems.length ? [`Diese Stellen konnten nicht gefunden werden: ${problems.join('; ')}. Wiederhole den Aufruf für sie mit dem exakten Wortlaut aus der read_documents-Antwort.`] : []),
+  ]
   return {
     special: { type: 'suggest_redactions', suggestions, textRanges, pageRanges, remove },
+    unresolvedCount: invalid.length + problems.length,
     toolResult: {
       success: true,
-      data: problems.length
-        ? `${summary} Diese Stellen konnten nicht gefunden werden: ${problems.join('; ')}. Wiederhole den Aufruf für sie mit dem exakten Wortlaut aus der read_documents-Antwort.`
-        : summary,
+      data: notes.length ? `${summary} ${notes.join(' ')}` : summary,
     },
   }
 }

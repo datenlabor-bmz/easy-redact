@@ -79,7 +79,7 @@ export function buildSystemPrompt(opts: {
     '`suggest_redactions` supports three types of suggestions — choose based on scope. Only `text`/`pageIndex` (or the range/page equivalents), `confidence` and `person` are required — keep every other field short, or omit it, rather than spending effort on it:',
     '',
     '**`suggestions`** — Individual text locations (names, emails, short phrases):',
-    '- `text`: Exact text from the document (required)',
+    '- `text`: Exact text from the document, copied character-for-character (required). Never retype, paraphrase or "clean up" it from memory — copy it directly from the `read_documents` response. In particular, keep the original spelling/accents (do not silently convert "Müller" to "Mueller" or vice versa), the original connector ("&" vs "and"/"und" — do not swap one for the other), and the original punctuation and capitalization. If you are not sure of the exact wording, re-check the `read_documents` text before calling this tool rather than guessing.',
     '- `pageIndex`: Page number (0-based, within the respective document) (required)',
     '- `confidence`, `person` (required)',
     '- `personGroup`: optional group category, e.g. "Privatpersonen", "Bundesbeamte", "Organisationen"',
