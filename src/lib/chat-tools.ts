@@ -150,6 +150,35 @@ function resolveRule(title: unknown, foiRules?: RedactionRule[]): RedactionRule 
 
 const normalizeForSearch = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase()
 
+// Small/local models occasionally send page numbers as a numeric string
+// ("3") rather than a number, or apply 1-based counting despite the schema
+// saying 0-based. Coercing rather than requiring a strict `number` avoids
+// discarding an otherwise perfectly good suggestion over a typing quirk.
+function coerceNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value.trim())
+    if (Number.isFinite(n)) return n
+  }
+  return undefined
+}
+
+// When pageIndex is missing or unparseable, the exact text is still enough to
+// find which page it's actually on — the same way the client's own
+// whole-document dedup search does. Falling back to that recovers a
+// well-formed suggestion whose page number the model omitted or mistyped,
+// instead of discarding it outright.
+function inferPageIndex(text: string, documentPages?: DocumentPage[]): number | undefined {
+  if (!documentPages?.length) return undefined
+  const needle = normalizeForSearch(text)
+  if (needle) {
+    const exact = documentPages.find(p => normalizeForSearch(p.text).includes(needle))
+    if (exact) return exact.pageIndex
+  }
+  const fuzzy = documentPages.find(p => findFuzzyMatch(p.text, text))
+  return fuzzy?.pageIndex
+}
+
 // The model sometimes paraphrases or mistypes the text it claims to have read, and
 // the browser can only redact strings it finds verbatim in the PDF. Checking each
 // suggestion against the extracted page text turns that silent miss into feedback
@@ -204,14 +233,21 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
   // and tells the model exactly what to resend instead.
   const invalid: string[] = []
 
+  let guessedPageCount = 0
+
   const suggestions: RedactionSuggestion[] = []
   rawSuggestions.forEach((s, i) => {
     const text = typeof s.text === 'string' ? s.text.trim() : ''
     if (!text) { invalid.push(`suggestions[${i}] hat kein (nicht-leeres) "text"-Feld`); return }
-    if (typeof s.pageIndex !== 'number') { invalid.push(`suggestions[${i}] ("${text}") hat kein gültiges "pageIndex"-Feld`); return }
+    let pageIndex = coerceNumber(s.pageIndex)
+    if (pageIndex === undefined) {
+      pageIndex = inferPageIndex(text, documentPages)
+      if (pageIndex === undefined) { invalid.push(`suggestions[${i}] ("${text}") hat kein gültiges "pageIndex"-Feld und die Seite konnte auch nicht anhand des Texts ermittelt werden`); return }
+      guessedPageCount++
+    }
     suggestions.push({
       text,
-      pageIndex: s.pageIndex,
+      pageIndex,
       confidence: s.confidence as RedactionSuggestion['confidence'],
       person: s.person as string | undefined,
       personGroup: s.personGroup as string | undefined,
@@ -225,12 +261,22 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
     const startText = typeof r.startText === 'string' ? r.startText.trim() : ''
     const endText = typeof r.endText === 'string' ? r.endText.trim() : ''
     if (!startText || !endText) { invalid.push(`textRanges[${i}] hat kein (nicht-leeres) "startText"/"endText"-Feld`); return }
-    if (typeof r.startPage !== 'number' || typeof r.endPage !== 'number') { invalid.push(`textRanges[${i}] hat kein gültiges "startPage"/"endPage"-Feld`); return }
+    let startPage = coerceNumber(r.startPage)
+    if (startPage === undefined) {
+      startPage = inferPageIndex(startText, documentPages)
+      if (startPage !== undefined) guessedPageCount++
+    }
+    let endPage = coerceNumber(r.endPage)
+    if (endPage === undefined) {
+      endPage = inferPageIndex(endText, documentPages)
+      if (endPage !== undefined) guessedPageCount++
+    }
+    if (startPage === undefined || endPage === undefined) { invalid.push(`textRanges[${i}] hat kein gültiges "startPage"/"endPage"-Feld und die Seite(n) konnten auch nicht anhand des Texts ermittelt werden`); return }
     textRanges.push({
       startText,
-      startPage: r.startPage,
+      startPage,
       endText,
-      endPage: r.endPage,
+      endPage,
       confidence: r.confidence as TextRangeSuggestion['confidence'],
       person: r.person as string | undefined,
       personGroup: r.personGroup as string | undefined,
@@ -239,12 +285,17 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
     })
   })
 
+  // fromPage/toPage have no associated text to infer a page from, so a
+  // missing/unparseable value here really does have to be dropped — only the
+  // numeric-string coercion applies.
   const pageRanges: PageRangeSuggestion[] = []
   rawPageRanges.forEach((r, i) => {
-    if (typeof r.fromPage !== 'number' || typeof r.toPage !== 'number') { invalid.push(`pageRanges[${i}] hat kein gültiges "fromPage"/"toPage"-Feld`); return }
+    const fromPage = coerceNumber(r.fromPage)
+    const toPage = coerceNumber(r.toPage)
+    if (fromPage === undefined || toPage === undefined) { invalid.push(`pageRanges[${i}] hat kein gültiges "fromPage"/"toPage"-Feld`); return }
     pageRanges.push({
-      fromPage: r.fromPage,
-      toPage: r.toPage,
+      fromPage,
+      toPage,
       confidence: r.confidence as PageRangeSuggestion['confidence'],
       person: r.person as string | undefined,
       personGroup: r.personGroup as string | undefined,
@@ -274,6 +325,7 @@ export function executeSuggestRedactions(args: Record<string, unknown>, document
   const problems = describeUnlocatable(suggestions, documentPages)
   const notes = [
     ...(invalid.length ? [`${invalid.length} Einträge waren ungültig und wurden übersprungen: ${invalid.join('; ')}.`] : []),
+    ...(guessedPageCount ? [`Hinweis: Bei ${guessedPageCount} Einträgen fehlte die Seitenangabe (oder war ungültig) — die Seite wurde automatisch anhand des Texts ermittelt. Gib pageIndex/startPage/endPage künftig direkt an.`] : []),
     ...(problems.length ? [`Diese Stellen konnten nicht gefunden werden: ${problems.join('; ')}. Wiederhole den Aufruf für sie mit dem exakten Wortlaut aus der read_documents-Antwort.`] : []),
   ]
   return {
