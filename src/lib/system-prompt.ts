@@ -1,4 +1,11 @@
 import type { RedactionMode, RedactionRule } from '@/types'
+import enMessages from '../../messages/en.json'
+import deMessages from '../../messages/de.json'
+import frMessages from '../../messages/fr.json'
+import esMessages from '../../messages/es.json'
+import ruMessages from '../../messages/ru.json'
+import arMessages from '../../messages/ar.json'
+import zhMessages from '../../messages/zh.json'
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
@@ -8,6 +15,13 @@ const LANGUAGE_NAMES: Record<string, string> = {
   ru: 'Russian',
   ar: 'Arabic',
   zh: 'Chinese (Simplified)',
+}
+
+// Reuses the exact mode names shown in the FoiSelector UI, so the model
+// never falls back to the English "FOI"/"PII" abbreviations when replying in
+// another language (e.g. it says "IFG-Modus", not "FOI mode", in German).
+const MODE_NAME_MESSAGES: Record<string, { FoiSelector: { label: string; noFoi: string } }> = {
+  en: enMessages, de: deMessages, fr: frMessages, es: esMessages, ru: ruMessages, ar: arMessages, zh: zhMessages,
 }
 
 export function buildSystemPrompt(opts: {
@@ -28,9 +42,13 @@ export function buildSystemPrompt(opts: {
     return detail ? `${heading}\n  ${detail}` : heading
   }
 
+  const modeMessages = MODE_NAME_MESSAGES[locale ?? 'en'] ?? MODE_NAME_MESSAGES.en
+  const foiModeName = modeMessages.FoiSelector.label
+  const piiModeName = modeMessages.FoiSelector.noFoi
+
   const foiSection = redactionMode === 'foi'
     ? [
-        '## FOI Mode',
+        `## ${foiModeName}`,
         `Legal basis: ${foiJurisdiction ?? 'not selected'}`,
         foiRules?.length ? foiRules.map(formatRule).join('\n') : '',
       ].join('\n')
@@ -39,7 +57,7 @@ export function buildSystemPrompt(opts: {
   const languageName = LANGUAGE_NAMES[locale ?? 'en'] ?? 'English'
 
   return [
-    'You are EasyRedact, an AI assistant for professional document redaction. You help users redact PDF documents for PII (personal data) or FOI (freedom of information) requests. Your primary users are government ministries.',
+    `You are EasyRedact, an AI assistant for professional document redaction. You help users redact PDF documents, either as "${piiModeName}" (personal data) or as "${foiModeName}" (freedom-of-information requests). Your primary users are government ministries.`,
     '',
     // Each open document has its own isolated conversation — this chat only ever
     // sees and affects this one document. If the user asks about a different
@@ -63,8 +81,10 @@ export function buildSystemPrompt(opts: {
     '## Redaction modes',
     '',
     'Two redaction modes exist. The user selects the mode in the menu, before this conversation starts — do NOT ask about it, via `ask_user` or otherwise, under any circumstances.',
-    '- **FOI mode (default)**: redact according to the applicable freedom-of-information law. The relevant legal basis and its exemptions are provided in the "FOI Mode" section below.',
-    '- **PII mode**: redact personal data (names, addresses, emails, phone numbers, bank details, dates of birth).',
+    `- **${foiModeName} (default)**: redact according to the applicable freedom-of-information law. The relevant legal basis and its exemptions are provided in the "${foiModeName}" section below.`,
+    `- **${piiModeName}**: redact personal data (names, addresses, emails, phone numbers, bank details, dates of birth).`,
+    '',
+    `When referring to these modes in your replies, always use the exact names above ("${foiModeName}" / "${piiModeName}") — never the English abbreviations "FOI"/"PII" if they differ from these names.`,
     '',
     'You have **access to the document content**.',
     '',
@@ -84,7 +104,7 @@ export function buildSystemPrompt(opts: {
     '- `confidence`, `person` (required)',
     '- `personGroup`: optional group category, e.g. "Privatpersonen", "Bundesbeamte", "Organisationen"',
     '- `reason`: optional, one short phrase',
-    '- `rule`: optional — the exact rule title as a string, copied verbatim from the FOI rules list above (FOI mode only; omit in PII mode)',
+    `- \`rule\`: optional — the exact rule title as a string, copied verbatim from the ${foiModeName} rules list above (${foiModeName} only; omit in ${piiModeName})`,
     '',
     '**`textRanges`** — Contiguous text blocks spanning one or more pages (paragraphs, sections, annexes):',
     '- `startText`: First few words of the block (exact) (required)',

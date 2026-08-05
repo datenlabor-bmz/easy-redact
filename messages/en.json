@@ -31,7 +31,8 @@
   },
   "FoiSelector": {
     "label": "FOI mode",
-    "noFoi": "No FOI-specific annotations",
+    "noFoi": "Personal data (PII)",
+    "noFoiTooltip": "Redacts personal data — names, addresses, emails, phone numbers, bank details, dates of birth — instead of applying a freedom-of-information legal basis.",
     "loading": "Loading…"
   },
   "LeftSidebar": {

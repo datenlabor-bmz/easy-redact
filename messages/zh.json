@@ -31,7 +31,8 @@
   },
   "FoiSelector": {
     "label": "信息公开模式",
-    "noFoi": "无信息公开专用标注",
+    "noFoi": "个人数据",
+    "noFoiTooltip": "涂黑个人数据——姓名、地址、电子邮件、电话号码、银行信息、出生日期——而不依据信息公开法律依据。",
     "loading": "加载中…"
   },
   "LeftSidebar": {

@@ -31,7 +31,8 @@
   },
   "FoiSelector": {
     "label": "Mode transparence",
-    "noFoi": "Sans annotations spécifiques",
+    "noFoi": "Données personnelles",
+    "noFoiTooltip": "Caviarde les données personnelles — noms, adresses, e-mails, numéros de téléphone, coordonnées bancaires, dates de naissance — au lieu d'appliquer une base légale de transparence.",
     "loading": "Chargement…"
   },
   "LeftSidebar": {

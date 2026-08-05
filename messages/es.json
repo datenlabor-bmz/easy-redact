@@ -31,7 +31,8 @@
   },
   "FoiSelector": {
     "label": "Modo transparencia",
-    "noFoi": "Sin anotaciones específicas",
+    "noFoi": "Datos personales",
+    "noFoiTooltip": "Suprime datos personales — nombres, direcciones, correos electrónicos, números de teléfono, datos bancarios, fechas de nacimiento — en lugar de aplicar una base legal de transparencia.",
     "loading": "Cargando…"
   },
   "LeftSidebar": {

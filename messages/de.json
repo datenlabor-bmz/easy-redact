@@ -31,7 +31,8 @@
   },
   "FoiSelector": {
     "label": "IFG-Modus",
-    "noFoi": "Ohne IFG-Bezug",
+    "noFoi": "Personenbezogene Daten",
+    "noFoiTooltip": "Schwärzt personenbezogene Daten – Namen, Adressen, E-Mails, Telefonnummern, Bankdaten, Geburtsdaten – statt nach einem Informationsfreiheitsgesetz (IFG) vorzugehen.",
     "loading": "Lädt…"
   },
   "LeftSidebar": {
